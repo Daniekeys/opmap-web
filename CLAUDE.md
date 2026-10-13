@@ -1,5 +1,7 @@
 Copy of opmap-api/CLAUDE.md. The API repo is the source of truth; update there first.
 
+Web only: also read AGENTS.md for Next.js 16 notes before writing code.
+
 # CLAUDE.md
 
 Rules for any AI coding agent working in this repo. The product spec lives in `specs/`. Check specs/07-decisions-log.md before changing anything it covers, and add a row when you change a decision. Screenshots in `reference/` show flow and information density only; never copy Explee's UI or copy.
