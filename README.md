@@ -12,7 +12,7 @@ npm install
 npm run dev                   # http://localhost:3001
 ```
 
-The API's `WEB_ORIGIN` must be this app's origin (`http://localhost:3001`), and the test job page needs `ENABLE_DEV_ROUTES=true` on the API.
+The API's `BETTER_AUTH_URL` and `WEB_ORIGIN` must both be this app's origin (`http://localhost:3001`). Two setups are supported: fully local, and Vercel to Railway. Local web against the Railway API is not.
 
 ## How it talks to the API
 
@@ -36,25 +36,20 @@ Cache Components is on, so each route has a static shell and everything else str
 | `/login` | Sign in through Better Auth. No sign-up: accounts come from invites |
 | `/` | Goes to the user's first workspace |
 | `/w/<slug>` | Workspace overview: members and recent pipeline runs |
-| `/w/<slug>/dev/test-job` | Starts the API's test job and shows it in the progress panel. On in `next dev`; a 404 in a production build unless `ENABLE_DEV_PAGES=true` |
+| `/w/<slug>/test-job` | Owners only. Starts the API's test job and shows it in the progress panel. Members get no nav link and an "owners only" message if they open the URL |
 
-## Deploy to Railway
+## Deploy to Vercel
 
-Deployed as a second service in the same Railway project as `api` and Postgres.
+Hosted on Vercel Pro. `opmap-api` and Postgres stay on Railway (see its README).
 
-1. In the project, add a service from the `Daniekeys/opmap-web` GitHub repo, branch `main`. Name it `web`.
-2. On the `api` service, add the variable `PORT=3000` so its port is fixed.
-3. On the `web` service, set these variables before the first build:
+1. Import the `Daniekeys/opmap-web` GitHub repo into Vercel, production branch `main`. Framework preset Next.js, default build and output settings.
+2. Set this variable for Production (and Preview, if you use previews against the same API):
 
    | Variable | Value | Why |
    | --- | --- | --- |
-   | `API_URL` | `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:3000` | Reaches the API over Railway's private network. `next build` writes it into the `/api/*` rewrite, so changing it needs a rebuild, which Railway does on any variable change |
-   | `ENABLE_DEV_PAGES` | Leave unset | Set to `true` only while checking the test job on the live URL |
+   | `API_URL` | The Railway API's public URL (`https://...`, no trailing slash) | Vercel can't reach Railway's private network. `next build` writes it into the `/api/*` rewrite, so changing it needs a redeploy |
 
-   If the API service has a different name, use that name in place of `api`.
-4. `web` service settings: Builder Railpack (the default; it runs `npm run build` and `npm run start`, and `next start` listens on Railway's `PORT`). Healthcheck path `/login`. Serverless (app sleeping) on. Restart policy on failure.
-5. Under Networking, generate a public domain for `web`.
-6. On the `api` service, set both `BETTER_AUTH_URL` and `WEB_ORIGIN` to that public URL (`https://...`, no trailing slash), then let it redeploy. The browser only sees the web origin, so that is the origin Better Auth must trust and issue cookies for.
-7. Open the web URL and sign in. To watch a test job there, set `ENABLE_DEV_ROUTES=true` on `api` and `ENABLE_DEV_PAGES=true` on `web`, run it as an owner, then unset both.
+3. On the Railway `api` service, set both `BETTER_AUTH_URL` and `WEB_ORIGIN` to the Vercel production URL, then let it redeploy. The browser only sees the web origin, so that is the origin Better Auth must trust and issue cookies for.
+4. Open the Vercel URL and sign in. As an owner, open Test job and run it.
 
-App sleeping stays off on `api`: the worker has to stay up to pick up jobs. The first request to a sleeping `web` takes a few seconds while it wakes.
+Preview deployments get their own URLs, which are not in `WEB_ORIGIN`, so sign-in only works on the production URL.

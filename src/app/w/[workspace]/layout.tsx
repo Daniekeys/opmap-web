@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { WorkspaceNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { devPagesEnabled, getMe, getWorkspace } from "@/lib/api";
+import { getMe, getWorkspace } from "@/lib/api";
 
 type Params = LayoutProps<"/w/[workspace]">["params"];
 
@@ -37,6 +37,6 @@ async function Switcher({ params }: { params: Params }) {
 async function Nav({ params }: { params: Params }) {
   const { workspace } = await params;
   // Also the membership check for the shell: an unknown slug is a 404.
-  await getWorkspace(workspace);
-  return <WorkspaceNav slug={workspace} showDevPages={devPagesEnabled()} />;
+  const { role } = await getWorkspace(workspace);
+  return <WorkspaceNav slug={workspace} isOwner={role === "owner"} />;
 }

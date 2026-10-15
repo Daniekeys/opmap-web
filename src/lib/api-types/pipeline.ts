@@ -38,5 +38,5 @@ export type PipelineRunsResponse = { runs: PipelineRun[] };
 // GET /api/w/:workspaceId/pipeline-runs/:runId
 export type PipelineRunDetailResponse = { run: PipelineRun; steps: StepRun[] };
 
-// POST /api/w/:workspaceId/dev/test-pipeline (202)
+// POST /api/w/:workspaceId/test-pipeline (202, owner only)
 export type StartTestPipelineResponse = { run: PipelineRun };

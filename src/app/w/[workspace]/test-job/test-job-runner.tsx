@@ -7,19 +7,11 @@ import type { StartTestPipelineResponse } from "@/lib/api-types/pipeline";
 import { goToLogin } from "@/lib/go-to-login";
 
 const START_ERRORS: Record<number, string> = {
-  403: "Only a workspace owner can start the test job.",
-  404: "The API's dev routes are off. Set ENABLE_DEV_ROUTES=true in opmap-api and restart it.",
+  // The page only renders this for owners, but a role can change mid-session.
+  403: "Owners only. Your role in this workspace no longer allows starting the test job.",
 };
 
-export function TestJobRunner({
-  workspaceId,
-  canStart,
-  initialRunId,
-}: {
-  workspaceId: string;
-  canStart: boolean;
-  initialRunId: string | null;
-}) {
+export function TestJobRunner({ workspaceId, initialRunId }: { workspaceId: string; initialRunId: string | null }) {
   const [runId, setRunId] = useState(initialRunId);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +20,7 @@ export function TestJobRunner({
     setStarting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/w/${workspaceId}/dev/test-pipeline`, {
+      const res = await fetch(`/api/w/${workspaceId}/test-pipeline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
@@ -61,10 +53,9 @@ export function TestJobRunner({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button className="h-11 w-full text-base sm:w-auto sm:self-start sm:px-5" disabled={!canStart || starting} onClick={start}>
+        <Button className="h-11 w-full text-base sm:w-auto sm:self-start sm:px-5" disabled={starting} onClick={start}>
           {starting ? "Starting" : runId ? "Start another test job" : "Start test job"}
         </Button>
-        {!canStart && <p className="text-sm text-muted-foreground">{START_ERRORS[403]}</p>}
         {error && (
           <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}

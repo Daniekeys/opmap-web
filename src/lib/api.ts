@@ -37,8 +37,3 @@ export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/ap
 
 export const listPipelineRuns = (workspaceId: string) =>
   apiGet<PipelineRunsResponse>(`/api/w/${workspaceId}/pipeline-runs`);
-
-// Dev pages (the test job) are on in `next dev` and off in a production build
-// unless ENABLE_DEV_PAGES=true. Call it at request time, not in a static shell.
-export const devPagesEnabled = () =>
-  process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_PAGES === "true";

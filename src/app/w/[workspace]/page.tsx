@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { StatusBadge } from "@/components/status-badge";
-import { devPagesEnabled, getMe, getWorkspace, listMembers, listPipelineRuns } from "@/lib/api";
+import { getMe, getWorkspace, listMembers, listPipelineRuns } from "@/lib/api";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 type Params = PageProps<"/w/[workspace]">["params"];
@@ -22,7 +22,8 @@ async function Overview({ params }: { params: Params }) {
     listMembers(workspace.id),
     listPipelineRuns(workspace.id),
   ]);
-  const linkRuns = devPagesEnabled();
+  // Runs open in the test job page, which is owners only.
+  const linkRuns = workspace.role === "owner";
 
   return (
     <>
@@ -79,7 +80,7 @@ async function Overview({ params }: { params: Params }) {
                 <li key={run.id}>
                   {linkRuns ? (
                     <Link
-                      href={`/w/${workspace.slug}/dev/test-job?run=${run.id}`}
+                      href={`/w/${workspace.slug}/test-job?run=${run.id}`}
                       className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-muted/50"
                     >
                       {row}
