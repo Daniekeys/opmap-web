@@ -76,7 +76,7 @@ Claude handles every AI step, paid from the $1,000 in Claude API credits. Railwa
 | AI decisions | Claude Haiku 5.5, behind `DecisionProvider` | Fit checks, routing, claim and draft checks. Batch API (50% off) where it isn't urgent |
 | Web search | Claude web search tool, behind `EnrichmentProvider` | Finds socials for businesses with no website |
 | Tests | Vitest | Unit tests for services and adapters, plus an AI eval set |
-| Hosting | Railway for `api`, `web` and Postgres | Two repos, deployed separately. `opmap-api` (backend plus worker) and Postgres (pgvector template) on Railway. `opmap-web` (Next.js) on Railway with app sleeping on. |
+| Hosting | Railway for `api` and Postgres; Vercel Pro for `web` | Two repos, deployed separately. `opmap-api` (backend plus worker) and Postgres on Railway. `opmap-web` (Next.js) on Vercel Pro |
 
 ## Data model
 

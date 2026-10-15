@@ -4,6 +4,7 @@ Newest first. Add a line whenever something changes, with the reason.
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-15 | `opmap-web` hosted on Vercel Pro; `opmap-api` and Postgres stay on Railway | Already paying for Pro, which allows commercial use, so it's fine for stage 1. Previews and faster deploys come free with it |
 | 2026-10-13 | `railway.json` deleted; the `api` service's Railway settings are set by hand and listed in the README | Railway's Config as Code is closed to new services, so the file was never read. A config file that does nothing misleads whoever deploys next |
 | 2026-10-12 | Repo `specs/` is the source of truth; the live doc is retired | Three copies drifted within six days; the repo is versioned and is what Claude Code reads |
 | 2026-10-12 | `contact_points` owned by the research module | It references `sources`; the lead finder writes through research's service functions |

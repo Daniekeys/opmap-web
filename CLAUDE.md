@@ -35,7 +35,7 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 - Every new repo file must register its queries with the leak test: put a `repo.leak.ts` beside the `repo.ts`, exporting `leakCases` with one case per exported query, each calling it with fixture arguments (see `test/leak-registry.ts`). A repo with no registration file, or a query missing from it, fails the leak test and the typecheck.
 - Every new workspace-owned table needs a row in `seedFullWorkspace` (`test/helpers.ts`); the schema test fails until it has one.
 - Capped vendor calls reserve their ledger row first (`reserveUsage`), call the vendor, then record the result (`settleUsage`). A failed call keeps its slot.
-- Routes for development only go on the dev router, which is owner-only and mounted only when `ENABLE_DEV_ROUTES=true`.
+- Owner-only routes use `requireOwner`; members get 403. There is no dev-only router or flag: the Phase 0 test job is owner-only and stays on in production.
 - Other modules import a module's `service.ts`, never its `repo.ts`.
 - Write functions for shared tables go in files named `worker-writes.ts`; HTTP code may not import them.
 - A pipeline is a function in `src/worker/pipelines/`, registered in its `index.ts`, that does its work through `step(...)`. Give a paid step its `paidAction` so the limit check and the ledger write happen for it.
