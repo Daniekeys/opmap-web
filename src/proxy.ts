@@ -17,8 +17,8 @@ export function proxy(request: NextRequest) {
   return NextResponse.redirect(login);
 }
 
-// Every app route except login. /api/* is forwarded to opmap-api, which does
-// its own session check.
+// Every app route except login and invite links, which are opened signed out.
+// /api/* is forwarded to opmap-api, which does its own session check.
 export const config = {
-  matcher: ["/((?!api/|login$|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/|login$|invite/|_next/static|_next/image|favicon.ico).*)"],
 };

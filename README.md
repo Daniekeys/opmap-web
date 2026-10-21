@@ -10,6 +10,8 @@ Needs Node 24 and `opmap-api` running on port 3000 (see its README).
 cp .env.example .env.local    # API_URL=http://localhost:3000
 npm install
 npm run dev                   # http://localhost:3001
+npm run lint
+npm run typecheck             # generates route types, then tsc
 ```
 
 The API's `BETTER_AUTH_URL` and `WEB_ORIGIN` must both be this app's origin (`http://localhost:3001`). Two setups are supported: fully local, and Vercel to Railway. Local web against the Railway API is not.
@@ -26,7 +28,7 @@ Cache Components is on, so each route has a static shell and everything else str
 
 - Nothing that depends on the session or the workspace uses `use cache`. It is read at request time inside a `<Suspense>` boundary and never stored on the server.
 - The active workspace is the slug in the URL (`/w/<slug>/...`), not a cookie. Switching workspace is a navigation.
-- `src/proxy.ts` sends requests with no session cookie to `/login`. That check is only a shortcut: `getMe()` asks the API on every render and redirects on a 401.
+- `src/proxy.ts` sends requests with no session cookie to `/login`, except `/invite/*`. That check is only a shortcut: `getMe()` asks the API on every render and redirects on a 401.
 - Signing in and out do a full page load, so the router's in-memory cache never carries from one user to the next.
 
 ## Routes
@@ -34,8 +36,10 @@ Cache Components is on, so each route has a static shell and everything else str
 | Route | What |
 | --- | --- |
 | `/login` | Sign in through Better Auth. No sign-up: accounts come from invites |
+| `/invite/<token>` | Opened signed out. A new invitee sets a name and password and lands in the workspace; someone with an account joins and signs in. Says clearly when a link is invalid, used or expired |
 | `/` | Goes to the user's first workspace |
 | `/w/<slug>` | Workspace overview: members and recent pipeline runs |
+| `/w/<slug>/members` | Owners only. Members, pending invites, and a form that creates an invite link (email and role) with a copy button. No email is sent: the owner sends the link. Members get no nav link and an "owners only" message |
 | `/w/<slug>/test-job` | Owners only. Starts the API's test job and shows it in the progress panel. Members get no nav link and an "owners only" message if they open the URL |
 
 ## Deploy to Vercel

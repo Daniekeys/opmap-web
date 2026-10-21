@@ -2,7 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { MeResponse, MembersResponse } from "./api-types/access";
+import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
+import type { ApiErrorResponse } from "./api-types/errors";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
@@ -37,3 +38,24 @@ export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/ap
 
 export const listPipelineRuns = (workspaceId: string) =>
   apiGet<PipelineRunsResponse>(`/api/w/${workspaceId}/pipeline-runs`);
+
+// Owners only; the API answers 403 to a member.
+export const listPendingInvites = (workspaceId: string) =>
+  apiGet<PendingInvitesResponse>(`/api/w/${workspaceId}/invites`);
+
+export type InviteProblem = "invite_invalid" | "invite_used" | "invite_expired";
+
+// For the invite page, which the invitee opens signed out: no cookie is sent,
+// and a link that can't be used is a state to show, not an error page.
+export async function getInvite(
+  token: string,
+): Promise<{ invite: InviteDescription; problem: null } | { invite: null; problem: InviteProblem }> {
+  const res = await fetch(`${process.env.API_URL}/api/invites/${encodeURIComponent(token)}`, { cache: "no-store" });
+  if (res.ok) return { invite: await res.json(), problem: null };
+  if (res.status === 404 || res.status === 410) {
+    const { error }: ApiErrorResponse = await res.json();
+    const known: InviteProblem[] = ["invite_invalid", "invite_used", "invite_expired"];
+    return { invite: null, problem: known.find((code) => code === error.code) ?? "invite_invalid" };
+  }
+  throw new Error(`API answered ${res.status} for the invite`);
+}
