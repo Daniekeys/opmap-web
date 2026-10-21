@@ -20,11 +20,11 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 
 ## Design rules
 1. **Two repos, one database.** `opmap-web` (Next.js frontend) and `opmap-api` (Node + Express 5, which also runs the pg-boss worker). The API repo owns the specs and the data contracts (Zod schemas). The web repo keeps a copy of the API types it needs, updated whenever the API changes. No microservices.
-2. **Workspace on everything.** Every business table carries `workspace_id`. Every query function takes a workspace id as a required argument. Leak tests must fail if any query returns another workspace's rows.
-3. **Modules own their data.** Feature modules: `brand`, `leads`, `research`, `outreach`, `outcomes`, `billing`, `admin`. A module calls another module's service functions, never its tables.
+2. **Workspace on everything.** Every business table carries `workspace_id`. Every query function takes a workspace id as a required argument. Leak tests must fail if any query returns another workspace's rows. The first query on any workspace-owned table must ship with its leak test.
+3. **Modules own their data.** Feature modules: `brand`, `leads`, `research`, `outreach`, `outcomes`, `billing`, `admin`. A module calls another module's service functions, never its tables. Module folders are created in the phase that first needs them, not ahead of time.
 4. **Every outside service sits behind an adapter.** `LlmProvider`, `DecisionProvider`, `PlacesProvider`, `GeoProvider`, `CrawlerProvider`, `EnrichmentProvider`, later `MailProvider`. Only adapters import vendor SDKs. Model names live in config.
 5. **Pipelines are steps.** Each step saves input, output, cost and errors to `step_runs`, retries safely, and can be swapped without touching the others.
-6. **Prompts are versioned files with typed outputs.** One file per prompt, with a Zod schema for its output. Every saved AI result records its prompt version.
+6. **Prompts are versioned files with typed outputs.** One file per prompt, with a Zod schema for its output. Every saved AI result records its prompt version. Prompts live in src/modules/<module>/prompts/<name>.v<n>.ts, each exporting the prompt and its Zod output schema.
 7. **Limits are checked in one place.** `checkLimit(workspace, action)` reads the plan and the usage ledger before any paid action.
 8. **Everything important becomes an event** in the append-only `events` table.
 9. **Mobile-first UI.** Build every screen for a 380px width first, then widen. Tables become stacked cards on phones. Copy buttons and outcome buttons must be easy to tap. Check each screen at phone width before calling it done.
@@ -42,7 +42,7 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 - Places and geocoding are reached only through `places` and `geo` from `src/adapters/index.ts`, which write every call to the usage ledger.
 
 ## Stack
-TypeScript everywhere. Next.js App Router, Tailwind, shadcn/ui. Express 5, Drizzle with plain SQL migrations, Postgres with pgvector, pg-boss, Better Auth, Zod, Playwright + Cheerio, Vitest. Hosted on Railway.
+TypeScript everywhere. Next.js App Router, Tailwind, shadcn/ui. Express 5, Drizzle with plain SQL migrations, Postgres with pgvector, pg-boss, Better Auth, Zod, Playwright + Cheerio, Vitest. API and Postgres on Railway, web on Vercel Pro.
 
 AI is the Claude API through the official Anthropic TypeScript SDK, inside the adapters only:
 - `DecisionProvider`: Claude Haiku 5.5 for fit checks, routing, claim and draft checks. Use the Batch API when the result isn't needed right away.

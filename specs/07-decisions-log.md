@@ -4,11 +4,13 @@ Newest first. Add a line whenever something changes, with the reason.
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-21 | Module folders created per phase, not up front; prompts live in src/modules/<module>/prompts/<name>.v<n>.ts | Empty folders aren't tracked by git and add nothing; one fixed place for prompts before Phase 1 writes the first |
+| 2026-10-15 | Dropped leads.contact_name and contact_email | Contact details are sourced claims in contact_points (spec, Data accuracy); bare values on leads would bypass the labels |
 | 2026-10-15 | `opmap-web` hosted on Vercel Pro; `opmap-api` and Postgres stay on Railway | Already paying for Pro, which allows commercial use, so it's fine for stage 1. Previews and faster deploys come free with it |
 | 2026-10-13 | `railway.json` deleted; the `api` service's Railway settings are set by hand and listed in the README | Railway's Config as Code is closed to new services, so the file was never read. A config file that does nothing misleads whoever deploys next |
 | 2026-10-12 | Repo `specs/` is the source of truth; the live doc is retired | Three copies drifted within six days; the repo is versioned and is what Claude Code reads |
 | 2026-10-12 | `contact_points` owned by the research module | It references `sources`; the lead finder writes through research's service functions |
-| 2026-10-12 | `web` hosted on Railway with app sleeping | Vercel's free plan is non-commercial and stage 1 is a paid service |
+| 2026-10-12 | `web` hosted on Railway with app sleeping (replaced 2026-10-15) | Vercel's free plan is non-commercial and stage 1 is a paid service |
 | 2026-10-12 | Google caps are global across workspaces, not per workspace | One Google project and one free tier shared by everyone |
 | 2026-10-12 | Google caps counted in UTC; Places calls reserve a ledger slot before calling | Worst case at the month boundary is 980 calls, under the free 1,000. Reserving first means a failed call can never slip past the cap |
 | 2026-10-12 | `usage_ledger.status` (reserved, done, failed); every status counts toward the Google cap | A crashed or timed-out call can never free its slot |
