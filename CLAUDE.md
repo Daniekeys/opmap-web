@@ -39,7 +39,12 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 - Other modules import a module's `service.ts`, never its `repo.ts`.
 - Write functions for shared tables go in files named `worker-writes.ts`; HTTP code may not import them.
 - A pipeline is a function in `src/worker/pipelines/`, registered in its `index.ts`, that does its work through `step(...)`. Give a paid step its `paidAction` so the limit check and the ledger write happen for it.
-- Places and geocoding are reached only through `places` and `geo` from `src/adapters/index.ts`, which write every call to the usage ledger.
+- Places and geocoding are reached only through `places` and `geo` from `src/adapters/index.ts`, which write every call to the usage ledger. A step that calls them declares no `paidAction` (the type and `runStep` both refuse it), so a call is never counted twice.
+- A paid step that can reuse an earlier result passes `reuse` in its step spec. It runs before the limit check, so a hit is allowed even over budget: no ledger row, cost 0.
+- An adapter whose paid call was charged but whose answer can't be used (cut off, off-schema, refused) throws `PaidCallError` with the real cost; `runStep` writes it to the ledger as a failed row.
+- A failure that retrying can't fix (site unreachable, no content) throws `PipelineError(code, message)`: the run fails at once with `{ errorCode }` in its output, and pg-boss does not retry it.
+- Later phases read the seller's claims only through `getApprovedFacts` in the brand service.
+- Every fetch of a user-supplied URL goes through `safeFetch` (`src/adapters/crawler/safe-fetch.ts`), which blocks private, loopback, link-local and internal addresses after DNS resolution.
 
 ## Stack
 TypeScript everywhere. Next.js App Router, Tailwind, shadcn/ui. Express 5, Drizzle with plain SQL migrations, Postgres with pgvector, pg-boss, Better Auth, Zod, Playwright + Cheerio, Vitest. API and Postgres on Railway, web on Vercel Pro.

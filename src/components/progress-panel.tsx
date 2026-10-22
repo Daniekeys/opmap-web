@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import type { PipelineRunDetailResponse, StepRun } from "@/lib/api-types/pipeline";
 import { formatDuration } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
+import { stepLabel } from "@/lib/step-labels";
 
 const POLL_MS = 1000;
 // The worker retries a failed job (twice, 5 seconds apart) and the API does not
@@ -22,9 +23,20 @@ type Poll = {
   polling: boolean;
 };
 
+type Finished = (status: "done" | "failed") => void;
+
 // Live view of one pipeline run: polls the run and its step_runs until the run
-// finishes. `runId` is null before a run has been started.
-export function ProgressPanel({ workspaceId, runId }: { workspaceId: string; runId: string | null }) {
+// finishes. `runId` is null before a run has been started. `onFinished` is
+// called once when polling stops on a finished run.
+export function ProgressPanel({
+  workspaceId,
+  runId,
+  onFinished,
+}: {
+  workspaceId: string;
+  runId: string | null;
+  onFinished?: Finished;
+}) {
   return (
     <section aria-labelledby="progress-heading" className="flex flex-col gap-2">
       <h2 id="progress-heading" className="text-sm font-medium text-muted-foreground">
@@ -32,7 +44,7 @@ export function ProgressPanel({ workspaceId, runId }: { workspaceId: string; run
       </h2>
       {runId ? (
         // Keyed, so a new run starts from a clean loading state.
-        <RunProgress key={runId} workspaceId={workspaceId} runId={runId} />
+        <RunProgress key={runId} workspaceId={workspaceId} runId={runId} onFinished={onFinished} />
       ) : (
         <Notice>No run yet. Start one and its steps will show up here.</Notice>
       )}
@@ -40,9 +52,14 @@ export function ProgressPanel({ workspaceId, runId }: { workspaceId: string; run
   );
 }
 
-function RunProgress({ workspaceId, runId }: { workspaceId: string; runId: string }) {
+function RunProgress({ workspaceId, runId, onFinished }: { workspaceId: string; runId: string; onFinished?: Finished }) {
   const [poll, setPoll] = useState<Poll>({ data: null, at: 0, problem: null, polling: true });
   const [restarts, setRestarts] = useState(0);
+  // Kept in a ref so a new callback from the parent doesn't restart polling.
+  const finishedRef = useRef(onFinished);
+  useEffect(() => {
+    finishedRef.current = onFinished;
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,10 +88,16 @@ function RunProgress({ workspaceId, runId }: { workspaceId: string; runId: strin
         const now = Date.now();
         fetchFailures = 0;
         failedSince = data.run.status === "failed" ? (failedSince ?? now) : null;
+        // A run failed with an errorCode failed for good: the worker won't retry it.
+        const finalFailure =
+          data.run.status === "failed" && typeof (data.run.output as { errorCode?: unknown } | null)?.errorCode === "string";
         const finished =
-          data.run.status === "done" || (failedSince !== null && now - failedSince >= WATCH_AFTER_FAILED_MS);
+          data.run.status === "done" ||
+          finalFailure ||
+          (failedSince !== null && now - failedSince >= WATCH_AFTER_FAILED_MS);
         setPoll({ data, at: now, problem: null, polling: !finished });
         if (!finished) timer = setTimeout(tick, POLL_MS);
+        else finishedRef.current?.(data.run.status === "done" ? "done" : "failed");
       } catch {
         if (controller.signal.aborted) return;
         fetchFailures += 1;
@@ -181,7 +204,7 @@ function StepRow({ step, number, now }: { step: StepRun; number: number; now: nu
     <li className="flex min-h-11 items-start gap-3 px-4 py-3">
       <span className="w-5 shrink-0 pt-0.5 text-sm text-muted-foreground tabular-nums">{number}</span>
       <div className="min-w-0 flex-1">
-        <p className="font-medium wrap-break-word">{step.name}</p>
+        <p className="font-medium wrap-break-word">{stepLabel(step.name)}</p>
         {step.attempts > 1 && <p className="text-sm text-muted-foreground">Attempt {step.attempts}</p>}
         {step.error && <p className="mt-1 text-sm wrap-break-word whitespace-pre-wrap text-destructive">{step.error}</p>}
       </div>

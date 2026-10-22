@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
+import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
 import type { ApiErrorResponse } from "./api-types/errors";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
 
@@ -38,6 +39,11 @@ export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/ap
 
 export const listPipelineRuns = (workspaceId: string) =>
   apiGet<PipelineRunsResponse>(`/api/w/${workspaceId}/pipeline-runs`);
+
+export const getBrand = (workspaceId: string) => apiGet<BrandOverviewResponse>(`/api/w/${workspaceId}/brand`);
+
+export const getBrandProfile = (workspaceId: string, profileId: string) =>
+  apiGet<ProfileDetailResponse>(`/api/w/${workspaceId}/brand/profiles/${encodeURIComponent(profileId)}`);
 
 // Owners only; the API answers 403 to a member.
 export const listPendingInvites = (workspaceId: string) =>
