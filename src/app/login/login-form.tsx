@@ -2,10 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { inputClass } from "@/components/input-class";
 import { Button } from "@/components/ui/button";
-
-const inputClass =
-  "h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 // Only paths on this site, so a crafted ?next= cannot send someone elsewhere.
 const safeNext = (next: string | null) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/");

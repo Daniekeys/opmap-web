@@ -1,6 +1,5 @@
-// Mirrors opmap-api/src/core/routes.ts
-// (row shapes from src/db/schema/core.ts, as they arrive over JSON: timestamps
-// are ISO strings). The API has no Zod schema for these responses yet.
+// Mirrors opmap-api/src/core/contracts.ts
+// (rows as they arrive over JSON: timestamps are ISO strings)
 
 export type RunStatus = "queued" | "running" | "done" | "failed";
 

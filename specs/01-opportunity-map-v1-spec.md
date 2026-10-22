@@ -58,7 +58,7 @@ Nine rules keep the codebase simple today and open for new scope later. Put them
 
 ## Tech stack
 
-Claude handles every AI step, paid from the $1,000 in Claude API credits. Railway hosts the frontend, our own backend and Postgres, at about $9 to $12 a month.
+Claude handles every AI step, paid from the $1,000 in Claude API credits. Railway hosts our own backend and Postgres at about $9 to $12 a month, and the frontend runs on the existing Vercel Pro plan.
 
 | Layer | Choice | Note |
 | --- | --- | --- |
@@ -95,7 +95,7 @@ Twenty-five tables, plus Better Auth's own (user, session, account, verification
 | `approved_facts` | brand | brand_profile_id, kind, text | The only claims the AI may make about the seller |
 | `campaigns` | leads | workspace_id, name, segment, locations, brand_profile_version, status | A search for one kind of business in some places |
 | `businesses` | leads | place_id, domain, name, city, country, phone, website, rating, review_count, refreshed_at | One row per real business, shared across workspaces. Places fields get refreshed, not hoarded |
-| `leads` | leads | workspace_id, campaign_id, business_id, fit_score, status | A business inside one workspace's campaign |
+| `leads` | leads | workspace_id, campaign_id, business_id, fit_score, status | A business inside one workspace's campaign. Contact details live in `contact_points` on the business, never on the lead |
 | `contact_points` | research | business_id, kind, value, source_id, confidence, status, checked_at | Every contact detail as a sourced, labelled claim. Shared across workspaces |
 | `geo_areas` | leads | level, name, parent_id, country, bbox, population | The location ladder |
 | `search_coverage` | leads | query, tile_bbox, geo_area_id, searched_at, result_count | Which tiles were searched and when. Shared across workspaces |
