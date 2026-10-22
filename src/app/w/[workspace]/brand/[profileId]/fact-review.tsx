@@ -109,7 +109,9 @@ export function FactReview({
     }
     const after = facts.map((f) => (f.id === fact.id ? result.data.fact : f));
     replace(result.data.fact);
-    setEditing(null);
+    // Close the editor only if it was open on this fact; an edit open on
+    // another card (wide screens show them all) is kept.
+    setEditing((open) => (open?.id === fact.id ? null : open));
     advanceFrom(position, after);
   }
 
