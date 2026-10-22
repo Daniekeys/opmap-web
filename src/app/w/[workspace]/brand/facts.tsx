@@ -1,18 +1,9 @@
 // Pieces shared by the Brand DNA screens.
 import { ExternalLink, History, TriangleAlert, UserPen } from "lucide-react";
-import type { Fact, FactKind, ProfileSummary } from "@/lib/api-types/brand";
+import type { Fact, ProfileSummary } from "@/lib/api-types/brand";
 import { cn } from "@/lib/utils";
 
-export const KINDS: { kind: FactKind; label: string; one: string }[] = [
-  { kind: "service", label: "Services", one: "Service" },
-  { kind: "proof_point", label: "Proof points", one: "Proof point" },
-  { kind: "ideal_client", label: "Ideal clients", one: "Ideal client" },
-  { kind: "industry", label: "Industries", one: "Industry" },
-  { kind: "tone", label: "Tone", one: "Tone" },
-  { kind: "location", label: "Locations served", one: "Location" },
-];
-
-export const kindLabel = (kind: FactKind) => KINDS.find((k) => k.kind === kind)!.one;
+export { KINDS, kindLabel } from "./kinds";
 
 // "daniekeysstudios.com/services" from the full URL.
 export function shortUrl(url: string) {

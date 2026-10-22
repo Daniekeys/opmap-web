@@ -4,6 +4,9 @@ Newest first. Add a line whenever something changes, with the reason.
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-22 | A Claude call that is charged but unusable (cut off, off-schema, refused) writes its real cost to `usage_ledger` with status `failed`; it counts toward the budget | Every paid call writes its real cost (money guardrails); a failed answer still costs money |
+| 2026-10-22 | A paid step's free reuse of an earlier result runs before `checkLimit`, so it works for a workspace over budget | Reuse costs nothing; blocking it would stop a re-crawl of an unchanged site for no saving |
+| 2026-10-22 | Crawler user agent: `OpmapBot/1.0 (+https://daniekeysstudios.com/bot; ...)` | Site owners can see who we are and how to reach us; robots.txt rules still match `OpmapBot` |
 | 2026-10-22 | opmap-api runs TypeScript 7 for tsc (`@typescript/native`) with `typescript` aliased to TS 6 for typescript-eslint | typescript-eslint doesn't support TS 7 yet. Collapse back to one version once it does |
 | 2026-10-22 | Brand DNA versions: each crawl with changed content saves a new draft and archives the old draft; at most one draft and one approved version per workspace. Facts start pending; ones matching the approved version are pre-marked but confirmed again; approved facts the crawl no longer finds are listed as "no longer on your site" | The approve step exists to catch stale claims (00-explee-flow-breakdown, weak spot 1), so nothing carries over without a fresh yes, while a re-crawl keeps the user's earlier wording |
 | 2026-10-22 | Candidate and approved facts share `approved_facts`, with `status` (pending, approved, rejected), `origin` (extracted, user) and nullable `source_url`. Later phases read only approved facts of the approved version, through `getApprovedFacts` | One table keeps a fact's review state and its source together; the single read function keeps unapproved rows out of outreach |

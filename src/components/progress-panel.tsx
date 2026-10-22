@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { PipelineRunDetailResponse, StepRun } from "@/lib/api-types/pipeline";
 import { formatDuration } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
+import { stepLabel } from "@/lib/step-labels";
 
 const POLL_MS = 1000;
 // The worker retries a failed job (twice, 5 seconds apart) and the API does not
@@ -203,7 +204,7 @@ function StepRow({ step, number, now }: { step: StepRun; number: number; now: nu
     <li className="flex min-h-11 items-start gap-3 px-4 py-3">
       <span className="w-5 shrink-0 pt-0.5 text-sm text-muted-foreground tabular-nums">{number}</span>
       <div className="min-w-0 flex-1">
-        <p className="font-medium wrap-break-word">{step.name}</p>
+        <p className="font-medium wrap-break-word">{stepLabel(step.name)}</p>
         {step.attempts > 1 && <p className="text-sm text-muted-foreground">Attempt {step.attempts}</p>}
         {step.error && <p className="mt-1 text-sm wrap-break-word whitespace-pre-wrap text-destructive">{step.error}</p>}
       </div>

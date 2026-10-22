@@ -19,6 +19,7 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import { goToLogin } from "@/lib/go-to-login";
 import { cn } from "@/lib/utils";
 import { FactSource, KINDS, kindLabel, PreviouslyApproved, StaleFlag } from "../facts";
+import { emptyFactsMessage, factTabs } from "../kinds";
 
 type Result<T> = { ok: true; data: T } | { ok: false; message: string };
 
@@ -153,9 +154,7 @@ export function FactReview({
       </section>
 
       <div role="group" aria-label="Show facts of one kind" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {[{ kind: "all" as const, label: "All" }, ...KINDS].map(({ kind, label }) => {
-          const count = kind === "all" ? facts.length : facts.filter((f) => f.kind === kind).length;
-          if (count === 0) return null;
+        {factTabs(facts).map(({ kind, label, count }) => {
           const active = filter === kind;
           return (
             <button
@@ -179,7 +178,7 @@ export function FactReview({
 
       {visible.length === 0 ? (
         <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground">
-          No facts were found on the site. Add the ones you want by hand below.
+          {emptyFactsMessage(filter)}
         </p>
       ) : (
         <>
