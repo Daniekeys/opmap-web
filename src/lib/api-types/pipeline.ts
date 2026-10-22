@@ -9,6 +9,7 @@ export type PipelineRun = {
   type: string;
   status: RunStatus;
   input: unknown;
+  // On a run that failed for good (no retry coming): { errorCode }.
   output: unknown;
   error: string | null;
   costUsd: number;
