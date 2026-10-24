@@ -319,7 +319,7 @@ These are built into v1, not added later, because they're what make the tool tru
 - The suppression list is checked before any draft is shown
 - Every email draft ends with an opt-out line and the sender's real business identity
 - No LinkedIn scraping. Public websites, Maps and approved APIs only
-- Places content is refreshed per campaign. Place IDs and your own analysis are what get stored long-term
+- Place ids are stored long-term. Coordinates and other Places fields are refreshed or cleared within 30 days. Data our crawler finds on a business's own site is ours to keep.
 - A privacy notice on the website explains data sources, use and opt-out, in line with Nigeria's NDPA
 - API keys and future mailbox credentials are encrypted and never sent to the browser
 

@@ -4,6 +4,10 @@ Newest first. Add a line whenever something changes, with the reason.
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-24 | Places-sourced fields marked with places_fetched_at and refreshed or cleared after 30 days | Google terms allow storing place ids long-term and lat/lng for 30 days only. Crawled data is ours |
+| 2026-10-24 | Fixed global tile grid (0.02 degrees, splitting to 0.0025), search_coverage stores business_ids | Lets expansions and other workspaces reuse tiles and still get the businesses back |
+| 2026-10-24 | Google cap windows count in America/Los_Angeles, replacing UTC | Google's daily quota resets at Pacific midnight, so our counter has to match or Google returns 429s we didn't expect |
+| 2026-10-24 | Google Cloud set up: `opmap-maps` project, key restricted to Places API (New) and Geocoding, Text Search quota 30/day and 10/min, $1 budget scoped to opmap-maps only | Budget counts free tier credits (so free calls don't trigger alerts) but excludes promotional credits (so the $30 credit can't hide Maps spend). Separate budget for Voice-work keeps alerts unambiguous |
 | 2026-10-22 | A Claude call that is charged but unusable (cut off, off-schema, refused) writes its real cost to `usage_ledger` with status `failed`; it counts toward the budget | Every paid call writes its real cost (money guardrails); a failed answer still costs money |
 | 2026-10-22 | A paid step's free reuse of an earlier result runs before `checkLimit`, so it works for a workspace over budget | Reuse costs nothing; blocking it would stop a re-crawl of an unchanged site for no saving |
 | 2026-10-22 | Crawler user agent: `OpmapBot/1.0 (+https://daniekeysstudios.com/bot; ...)` | Site owners can see who we are and how to reach us; robots.txt rules still match `OpmapBot` |
@@ -24,7 +28,7 @@ Newest first. Add a line whenever something changes, with the reason.
 | 2026-10-12 | `contact_points` owned by the research module | It references `sources`; the lead finder writes through research's service functions |
 | 2026-10-12 | `web` hosted on Railway with app sleeping (replaced 2026-10-15) | Vercel's free plan is non-commercial and stage 1 is a paid service |
 | 2026-10-12 | Google caps are global across workspaces, not per workspace | One Google project and one free tier shared by everyone |
-| 2026-10-12 | Google caps counted in UTC; Places calls reserve a ledger slot before calling | Worst case at the month boundary is 980 calls, under the free 1,000. Reserving first means a failed call can never slip past the cap |
+| 2026-10-12 | ~~Google caps counted in UTC~~ (superseded 2026-10-24: America/Los_Angeles); Places calls reserve a ledger slot before calling | Worst case at the month boundary is 980 calls, under the free 1,000. Reserving first means a failed call can never slip past the cap |
 | 2026-10-12 | `usage_ledger.status` (reserved, done, failed); every status counts toward the Google cap | A crashed or timed-out call can never free its slot |
 | 2026-10-12 | Drop `leads.contact_name` and `contact_email`; contacts come from `contact_points` | Keeps every contact detail a sourced claim |
 | 2026-10-12 | Active workspace lives in the URL (`/api/w/:workspaceId/...`), not on the session | Nothing to go stale, links are shareable, the switcher is frontend state only |
