@@ -130,11 +130,11 @@ A version is only used (by segments, campaigns, deep-dives and outreach) when it
 
 **2. Lead finder**
 
-1. The tool suggests up to 6 buyer segments from the approved Brand DNA, ranked by likelihood to pay. Each shows who they are, their Places search terms, the pain, what to pitch first, buyer signals, suggested places, and whether Places can reach them. The user picks one, edits it, or types their own, then chooses locations. The chosen segment is saved on the campaign and feeds the lead ranking and the deep-dive.
+1. The tool suggests up to 6 buyer segments from the approved Brand DNA, ranked by likelihood to pay. Each shows who they are, their Places search terms, the pain, what to pitch first, buyer signals, suggested places, and whether Places can reach them. A segment is "not reachable yet" only when Google Maps doesn't list its businesses as a business type; a filter Maps can't check (recently funded, hiring, launching) is shown as something to look for, never a reason to block the segment. Suggested places start where the facts say the seller is based, then add the cities where these buyers cluster when the seller serves the whole country. The user picks one, edits it, or types their own, then chooses locations. The chosen segment is saved on the campaign and feeds the lead ranking and the deep-dive.
 2. The AI expands it into neighbourhood-level searches, for example "cake shop Bodija Ibadan"
 3. Places Text Search runs each query, respecting the daily call cap
 4. Results are deduplicated by place ID and saved to `businesses`
-5. Claude Haiku reports what each business's name, category, rating, review count, website and socials show, and code scores it against the category and the segment's buyer signals. Clear mismatches are dropped; the rest are ranked.
+5. Claude Haiku reports what each business's name and category say; code settles the name from its words and applies the category rubric. Only a business that passes the rubric (match or likely) becomes a lead and gets a buyer score from its reviews, rating, website and socials against the segment's buyer signals; one the user promotes by hand from the "possible" list keeps its score and is tagged "Promoted by you". Any other lead scores 0 and sits last.
 
 **3. Lead deep-dive**
 
@@ -162,12 +162,14 @@ A router picks the data source before any search runs, because local businesses,
 | B2B company | Startups, agencies, fintechs, SaaS | Web search API, then our crawler | Later (SearchProvider adapter stubbed in v1) |
 | Institution | NGOs, government agencies, associations | Web search plus public directories | Later |
 
+A buyer segment marked reachable is searched on Places as a local business whatever its industry: software companies, IT companies, tech hubs and fintechs with a Maps listing are found there. The B2B row covers the ones without a listing.
+
 **Local business flow (v1)**
 
 1. Places Text Search per search tile (see Location), with a field mask limited to: place ID, name, formatted address and address components, coordinates, primary type, phone, website, rating, review count, business status, Maps link.
 2. Drop anything whose business status is not operational.
 3. Dedupe and save to `businesses` (see Data accuracy).
-4. Claude Haiku quick fit check on name and category, before any money is spent on the lead; it also sees the rating, review count, website and socials and says what they show. Code then gives each business a buyer score against the campaign's buyer segment (reviews, rating, website, socials, fit) and the leads table is ordered by it, with the top reason in plain words. The score is worked out again when enrichment finds a website or socials.
+4. Claude Haiku quick fit check on name and category, before any money is spent on the lead. Code settles the name signal from the words in the name (a word for this kind of business names it, even next to another kind: "Cakes and Events"; only a word for another kind, such as "Events Palace", names another kind) and applies the rubric. The rubric must pass (match or likely) before the buyer score counts: code then scores each lead against the campaign's buyer segment (reviews, rating, website, socials, fit) and the leads table is ordered by it, with the top reason in plain words. A lead below likely scores 0 and sits last, unless the user promoted it by hand ("Promoted by you"), which keeps its score. The score is worked out again when enrichment finds a website or socials. The lead's note is Haiku's sentence on the name and category, followed by what the listing shows (reviews, website, socials), built by code from current data each time the lead is read.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
 6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
 
@@ -243,8 +245,8 @@ Six phases plus Phase 2.5, fed to Claude Code one at a time. Don't start a phase
    - Done when: daniekeysstudios.com produces a profile you'd sign off on with fewer than five edits.
 3. **Phase 2: Lead finder.** Places adapter, campaign screen, tile search with neighbourhood queries on top, geo_areas and search_coverage tables, contact_points with labels, daily cap, dedupe, Haiku fit filter, leads table view.
    - Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap.
-4. **Phase 2.5: Buyer segments.** Brand DNA from a written description (and an Instagram handle) when there's no website; up to 6 buyer segments from the approved Brand DNA (Opus, cached per Brand DNA version); the campaign screen opens on the segment cards; the chosen segment is saved on the campaign; fit check v3 ranks leads by the segment's buyer signals. See `phases/phase-2.5-buyer-segments.md`.
-   - Done when: Daniekeys and Afriment each get up to 6 segments from their approved Brand DNA that you'd use, a written description gives a usable segment list, and the Ilorin leads are ranked by buyer signals with a plain-words top reason.
+4. **Phase 2.5: Buyer segments.** Brand DNA from a written description (and an Instagram handle) when there's no website; up to 6 buyer segments from the approved Brand DNA (Opus, cached per Brand DNA version); the campaign screen opens on the segment cards; the chosen segment is saved on the campaign; fit check v4 (the category rubric) decides which businesses are leads, and the buyer score ranks them by the segment's buyer signals. See `phases/phase-2.5-buyer-segments.md`.
+   - Done when: Daniekeys and Afriment each get up to 6 segments from their approved Brand DNA that you'd use, a written description gives a usable segment list, and the Ilorin leads are ranked by buyer signals with a plain-words top reason and no non-bakery in the top 10.
 5. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
    - Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes.
 6. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.

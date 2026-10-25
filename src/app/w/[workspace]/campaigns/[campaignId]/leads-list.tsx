@@ -122,9 +122,16 @@ function Researched({ lead }: { lead: Lead }) {
 function Fit({ lead }: { lead: Lead }) {
   const word = lead.fit.verdict ? (FIT_WORDS[lead.fit.verdict] ?? lead.fit.verdict) : "Fit";
   return (
-    <span className="text-sm" title={lead.fit.reason ?? undefined}>
+    <span className="inline-flex flex-wrap items-center gap-1.5 text-sm" title={lead.fit.reason ?? undefined}>
       {word}
-      {lead.promoted && <span className="text-muted-foreground">, promoted by hand</span>}
+      {lead.promoted && (
+        <span
+          className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900"
+          title="You made this lead from the possible list; it keeps its place by its buyer score"
+        >
+          Promoted by you
+        </span>
+      )}
     </span>
   );
 }

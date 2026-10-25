@@ -214,6 +214,12 @@ function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () =>
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Buyer signals</dt>
             <dd className="wrap-break-word">{signals.length ? signals.join(" · ") : "None in particular"}</dd>
           </div>
+          {segment.signalNotes.length > 0 && (
+            <div>
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Also look for (Maps can&apos;t check)</dt>
+              <dd className="wrap-break-word">{segment.signalNotes.join(" · ")}</dd>
+            </div>
+          )}
           <div>
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Backed by your Brand DNA</dt>
             <dd>

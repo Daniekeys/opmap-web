@@ -45,6 +45,8 @@ export type BuyerSegment = {
   pitchFirst: string;
   pitchFacts: { id: string; text: string }[];
   buyerSignals: BuyerSignals;
+  // What to look for that Google Maps can't check ("recently funded").
+  signalNotes: string[];
   suggestedPlaces: { name: string; areaId: string | null }[];
   reachability: "places" | "not_yet";
   reachabilityReason: string;
