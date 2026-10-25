@@ -27,6 +27,10 @@ const PROBLEMS: Record<RunProblem, { title: string; help: string }> = {
     title: "No usable content found",
     help: "We reached the site but found nothing we could quote. Text that only shows after a login, or only inside images, can't be read.",
   },
+  foreign_website: {
+    title: "That website belongs to another workspace",
+    help: "Its Brand DNA can only be read in the workspace that owns it. Switch workspace, or enter this business's own website.",
+  },
   failed: {
     title: "The run failed",
     help: "Something went wrong on our side. Try again in a minute.",

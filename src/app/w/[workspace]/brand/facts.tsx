@@ -71,6 +71,7 @@ export function VersionBadge({ status, className }: { status: ProfileSummary["st
     draft: "bg-amber-100 text-amber-900",
     approved: "bg-emerald-100 text-emerald-800",
     archived: "bg-muted text-muted-foreground",
+    retired: "bg-destructive/10 text-destructive",
   }[status];
   return (
     <span className={cn("ml-1 inline-flex rounded-full px-2 py-0.5 align-middle text-xs font-medium capitalize", tone, className)}>

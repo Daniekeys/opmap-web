@@ -91,7 +91,8 @@ Twenty-five tables, plus Better Auth's own (user, session, account, verification
 | `usage_ledger` | billing | workspace_id, action, quantity, cost_usd, status | Counts every paid action and its real cost. Places calls are written as `reserved` before the call and updated to `done` or `failed`; all three count toward the Google cap |
 | `access_codes` | billing (later) | code, plan_id, expires_at, redeemed_by | Manual-payment unlocks |
 | `payments` | billing (later) | workspace_id, amount, currency, reference, method | The manual payment log |
-| `brand_profiles` | brand | workspace_id, version, website, profile (json), status | Brand DNA, versioned so old analyses still make sense |
+| `brand_profiles` | brand | workspace_id, version, website, profile (json), status (draft, approved, archived, retired), retired_reason | Brand DNA, versioned so old analyses still make sense. A version read from another workspace's website is retired: kept for history, never used |
+| `workspace_domains` | brand | workspace_id, domain (unique) | The websites a workspace's Brand DNA may be read from. The first workspace to crawl a domain holds it; another workspace's crawl of it is refused |
 | `approved_facts` | brand | brand_profile_id, kind, text, source_url | The only claims the AI may make about the seller. Each one links to the page it came from, or is marked as added by the user |
 | `campaigns` | leads | workspace_id, name, segment, locations, brand_profile_version, status | A search for one kind of business in some places |
 | `businesses` | leads | place_id, domain, name, city, country, phone, website, rating, review_count, refreshed_at | One row per real business, shared across workspaces. Places fields get refreshed, not hoarded |
@@ -123,6 +124,8 @@ Four pipelines do all the work. Each runs in the worker as a chain of steps, and
 2. Extract a profile to a fixed schema: services, proof points, ideal clients, industries, tone, locations served
 3. Show it in an editable form. The user fixes anything wrong
 4. The user approves facts one by one. Only approved facts can appear in outreach
+
+A version is only used (by segments, campaigns, deep-dives and outreach) when its source is the workspace's own: a website on a domain the workspace holds, or a description written in it.
 
 **2. Lead finder**
 

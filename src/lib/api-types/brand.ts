@@ -4,7 +4,7 @@ import type { PipelineRun } from "./pipeline";
 
 export type FactKind = "service" | "proof_point" | "ideal_client" | "industry" | "tone" | "location";
 export type FactStatus = "pending" | "approved" | "rejected";
-export type ProfileStatus = "draft" | "approved" | "archived";
+export type ProfileStatus = "draft" | "approved" | "archived" | "retired";
 
 export type Fact = {
   id: string;
@@ -31,12 +31,14 @@ export type ProfileSummary = {
   promptVersion: string | null;
   createdAt: string;
   approvedAt: string | null;
+  // Why a retired version can't be used.
+  retiredReason: string | null;
   facts: { total: number; pending: number; approved: number; rejected: number };
   // What the user changed while reviewing this version.
   changes: { edited: number; added: number; rejected: number; total: number };
 };
 
-export type RunProblem = "site_unreachable" | "blocked_address" | "robots_disallowed" | "no_content" | "failed";
+export type RunProblem = "site_unreachable" | "blocked_address" | "robots_disallowed" | "no_content" | "foreign_website" | "failed";
 
 // GET /api/w/:workspaceId/brand
 export type BrandOverviewResponse = {
