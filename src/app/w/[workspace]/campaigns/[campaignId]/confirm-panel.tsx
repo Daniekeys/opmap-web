@@ -62,7 +62,7 @@ export function ConfirmPanel({
         About <strong>{calls} Google searches</strong> ({tiles} map tiles x {estimate.areas[0]?.queries ?? 1}{" "}
         {estimate.areas[0]?.queries === 1 ? "search term" : "search terms"}, 1 to {estimate.pagesPerTile.max} pages each, plus a few
         neighbourhood searches). {inFreeTier ? "Inside the free tier" : "More than the free tier left this month"}; {cost} at list price.
-        At 30 a day that takes {days} {estimate.daysAtDailyCap.max === 1 ? "day" : "days"}.
+        At {estimate.dailyCap} a day that takes {days} {estimate.daysAtDailyCap.max === 1 ? "day" : "days"}.
       </p>
       <p className="text-sm text-muted-foreground">
         {estimate.callsLeft.today} searches left today and {estimate.callsLeft.month} this month, shared by every workspace. When today&apos;s run

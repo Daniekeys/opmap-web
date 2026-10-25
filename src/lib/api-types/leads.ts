@@ -64,6 +64,8 @@ export type EstimateResponse = {
   calls: Range;
   costUsd: Range;
   daysAtDailyCap: Range;
+  // Google searches a day the caps allow (30 in production).
+  dailyCap: number;
   // Google searches left under the shared caps (all workspaces).
   callsLeft: { today: number; month: number };
   unmapped: string[];
