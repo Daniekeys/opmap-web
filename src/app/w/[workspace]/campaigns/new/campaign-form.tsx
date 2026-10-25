@@ -1,22 +1,27 @@
 "use client";
 
-import { LoaderCircle, Search, Sparkles, X } from "lucide-react";
+import { ChevronLeft, LoaderCircle, Search, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { inputClass } from "@/components/input-class";
 import { Button } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type {
+  BuyerSegment,
+  BuyerSignals,
   CampaignResponse,
+  CampaignSegment,
   CreateCampaignBody,
   GeoArea,
   GeoAreasResponse,
+  Presence,
   RouteTargetBody,
   RouteTargetResponse,
   TargetKind,
 } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
 import { TARGET_KINDS } from "@/lib/leads";
+import { parseSearchTerms } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
 const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", city: "City", neighbourhood: "Area" };
@@ -31,20 +36,53 @@ type Suggestion =
   | { state: "done"; answer: RouteTargetResponse; for: string }
   | { state: "failed"; message: string };
 
-export function CampaignForm({ workspaceId, slug }: { workspaceId: string; slug: string }) {
+// What the form starts from: a suggested segment (from the picker) or nothing
+// (the user types their own).
+export type FormStart = { segment: BuyerSegment; setId: string } | null;
+
+const PRESENCE_OPTIONS: { value: Presence; label: string }[] = [
+  { value: "any", label: "Any" },
+  { value: "has", label: "Has one" },
+  { value: "lacks", label: "Doesn't have one" },
+];
+
+const NO_SIGNALS: BuyerSignals = { minReviews: null, minRating: null, website: "any", socials: "any", categories: [] };
+
+// Places of a suggestion that are in geo_areas, as the picker shows them.
+const startPlaces = (start: FormStart): GeoArea[] =>
+  (start?.segment.suggestedPlaces ?? []).flatMap((p) =>
+    p.areaId ? [{ id: p.areaId, name: p.name, level: "city" as const, parentName: null, country: "NG", population: null }] : [],
+  );
+
+export function CampaignForm({
+  workspaceId,
+  slug,
+  start,
+  onBack,
+}: {
+  workspaceId: string;
+  slug: string;
+  start: FormStart;
+  onBack: () => void;
+}) {
   const router = useRouter();
-  const [segment, setSegment] = useState("");
+  const picked = start?.segment ?? null;
+  const [segment, setSegment] = useState(picked?.name ?? "");
+  const [terms, setTerms] = useState(picked?.searchTerms.join(", ") ?? "");
+  const [pitch, setPitch] = useState(picked?.pitchFirst ?? "");
+  const [signals, setSignals] = useState<BuyerSignals>(picked?.buyerSignals ?? NO_SIGNALS);
   const [kind, setKind] = useState<TargetKind>("local_business");
   const [suggestion, setSuggestion] = useState<Suggestion>({ state: "idle" });
-  const [chosen, setChosen] = useState<GeoArea[]>([]);
+  const [chosen, setChosen] = useState<GeoArea[]>(() => startPlaces(start));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // The Haiku router's suggestion (one paid call), once per business type the
-  // user settles on. The user can pick another kind.
+  // The user's own segment: the Haiku router's suggestion (one paid call),
+  // once per business type they settle on. A suggested segment is already
+  // known to be on Google Maps, so it skips this.
   async function suggest() {
     const text = segment.trim();
-    if (text.length < 2 || (suggestion.state === "done" && suggestion.for === text)) return;
+    if (start || text.length < 2 || (suggestion.state === "done" && suggestion.for === text)) return;
     setSuggestion({ state: "loading" });
     try {
       const body: RouteTargetBody = { segment: text };
@@ -70,14 +108,30 @@ export function CampaignForm({ workspaceId, slug }: { workspaceId: string; slug:
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const searchTerms = parseSearchTerms(terms || segment);
+    if (searchTerms.length === 0) {
+      setError('Add at least one Google Maps search, e.g. "hotel".');
+      return;
+    }
     if (chosen.length === 0) {
       setError("Pick at least one place to search.");
       return;
     }
+    const buyerSegment: CampaignSegment = {
+      setId: start?.setId ?? null,
+      rank: start?.segment.rank ?? null,
+      name: segment.trim(),
+      searchTerms,
+      whyTheyBuy: start?.segment.whyTheyBuy ?? "",
+      pain: start?.segment.pain ?? "",
+      pitchFirst: pitch.trim(),
+      buyerSignals: signals,
+    };
     const body: CreateCampaignBody = {
       segment: segment.trim(),
       targetKind: kind,
       locations: chosen.map((a) => a.id),
+      buyerSegment,
       ...(suggestion.state === "done" ? { suggested: { kind: suggestion.answer.kind, promptVersion: suggestion.answer.promptVersion } } : {}),
     };
     setSaving(true);
@@ -95,8 +149,8 @@ export function CampaignForm({ workspaceId, slug }: { workspaceId: string; slug:
       }
       const { error: e }: ApiErrorResponse = await res.json().catch(() => NO_ERROR);
       setError(
-        res.status === 400 && e.code !== "unknown_location"
-          ? "Enter a business type of at least 2 letters."
+        res.status === 400 && e.code === "invalid_input"
+          ? "Check the fields: a name of at least 2 letters, and searches of at least 2 letters each."
           : e.message || "The campaign could not be saved. Please try again.",
       );
     } catch {
@@ -106,61 +160,169 @@ export function CampaignForm({ workspaceId, slug }: { workspaceId: string; slug:
   }
 
   const unsupported = !TARGET_KINDS.find((t) => t.kind === kind)!.supported;
+  const notSearchable = (start?.segment.suggestedPlaces ?? []).filter((p) => !p.areaId);
 
   return (
     <form onSubmit={save} className="flex flex-col gap-5 rounded-xl border bg-card p-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="-mx-1 -mt-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="size-4" aria-hidden /> All segments
+      </button>
+      {start && (
+        <p className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+          <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            Suggestion {start.segment.rank}. {start.segment.pain} Change anything that&apos;s off.
+          </span>
+        </p>
+      )}
+
       <label className="flex flex-col gap-1.5 text-sm font-medium">
-        Business type
+        Who to look for
         <input
           name="segment"
           value={segment}
           onChange={(e) => setSegment(e.target.value)}
           onBlur={suggest}
-          placeholder="Bakeries and cake shops"
+          placeholder="Hotels and guest houses"
           autoComplete="off"
           required
           minLength={2}
           maxLength={100}
           className={inputClass}
         />
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-sm font-medium">
+        Google Maps searches
+        <input
+          name="terms"
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          placeholder="hotel, guest house"
+          autoComplete="off"
+          className={inputClass}
+        />
         <span className="font-normal text-muted-foreground">
-          Searched on Google Maps as you write it, e.g. &quot;bakery&quot; or &quot;private school&quot;.
+          Up to 3, separated by commas, the way a person would search.
+          {!start && " Left empty, the name above is searched."}
         </span>
       </label>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-sm font-medium">Who are you looking for?</legend>
-        <SuggestionNote suggestion={suggestion} />
-        {TARGET_KINDS.map((t) => (
-          <label
-            key={t.kind}
-            className={cn(
-              "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
-              kind === t.kind ? "border-foreground bg-muted/50" : "border-border",
-            )}
-          >
+      <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <span>
+          What to pitch first <span className="font-normal text-muted-foreground">(optional)</span>
+        </span>
+        <input
+          name="pitch"
+          value={pitch}
+          onChange={(e) => setPitch(e.target.value)}
+          maxLength={300}
+          autoComplete="off"
+          placeholder="Website development"
+          className={inputClass}
+        />
+      </label>
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 text-sm font-medium">Buyer signals</legend>
+        <p className="-mt-1 text-sm text-muted-foreground">Leads that match these rank higher. Nothing is filtered out.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5 text-sm">
+            Reviews, at least
             <input
-              type="radio"
-              name="kind"
-              value={t.kind}
-              checked={kind === t.kind}
-              onChange={() => setKind(t.kind)}
-              className="mt-1 size-4 shrink-0"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={100000}
+              value={signals.minReviews ?? ""}
+              onChange={(e) =>
+                setSignals({ ...signals, minReviews: e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value))) })
+              }
+              placeholder="Any"
+              className={inputClass}
             />
-            <span className="flex flex-col">
-              <span className="font-medium">
-                {t.label}
-                {suggestion.state === "done" && suggestion.answer.kind === t.kind && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">suggested</span>
-                )}
-              </span>
-              <span className="text-sm text-muted-foreground">{t.help}</span>
-            </span>
           </label>
-        ))}
+          <label className="flex flex-col gap-1.5 text-sm">
+            Rated at least
+            <select
+              value={signals.minRating ?? ""}
+              onChange={(e) => setSignals({ ...signals, minRating: e.target.value === "" ? null : Number(e.target.value) })}
+              className={inputClass}
+            >
+              <option value="">Any</option>
+              {[3, 3.5, 4, 4.5].map((r) => (
+                <option key={r} value={r}>
+                  {r.toFixed(1)}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(
+            [
+              ["website", "Website"],
+              ["socials", "Social media"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex flex-col gap-1.5 text-sm">
+              {label}
+              <select
+                value={signals[key]}
+                onChange={(e) => setSignals({ ...signals, [key]: e.target.value as Presence })}
+                className={inputClass}
+              >
+                {PRESENCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
       </fieldset>
 
+      {!start && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1.5 text-sm font-medium">Who are you looking for?</legend>
+          <SuggestionNote suggestion={suggestion} />
+          {TARGET_KINDS.map((t) => (
+            <label
+              key={t.kind}
+              className={cn(
+                "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
+                kind === t.kind ? "border-foreground bg-muted/50" : "border-border",
+              )}
+            >
+              <input
+                type="radio"
+                name="kind"
+                value={t.kind}
+                checked={kind === t.kind}
+                onChange={() => setKind(t.kind)}
+                className="mt-1 size-4 shrink-0"
+              />
+              <span className="flex flex-col">
+                <span className="font-medium">
+                  {t.label}
+                  {suggestion.state === "done" && suggestion.answer.kind === t.kind && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">suggested</span>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">{t.help}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+
       <PlacePicker workspaceId={workspaceId} chosen={chosen} onChange={setChosen} />
+      {notSearchable.length > 0 && (
+        <p className="text-sm text-muted-foreground">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
+      )}
 
       {unsupported && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">

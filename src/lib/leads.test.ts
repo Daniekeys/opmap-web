@@ -11,6 +11,7 @@ const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   rating: null,
   reviewCount: null,
   fit: { score: 1, verdict: "match", reason: null },
+  buyer: null,
   promoted: false,
   researched: false,
   contacts: { phone: null, whatsapp: null, email: null, website: null, person: null, socials: [], ...contacts },

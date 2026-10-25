@@ -8,7 +8,7 @@ Source of truth is this file in the opmap-api repo. The old live doc is retired.
 
 Version one is an internal tool that tells a business exactly what to offer each lead, with evidence, and writes the outreach for them to copy. It runs for two workspaces, Daniekeys Studios and Afriment, with a handful of team users. "Opportunity Map" is a working name.
 
-The flow in one line: paste your website, approve your Brand DNA, find leads by business type and city, open a lead to see opportunity cards and ready-made messages, copy, send, and tap what happened.
+The flow in one line: describe your business or paste your website, approve your Brand DNA, pick from buyer segments the tool suggests (or type your own), choose places, get leads ranked by how likely they are to buy, open one to see what to offer and a ready message, send, and tap what happened.
 
 **Success targets for v1** (adjust after the first week of real use)
 
@@ -27,8 +27,8 @@ V1 builds six user-facing features and the full foundation underneath. Everythin
 | Area | In v1 | Later |
 | --- | --- | --- |
 | Access | Invite-only login, workspaces, roles (owner, member) | Public signup, access code redemption screen |
-| Brand DNA | Crawl website, extract profile, edit, approve facts | File uploads (portfolio, price list) |
-| Lead finder | Google Places search by business type and city, dedupe, quick fit filter | Signal triggers, people-data APIs for B2B, more countries |
+| Brand DNA | Crawl website or a written description, extract profile, edit, approve facts | File uploads (portfolio, price list) |
+| Lead finder | Buyer segment suggestions from Brand DNA, leads ranked by buyer signals, Google Places search by business type and city, dedupe, quick fit filter | Signal triggers, people-data APIs for B2B, more countries |
 | Deep-dive | Website crawl, signals, opportunity cards with evidence and confidence | Review text analysis, Instagram signals, website audit |
 | Outreach | Email, WhatsApp, LinkedIn DM and call opener drafts. Copy buttons. Open in Gmail or Outlook compose links | Connected mailboxes, sending, follow-up sequences, reply inbox |
 | Outcomes | Sent, replied, meeting, won, lost buttons. Simple pipeline view | Reply nudges, learning loop that reweights segments |
@@ -84,16 +84,18 @@ Twenty-five tables, plus Better Auth's own (user, session, account, verification
 
 | Table | Module | Key columns | Why it exists |
 | --- | --- | --- | --- |
-| `workspaces` | access | name, slug, plan_id, settings | One per company: Daniekeys, Afriment, future clients |
+| `workspaces` | access | name, slug, plan_id, settings, archived | One per company: Daniekeys, Afriment, future clients. An archived workspace is left out of the switcher; its rows and events are kept and its URL still works |
 | `memberships` | access | user_id, workspace_id, role | Who belongs where, owner or member |
 | `invites` | access | workspace_id, email, role, token_hash, expires_at, accepted_at | Invite-only access. Owners create a link and hand it over until MailProvider exists |
 | `plans` | billing | name, limits (json) | Seeded with Internal, Free, Pro |
 | `usage_ledger` | billing | workspace_id, action, quantity, cost_usd, status | Counts every paid action and its real cost. Places calls are written as `reserved` before the call and updated to `done` or `failed`; all three count toward the Google cap |
 | `access_codes` | billing (later) | code, plan_id, expires_at, redeemed_by | Manual-payment unlocks |
 | `payments` | billing (later) | workspace_id, amount, currency, reference, method | The manual payment log |
-| `brand_profiles` | brand | workspace_id, version, website, profile (json), status | Brand DNA, versioned so old analyses still make sense |
-| `approved_facts` | brand | brand_profile_id, kind, text, source_url | The only claims the AI may make about the seller. Each one links to the page it came from, or is marked as added by the user |
-| `campaigns` | leads | workspace_id, name, segment, locations, brand_profile_version, status | A search for one kind of business in some places |
+| `brand_profiles` | brand | workspace_id, version, source (website or description), website (null for a description), instagram, profile (json), status (draft, approved, archived, retired), retired_reason | Brand DNA, versioned so old analyses still make sense. A version read from another workspace's website is retired: kept for history, never used |
+| `workspace_domains` | brand | workspace_id, domain (unique) | The websites a workspace's Brand DNA may be read from. The first workspace to crawl a domain holds it; another workspace's crawl of it is refused |
+| `approved_facts` | brand | brand_profile_id, kind, text, source_url, added_by | The only claims the AI may make about the seller. Each one links to the page it came from, or names the member who typed it in (added_by) |
+| `campaigns` | leads | workspace_id, name, segment, buyer_segment (json), name_words (json), locations, brand_profile_version, status | A search for one kind of business in some places, started from a buyer segment (as the user kept it) and the Brand DNA version it came from. name_words: the words its fit check classifies business names with, made from the segment |
+| `buyer_segment_sets` | leads | workspace_id, brand_profile_id, brand_profile_version, segments (json), dropped (json), prompt_version, model, cost_usd | Up to 6 buyer segments suggested from one Brand DNA version: generated once per version and prompt version, then read from here |
 | `businesses` | leads | place_id, domain, name, city, country, phone, website, rating, review_count, refreshed_at | One row per real business, shared across workspaces. Places fields get refreshed, not hoarded |
 | `leads` | leads | workspace_id, campaign_id, business_id, fit_score, status | A business inside one workspace's campaign. Contact details live in `contact_points` on the business, never on the lead |
 | `contact_points` | research | business_id, kind, value, source_id, confidence, status, checked_at | Every contact detail as a sourced, labelled claim. Shared across workspaces |
@@ -119,18 +121,22 @@ Four pipelines do all the work. Each runs in the worker as a chain of steps, and
 
 **1. Brand DNA**
 
-1. Crawl the seller's site: home, about, services, portfolio, contact. Up to about 10 pages
+1. Crawl the seller's site (home, about, services, portfolio, contact, up to about 10 pages), or, if they have no website, extract from a short description they write or their Instagram bio and posts.
 2. Extract a profile to a fixed schema: services, proof points, ideal clients, industries, tone, locations served
 3. Show it in an editable form. The user fixes anything wrong
 4. The user approves facts one by one. Only approved facts can appear in outreach
 
+Facts can also be added by hand, with no crawl and no Claude call ("Add a fact" on the Brand screen). The fact goes into the open draft, or into a new draft made from the approved version: its approved facts are copied and stay approved, and the new fact is sourced to the member who typed it. Approving that draft asks only about the facts added since the last approval.
+
+A version is only used (by segments, campaigns, deep-dives and outreach) when its source is the workspace's own: a website on a domain the workspace holds, or a description written in it.
+
 **2. Lead finder**
 
-1. The user creates a campaign: business type, cities, and optionally a target country
+1. The tool suggests up to 6 buyer segments from the approved Brand DNA, ranked by likelihood to pay. Each shows who they are, their Places search terms, the pain, what to pitch first, buyer signals, suggested places, and whether Places can reach them. A segment is "not reachable yet" only when Google Maps doesn't list its businesses as a business type; a filter Maps can't check (recently funded, hiring, launching) is shown as something to look for, never a reason to block the segment. Suggested places start where the facts say the seller is based, then add the cities where these buyers cluster when the seller serves the whole country. The user picks one, edits it, or types their own, then chooses locations. The chosen segment is saved on the campaign and feeds the lead ranking and the deep-dive.
 2. The AI expands it into neighbourhood-level searches, for example "cake shop Bodija Ibadan"
 3. Places Text Search runs each query, respecting the daily call cap
 4. Results are deduplicated by place ID and saved to `businesses`
-5. Claude Haiku runs a quick fit check on name and category, and drops clear mismatches before any money is spent on them
+5. Claude Haiku reports what each business's name and category say; code settles the name from the campaign's own word lists (words that name this kind of business, and words for other kinds that rule a name out, made by Haiku from the segment and shown read-only on the campaign screen) and applies the category rubric. Only a business that passes the rubric (match or likely) becomes a lead and gets a buyer score from its reviews, rating, website and socials against the segment's buyer signals; one the user promotes by hand from the "possible" list keeps its score and is tagged "Promoted by you". Any other lead scores 0 and sits last.
 
 **3. Lead deep-dive**
 
@@ -158,12 +164,14 @@ A router picks the data source before any search runs, because local businesses,
 | B2B company | Startups, agencies, fintechs, SaaS | Web search API, then our crawler | Later (SearchProvider adapter stubbed in v1) |
 | Institution | NGOs, government agencies, associations | Web search plus public directories | Later |
 
+A buyer segment marked reachable is searched on Places as a local business whatever its industry: software companies, IT companies, tech hubs and fintechs with a Maps listing are found there. The B2B row covers the ones without a listing.
+
 **Local business flow (v1)**
 
 1. Places Text Search per search tile (see Location), with a field mask limited to: place ID, name, formatted address and address components, coordinates, primary type, phone, website, rating, review count, business status, Maps link.
 2. Drop anything whose business status is not operational.
 3. Dedupe and save to `businesses` (see Data accuracy).
-4. Claude Haiku quick fit check on name and category, before any money is spent on the lead.
+4. Claude Haiku quick fit check on name and category, before any money is spent on the lead. Code settles the name signal from the campaign's word lists, made from its segment (words for this kind must be specific to it: words that commonly name other businesses too, like "auto", "store" or "market", are left out; a word for this kind of business names it, even next to another kind: "Cakes and Events"; only a word for another kind, such as "Events Palace", names another kind) and applies the rubric. The rubric must pass (match or likely) before the buyer score counts: code then scores each lead against the campaign's buyer segment (reviews, rating, website, socials, fit) and the leads table is ordered by it, with the top reason in plain words. A lead below likely scores 0 and sits last, unless the user promoted it by hand ("Promoted by you"), which keeps its score. The score is worked out again when enrichment finds a website or socials. The lead's note is Haiku's sentence on the name and category, followed by what the listing shows (reviews, website, socials), built by code from current data each time the lead is read.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
 6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
 
@@ -231,7 +239,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 ## Build phases
 
-Six phases, fed to Claude Code one at a time. Don't start a phase until the previous one passes its done-when test. Each phase is roughly 3 to 5 days of focused work, so v1 lands in about four to six weeks alongside your other work.
+Six phases plus Phase 2.5, fed to Claude Code one at a time. Don't start a phase until the previous one passes its done-when test. Each phase is roughly 3 to 5 days of focused work, so v1 lands in about four to six weeks alongside your other work.
 
 1. **Phase 0: Foundation.** Two repos. `opmap-api` first: Express 5 backend with the pg-boss worker in the same service, Postgres with pgvector on Railway, Drizzle schema for every table in this spec (including contact_points, geo_areas, search_coverage and invites, plus Better Auth's own tables), workspace-scoped data layer with leak tests, Better Auth invite-only login, seed data (Daniekeys and Afriment workspaces, the three plans, three accounts), `pipeline_runs` and `step_runs` logging, every adapter as an interface with a fake implementation, checkLimit and the usage ledger with the global Google call caps. Then `opmap-web`: Next.js shell, login, workspace switcher and live progress panel, mobile-first, forwarding `/api/*` to the API. Deploy `api` and Postgres to Railway and `web` to Vercel Pro.
    - Done when: you log in on the live URL, switch between the two workspaces, a test job runs in the worker and shows in `step_runs`, and the workspace leak tests pass.
@@ -239,11 +247,13 @@ Six phases, fed to Claude Code one at a time. Don't start a phase until the prev
    - Done when: daniekeysstudios.com produces a profile you'd sign off on with fewer than five edits.
 3. **Phase 2: Lead finder.** Places adapter, campaign screen, tile search with neighbourhood queries on top, geo_areas and search_coverage tables, contact_points with labels, daily cap, dedupe, Haiku fit filter, leads table view.
    - Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap.
-4. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
+4. **Phase 2.5: Buyer segments.** Brand DNA from a written description (and an Instagram handle) when there's no website; up to 6 buyer segments from the approved Brand DNA (Opus, cached per Brand DNA version); the campaign screen opens on the segment cards; the chosen segment is saved on the campaign; fit check v5 (the category rubric, with word lists from the segment) decides which businesses are leads, and the buyer score ranks them by the segment's buyer signals. See `phases/phase-2.5-buyer-segments.md`.
+   - Done when: Daniekeys and Afriment each get up to 6 segments from their approved Brand DNA that you'd use, a written description gives a usable segment list, and the Ilorin leads are ranked by buyer signals with a plain-words top reason and no non-bakery in the top 10.
+5. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
    - Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes.
-5. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.
+6. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.
    - Done when: you contact 10 real leads using only the tool, and every outcome is logged.
-6. **Phase 5: Hardening.** `checkLimit` on every paid action, usage and cost per workspace on an admin page, an eval set of 20 saved leads that reruns after any prompt change, error states, retries, and alerts.
+7. **Phase 5: Hardening.** `checkLimit` on every paid action, usage and cost per workspace on an admin page, an eval set of 20 saved leads that reruns after any prompt change, error states, retries, and alerts.
    - Done when: a prompt change runs against the eval set and shows a side-by-side before and after, and the admin page shows each workspace's monthly cost.
 
 After phase 5, Daniekeys and Afriment use it for real for two to four weeks before any new scope gets added.

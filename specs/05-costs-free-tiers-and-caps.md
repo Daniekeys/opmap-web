@@ -38,7 +38,7 @@ Notes:
 | Drafts, 4 per lead | 50 leads at about $0.025 | $1.25 |
 | Total | | About $4.52 of Claude credit |
 
-A fully worked lead (deep-dive plus 4 drafts) costs about 6.5 cents. Brand DNA is about $0.15 per workspace.
+A fully worked lead (deep-dive plus 4 drafts) costs about 6.5 cents. Brand DNA is about $0.15 per workspace. Buyer segments are one Opus call per approved Brand DNA version, about $0.09 (Daniekeys, 2026-10-25).
 
 ## Monthly picture
 - Normal (8 campaigns): about $45 of Claude credit and about 640 Google calls. The credit lasts about 2 years.

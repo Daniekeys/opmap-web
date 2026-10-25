@@ -4,10 +4,12 @@ import type { PipelineRun } from "./pipeline";
 
 export type FactKind = "service" | "proof_point" | "ideal_client" | "industry" | "tone" | "location";
 export type FactStatus = "pending" | "approved" | "rejected";
-export type ProfileStatus = "draft" | "approved" | "archived";
+export type ProfileStatus = "draft" | "approved" | "archived" | "retired";
 
 export type Fact = {
   id: string;
+  // The member who typed it in (origin "user"), by name; null otherwise.
+  addedBy: string | null;
   kind: FactKind;
   text: string;
   // Null for a fact the user typed in (origin "user").
@@ -22,25 +24,39 @@ export type Fact = {
   originalText: string | null;
 };
 
+export type BrandSource = "website" | "description";
+
+// A fact read from a description has this as its sourceUrl.
+export const DESCRIPTION_SOURCE = "description";
+
 export type ProfileSummary = {
   id: string;
   version: number;
-  website: string;
+  source: BrandSource;
+  // Null for a version read from a description.
+  website: string | null;
+  // Instagram handle without "@", given with a description.
+  instagram: string | null;
   status: ProfileStatus;
   businessName: string | null;
   promptVersion: string | null;
   createdAt: string;
   approvedAt: string | null;
+  // Why a retired version can't be used.
+  retiredReason: string | null;
   facts: { total: number; pending: number; approved: number; rejected: number };
   // What the user changed while reviewing this version.
   changes: { edited: number; added: number; rejected: number; total: number };
 };
 
-export type RunProblem = "site_unreachable" | "blocked_address" | "robots_disallowed" | "no_content" | "failed";
+export type RunProblem = "site_unreachable" | "blocked_address" | "robots_disallowed" | "no_content" | "foreign_website" | "failed";
 
 // GET /api/w/:workspaceId/brand
 export type BrandOverviewResponse = {
   website: string | null;
+  // The last description run's text and handle, to start the next one from.
+  description: string | null;
+  instagram: string | null;
   approved: ProfileSummary | null;
   draft: ProfileSummary | null;
   latestRun: PipelineRun | null;
@@ -63,7 +79,11 @@ export type ProfileDetailResponse = {
 };
 
 // POST /api/w/:workspaceId/brand/runs (owner, 202). A bare domain gets https://.
-export type StartBrandRunBody = { website: string };
+// A website, or a description (30 to 3000 characters) and an optional
+// Instagram handle.
+export type StartBrandRunBody = { website: string } | { description: string; instagram?: string | null };
+export const MIN_DESCRIPTION_CHARS = 30;
+export const MAX_DESCRIPTION_CHARS = 3000;
 export type StartBrandRunResponse = { run: PipelineRun };
 
 // POST .../brand/facts/:factId/approve and /reject; PATCH .../brand/facts/:factId
@@ -74,6 +94,10 @@ export type EditFactBody = { text: string };
 
 // POST .../brand/profiles/:profileId/facts (201)
 export type AddFactBody = { kind: FactKind; text: string };
+
+// POST /api/w/:workspaceId/brand/facts, 201: "Add a fact" from the Brand screen.
+// The fact went into the draft (made from the approved version if needed).
+export type AddToBrandResponse = { profileId: string; version: number; fact: Fact };
 
 // POST .../brand/profiles/:profileId/approve (owner)
 export type ApproveProfileResponse = { profile: ProfileSummary };

@@ -5,8 +5,9 @@ import { PageLoading } from "@/components/page-loading";
 import { getBrand, getBrandProfile, getWorkspace } from "@/lib/api";
 import type { ProfileSummary } from "@/lib/api-types/brand";
 import { formatDateTime } from "@/lib/format";
+import { AddFactButton } from "./add-fact-button";
 import { BrandRunner } from "./brand-runner";
-import { FactSource, KINDS, StaleFlag, VersionBadge } from "./facts";
+import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "./facts";
 
 type Props = PageProps<"/w/[workspace]/brand">;
 
@@ -31,8 +32,8 @@ async function Brand({ params }: { params: Props["params"] }) {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Brand DNA</h1>
         <p className="text-sm text-muted-foreground">
-          What {workspace.name} offers and can prove, read from your website and approved by you. Messages to leads
-          may only claim what is approved here.
+          What {workspace.name} offers and can prove, read from your website or your own description, and approved by
+          you. Messages to leads may only claim what is approved here.
         </p>
       </div>
 
@@ -41,6 +42,8 @@ async function Brand({ params }: { params: Props["params"] }) {
         workspaceId={workspace.id}
         isOwner={workspace.role === "owner"}
         website={brand.website}
+        description={brand.description}
+        instagram={brand.instagram}
         latestRun={brand.latestRun}
         latestRunProblem={brand.latestRunProblem}
         hasProfile={brand.versions.length > 0}
@@ -57,14 +60,15 @@ async function Brand({ params }: { params: Props["params"] }) {
           <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground">
             {brand.draft
               ? "Nothing approved yet. Review the draft above and approve it."
-              : "No Brand DNA yet. Read your website to get a draft to review."}
+              : "No Brand DNA yet. Read your website, or describe your business, to get a draft to review."}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              Approved {formatDateTime(approved.profile.approvedAt!)} from {approved.profile.website}.{" "}
+              Approved {formatDateTime(approved.profile.approvedAt!)} from {sourceLabel(approved.profile)}.{" "}
               {approved.profile.facts.approved} facts.
             </p>
+            <AddFactButton workspaceId={workspace.id} brandHref={base} hasDraft={brand.draft !== null} />
             {KINDS.map(({ kind, label }) => {
               const facts = approved.facts.filter((f) => f.kind === kind && f.status === "approved");
               if (facts.length === 0) return null;

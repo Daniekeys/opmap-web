@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getBrandProfile, getWorkspace } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-import { FactSource, KINDS, StaleFlag, VersionBadge } from "../facts";
+import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "../facts";
 import { FactReview } from "./fact-review";
 
 type Props = PageProps<"/w/[workspace]/brand/[profileId]">;
@@ -39,8 +39,8 @@ async function Profile({ params }: { params: Props["params"] }) {
         Version {profile.version} <VersionBadge status={profile.status} />
       </h1>
       <p className="text-sm text-muted-foreground wrap-break-word">
-        Read from {profile.website} on {formatDateTime(profile.createdAt)}, {detail.pages.length}{" "}
-        {detail.pages.length === 1 ? "page" : "pages"}.
+        Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt)}
+        {profile.source === "website" && `, ${detail.pages.length} ${detail.pages.length === 1 ? "page" : "pages"}`}.
       </p>
     </div>
   );
@@ -68,7 +68,9 @@ async function Profile({ params }: { params: Props["params"] }) {
       <p className="rounded-lg bg-muted px-3 py-2 text-sm">
         {profile.status === "approved"
           ? `Approved ${formatDateTime(profile.approvedAt!)}. This is the profile messages to leads use.`
-          : "Archived: replaced by a newer version. Shown as it was decided."}{" "}
+          : profile.status === "retired"
+            ? `Retired: ${profile.retiredReason ?? "its source isn't this workspace's"}. Kept for history; it is never used.`
+            : "Archived: replaced by a newer version. Shown as it was decided."}{" "}
         {profile.changes.total} {profile.changes.total === 1 ? "change" : "changes"} during review ({profile.changes.edited}{" "}
         edited, {profile.changes.added} added, {profile.changes.rejected} rejected).
       </p>
