@@ -165,7 +165,7 @@ A router picks the data source before any search runs, because local businesses,
 3. Dedupe and save to `businesses` (see Data accuracy).
 4. Claude Haiku quick fit check on name and category, before any money is spent on the lead.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
-6. For fit leads without a website: one web search (the only search-API call in v1) for `"<name>" <city> instagram` to find their socials. Most Nigerian SMEs live there.
+6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
 
 No LinkedIn scraping. A decision maker's name comes only from the business's own pages, Google review owner replies, or (later) an approved people-data API.
 
