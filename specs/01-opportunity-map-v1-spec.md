@@ -179,7 +179,7 @@ contact_points is owned by the research module because it references sources. Th
 
 | Detail | Sources, best first | Check | Labels shown |
 | --- | --- | --- | --- |
-| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram, Linktree and other link-in-bio pages (about.me, beacons.ai...) are filed as socials, not websites. A short link (tinyurl, bit.ly...) is followed to where it lands first. Dead only when its host has no DNS record, or two checks at least 6 hours apart both fail; a single failure is unverified | verified, unverified, dead |
+| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram, Linktree and other link-in-bio pages (about.me, beacons.ai...) are filed as socials, not websites. A short link (tinyurl, bit.ly...) is followed to where it lands first. Dead only when two checks at least 6 hours apart both fail, DNS failures included; a first failure of any kind is unverified, with a recheck queued | verified, unverified, dead |
 | Phone | Places, their website, their Instagram bio | libphonenumber parse to E.164, mobile or landline | confirmed (2 sources agree), single source |
 | WhatsApp | `wa.me` link on their site, in their Places listing, or in their bio | Never auto-pinged | confirmed (a `wa.me` link they published), likely (a mobile number with no `wa.me` link) |
 | Email | Their own site, then pattern guess, then a paid finder (later) | MX check; paid verification only for fit leads | found on site, verified, catch-all, guessed |
@@ -206,7 +206,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 **Tile search**
 
 1. Get the chosen place's boundary from the Geocoding API and cache it.
-2. Cut it into a grid of tiles, about 2 km across in cities.
+2. Cut it into a grid of tiles about 4 km across, and keep only tiles that overlap the boundary circle or polygon. Dense tiles split under step 4, so the starting size only sets the cost of thin outskirts.
 3. Run each query with the search restricted to that tile's rectangle, paging up to 60 results.
 4. A tile that returns 60 splits into 4 and is searched again; a tile that returns fewer is done. Tiles stop splitting at about 250 m.
 5. AI neighbourhood queries such as "cake shop Tanke Ilorin" run on top as extras, never as the only coverage, since the names can be wrong or patchy.
