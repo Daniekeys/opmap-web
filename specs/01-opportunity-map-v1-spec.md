@@ -179,9 +179,9 @@ contact_points is owned by the research module because it references sources. Th
 
 | Detail | Sources, best first | Check | Labels shown |
 | --- | --- | --- | --- |
-| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram and Linktree links are filed as socials, not websites | verified, unverified, dead |
+| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram, Linktree and other link-in-bio pages (about.me, beacons.ai...) are filed as socials, not websites. A short link (tinyurl, bit.ly...) is followed to where it lands first. Dead only when its host has no DNS record, or two checks at least 6 hours apart both fail; a single failure is unverified | verified, unverified, dead |
 | Phone | Places, their website, their Instagram bio | libphonenumber parse to E.164, mobile or landline | confirmed (2 sources agree), single source |
-| WhatsApp | `wa.me` link on their site or bio | Never auto-pinged | confirmed, likely (mobile number) |
+| WhatsApp | `wa.me` link on their site, in their Places listing, or in their bio | Never auto-pinged | confirmed (a `wa.me` link they published), likely (a mobile number with no `wa.me` link) |
 | Email | Their own site, then pattern guess, then a paid finder (later) | MX check; paid verification only for fit leads | found on site, verified, catch-all, guessed |
 | Person | About or team page, Google owner replies | Their source must name the company or domain | sourced, none |
 | Socials | Their site, Places, one search | Handle bio mentions the business name or city | verified, unverified |
