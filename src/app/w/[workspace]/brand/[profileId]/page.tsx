@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getBrandProfile, getWorkspace } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-import { FactSource, KINDS, StaleFlag, VersionBadge } from "../facts";
+import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "../facts";
 import { FactReview } from "./fact-review";
 
 type Props = PageProps<"/w/[workspace]/brand/[profileId]">;
@@ -39,8 +39,8 @@ async function Profile({ params }: { params: Props["params"] }) {
         Version {profile.version} <VersionBadge status={profile.status} />
       </h1>
       <p className="text-sm text-muted-foreground wrap-break-word">
-        Read from {profile.website} on {formatDateTime(profile.createdAt)}, {detail.pages.length}{" "}
-        {detail.pages.length === 1 ? "page" : "pages"}.
+        Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt)}
+        {profile.source === "website" && `, ${detail.pages.length} ${detail.pages.length === 1 ? "page" : "pages"}`}.
       </p>
     </div>
   );

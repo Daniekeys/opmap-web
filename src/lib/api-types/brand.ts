@@ -22,10 +22,19 @@ export type Fact = {
   originalText: string | null;
 };
 
+export type BrandSource = "website" | "description";
+
+// A fact read from a description has this as its sourceUrl.
+export const DESCRIPTION_SOURCE = "description";
+
 export type ProfileSummary = {
   id: string;
   version: number;
-  website: string;
+  source: BrandSource;
+  // Null for a version read from a description.
+  website: string | null;
+  // Instagram handle without "@", given with a description.
+  instagram: string | null;
   status: ProfileStatus;
   businessName: string | null;
   promptVersion: string | null;
@@ -43,6 +52,9 @@ export type RunProblem = "site_unreachable" | "blocked_address" | "robots_disall
 // GET /api/w/:workspaceId/brand
 export type BrandOverviewResponse = {
   website: string | null;
+  // The last description run's text and handle, to start the next one from.
+  description: string | null;
+  instagram: string | null;
   approved: ProfileSummary | null;
   draft: ProfileSummary | null;
   latestRun: PipelineRun | null;
@@ -65,7 +77,11 @@ export type ProfileDetailResponse = {
 };
 
 // POST /api/w/:workspaceId/brand/runs (owner, 202). A bare domain gets https://.
-export type StartBrandRunBody = { website: string };
+// A website, or a description (30 to 3000 characters) and an optional
+// Instagram handle.
+export type StartBrandRunBody = { website: string } | { description: string; instagram?: string | null };
+export const MIN_DESCRIPTION_CHARS = 30;
+export const MAX_DESCRIPTION_CHARS = 3000;
 export type StartBrandRunResponse = { run: PipelineRun };
 
 // POST .../brand/facts/:factId/approve and /reject; PATCH .../brand/facts/:factId

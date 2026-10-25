@@ -1,6 +1,6 @@
 // Pieces shared by the Brand DNA screens.
-import { ExternalLink, History, TriangleAlert, UserPen } from "lucide-react";
-import type { Fact, ProfileSummary } from "@/lib/api-types/brand";
+import { ExternalLink, History, NotebookPen, TriangleAlert, UserPen } from "lucide-react";
+import { DESCRIPTION_SOURCE, type Fact, type ProfileSummary } from "@/lib/api-types/brand";
 import { cn } from "@/lib/utils";
 
 export { KINDS, kindLabel } from "./kinds";
@@ -15,6 +15,13 @@ export function shortUrl(url: string) {
   }
 }
 
+// Where a version was read from: "daniekeysstudios.com", or "your description
+// (Instagram @handle)".
+export function sourceLabel(profile: Pick<ProfileSummary, "source" | "website" | "instagram">) {
+  if (profile.source === "website" && profile.website) return shortUrl(profile.website);
+  return profile.instagram ? `your description (Instagram @${profile.instagram})` : "your description";
+}
+
 // Where a fact comes from: its page and the words on it, or the user.
 export function FactSource({ fact }: { fact: Pick<Fact, "sourceUrl" | "excerpt" | "origin"> }) {
   if (!fact.sourceUrl) {
@@ -23,6 +30,21 @@ export function FactSource({ fact }: { fact: Pick<Fact, "sourceUrl" | "excerpt" 
         <UserPen className="size-4 shrink-0" aria-hidden />
         Added by you. No source page.
       </p>
+    );
+  }
+  if (fact.sourceUrl === DESCRIPTION_SOURCE) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        {fact.excerpt && (
+          <blockquote className="border-l-2 pl-3 text-sm text-muted-foreground italic wrap-break-word">
+            &ldquo;{fact.excerpt}&rdquo;
+          </blockquote>
+        )}
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <NotebookPen className="size-4 shrink-0" aria-hidden />
+          From your description
+        </p>
+      </div>
     );
   }
   return (
