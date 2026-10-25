@@ -134,6 +134,8 @@ export type EstimateResponse = {
 // POST .../campaigns/:campaignId/start (owner), 202.
 export type StartCampaignResponse = { campaign: Campaign; runId: string };
 
+export type BuyerReason = { key: "fit" | "reviews" | "rating" | "website" | "socials"; text: string; good: boolean };
+
 export type ContactSource = { type: string; url: string };
 export type Contact = { value: string; label: string; sources: ContactSource[] };
 export type SocialContact = Contact & { kind: string };
@@ -148,6 +150,9 @@ export type Lead = {
   rating: number | null;
   reviewCount: number | null;
   fit: { score: number | null; verdict: string | null; reason: string | null };
+  // How likely to buy (0 to 1), from checkable facts against the campaign's
+  // buyer signals, with its top reason in plain words. Null until ranked.
+  buyer: { score: number; topReason: string; reasons: BuyerReason[] } | null;
   promoted: boolean;
   // The deep-dive has run: opening the lead costs nothing.
   researched: boolean;

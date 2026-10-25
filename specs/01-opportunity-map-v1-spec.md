@@ -167,7 +167,7 @@ A router picks the data source before any search runs, because local businesses,
 1. Places Text Search per search tile (see Location), with a field mask limited to: place ID, name, formatted address and address components, coordinates, primary type, phone, website, rating, review count, business status, Maps link.
 2. Drop anything whose business status is not operational.
 3. Dedupe and save to `businesses` (see Data accuracy).
-4. Claude Haiku quick fit check on name and category, before any money is spent on the lead.
+4. Claude Haiku quick fit check on name and category, before any money is spent on the lead; it also sees the rating, review count, website and socials and says what they show. Code then gives each business a buyer score against the campaign's buyer segment (reviews, rating, website, socials, fit) and the leads table is ordered by it, with the top reason in plain words. The score is worked out again when enrichment finds a website or socials.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
 6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Mail, MessageCircle, Phone, Star } from "lucide-react";
+import { Globe, Mail, MessageCircle, Phone, Star, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -129,6 +129,20 @@ function Fit({ lead }: { lead: Lead }) {
   );
 }
 
+// Why the lead sits where it does in the list: its top reason in plain
+// words. Every reason is in the tooltip; the score itself isn't shown, since
+// a decimal would read as more precise than it is.
+function WhyRanked({ lead }: { lead: Lead }) {
+  if (!lead.buyer) return null;
+  const all = lead.buyer.reasons.map((r) => `${r.good ? "+" : "-"} ${r.text}`).join("\n");
+  return (
+    <p className="flex items-start gap-1.5 text-sm" title={all}>
+      <TrendingUp className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <span className="wrap-break-word">{lead.buyer.topReason}</span>
+    </p>
+  );
+}
+
 // Website and socials, each linked, with its label.
 function WebAndSocials({ lead, empty = "None found" }: { lead: Lead; empty?: string }) {
   const { website, socials } = lead.contacts;
@@ -208,6 +222,7 @@ function LeadCard({ lead }: { lead: Lead }) {
           <Fit lead={lead} />
           <Researched lead={lead} />
         </div>
+        <WhyRanked lead={lead} />
       </div>
 
       {!hasAnyContact(lead) ? (
@@ -263,7 +278,7 @@ function LeadsTable({ leads }: { leads: Lead[] }) {
             <th className="px-3 py-2 font-medium">WhatsApp</th>
             <th className="px-3 py-2 font-medium">Email</th>
             <th className="px-3 py-2 font-medium">Website and socials</th>
-            <th className="px-3 py-2 font-medium">Fit</th>
+            <th className="px-3 py-2 font-medium">Fit, and why it ranks here</th>
             <th className="px-3 py-2 font-medium">Status</th>
           </tr>
         </thead>
@@ -323,8 +338,11 @@ function LeadsTable({ leads }: { leads: Lead[] }) {
                     </td>
                   </>
                 )}
-                <td className="px-3 py-3">
-                  <Fit lead={lead} />
+                <td className="max-w-56 px-3 py-3">
+                  <div className="flex flex-col gap-1">
+                    <Fit lead={lead} />
+                    <WhyRanked lead={lead} />
+                  </div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
                   <Researched lead={lead} />
