@@ -17,6 +17,7 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 - Make architectural decisions visible: say what you chose and why.
 - Handle empty, loading and error states, not just the happy path.
 - Never invent an API. If you're unsure a method or endpoint exists, check the docs or say so.
+- Keep the specs in sync. Whenever a decision changes how something works, update specs/01-opportunity-map-v1-spec.md (the build spec), specs/07-decisions-log.md and the matching phase file in specs/phases/ in the same commit, copy the specs to opmap-web, and list every spec change in your report with the section name.
 
 ## Design rules
 1. **Two repos, one database.** `opmap-web` (Next.js frontend) and `opmap-api` (Node + Express 5, which also runs the pg-boss worker). The API repo owns the specs and the data contracts (Zod schemas). The web repo keeps a copy of the API types it needs, updated whenever the API changes. No microservices.

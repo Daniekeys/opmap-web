@@ -8,7 +8,7 @@ Source of truth is this file in the opmap-api repo. The old live doc is retired.
 
 Version one is an internal tool that tells a business exactly what to offer each lead, with evidence, and writes the outreach for them to copy. It runs for two workspaces, Daniekeys Studios and Afriment, with a handful of team users. "Opportunity Map" is a working name.
 
-The flow in one line: paste your website, approve your Brand DNA, find leads by business type and city, open a lead to see opportunity cards and ready-made messages, copy, send, and tap what happened.
+The flow in one line: describe your business or paste your website, approve your Brand DNA, pick from buyer segments the tool suggests (or type your own), choose places, get leads ranked by how likely they are to buy, open one to see what to offer and a ready message, send, and tap what happened.
 
 **Success targets for v1** (adjust after the first week of real use)
 
@@ -27,8 +27,8 @@ V1 builds six user-facing features and the full foundation underneath. Everythin
 | Area | In v1 | Later |
 | --- | --- | --- |
 | Access | Invite-only login, workspaces, roles (owner, member) | Public signup, access code redemption screen |
-| Brand DNA | Crawl website, extract profile, edit, approve facts | File uploads (portfolio, price list) |
-| Lead finder | Google Places search by business type and city, dedupe, quick fit filter | Signal triggers, people-data APIs for B2B, more countries |
+| Brand DNA | Crawl website or a written description, extract profile, edit, approve facts | File uploads (portfolio, price list) |
+| Lead finder | Buyer segment suggestions from Brand DNA, leads ranked by buyer signals, Google Places search by business type and city, dedupe, quick fit filter | Signal triggers, people-data APIs for B2B, more countries |
 | Deep-dive | Website crawl, signals, opportunity cards with evidence and confidence | Review text analysis, Instagram signals, website audit |
 | Outreach | Email, WhatsApp, LinkedIn DM and call opener drafts. Copy buttons. Open in Gmail or Outlook compose links | Connected mailboxes, sending, follow-up sequences, reply inbox |
 | Outcomes | Sent, replied, meeting, won, lost buttons. Simple pipeline view | Reply nudges, learning loop that reweights segments |
@@ -119,18 +119,18 @@ Four pipelines do all the work. Each runs in the worker as a chain of steps, and
 
 **1. Brand DNA**
 
-1. Crawl the seller's site: home, about, services, portfolio, contact. Up to about 10 pages
+1. Crawl the seller's site (home, about, services, portfolio, contact, up to about 10 pages), or, if they have no website, extract from a short description they write or their Instagram bio and posts.
 2. Extract a profile to a fixed schema: services, proof points, ideal clients, industries, tone, locations served
 3. Show it in an editable form. The user fixes anything wrong
 4. The user approves facts one by one. Only approved facts can appear in outreach
 
 **2. Lead finder**
 
-1. The user creates a campaign: business type, cities, and optionally a target country
+1. The tool suggests up to 6 buyer segments from the approved Brand DNA, ranked by likelihood to pay. Each shows who they are, their Places search terms, the pain, what to pitch first, buyer signals, suggested places, and whether Places can reach them. The user picks one, edits it, or types their own, then chooses locations. The chosen segment is saved on the campaign and feeds the lead ranking and the deep-dive.
 2. The AI expands it into neighbourhood-level searches, for example "cake shop Bodija Ibadan"
 3. Places Text Search runs each query, respecting the daily call cap
 4. Results are deduplicated by place ID and saved to `businesses`
-5. Claude Haiku runs a quick fit check on name and category, and drops clear mismatches before any money is spent on them
+5. Claude Haiku reports what each business's name, category, rating, review count, website and socials show, and code scores it against the category and the segment's buyer signals. Clear mismatches are dropped; the rest are ranked.
 
 **3. Lead deep-dive**
 
@@ -231,7 +231,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 ## Build phases
 
-Six phases, fed to Claude Code one at a time. Don't start a phase until the previous one passes its done-when test. Each phase is roughly 3 to 5 days of focused work, so v1 lands in about four to six weeks alongside your other work.
+Six phases plus Phase 2.5, fed to Claude Code one at a time. Don't start a phase until the previous one passes its done-when test. Each phase is roughly 3 to 5 days of focused work, so v1 lands in about four to six weeks alongside your other work.
 
 1. **Phase 0: Foundation.** Two repos. `opmap-api` first: Express 5 backend with the pg-boss worker in the same service, Postgres with pgvector on Railway, Drizzle schema for every table in this spec (including contact_points, geo_areas, search_coverage and invites, plus Better Auth's own tables), workspace-scoped data layer with leak tests, Better Auth invite-only login, seed data (Daniekeys and Afriment workspaces, the three plans, three accounts), `pipeline_runs` and `step_runs` logging, every adapter as an interface with a fake implementation, checkLimit and the usage ledger with the global Google call caps. Then `opmap-web`: Next.js shell, login, workspace switcher and live progress panel, mobile-first, forwarding `/api/*` to the API. Deploy `api` and Postgres to Railway and `web` to Vercel Pro.
    - Done when: you log in on the live URL, switch between the two workspaces, a test job runs in the worker and shows in `step_runs`, and the workspace leak tests pass.
@@ -239,11 +239,13 @@ Six phases, fed to Claude Code one at a time. Don't start a phase until the prev
    - Done when: daniekeysstudios.com produces a profile you'd sign off on with fewer than five edits.
 3. **Phase 2: Lead finder.** Places adapter, campaign screen, tile search with neighbourhood queries on top, geo_areas and search_coverage tables, contact_points with labels, daily cap, dedupe, Haiku fit filter, leads table view.
    - Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap.
-4. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
+4. **Phase 2.5: Buyer segments.** Brand DNA from a written description (and an Instagram handle) when there's no website; up to 6 buyer segments from the approved Brand DNA (Opus, cached per Brand DNA version); the campaign screen opens on the segment cards; the chosen segment is saved on the campaign; fit check v3 ranks leads by the segment's buyer signals. See `phases/phase-2.5-buyer-segments.md`.
+   - Done when: Daniekeys and Afriment each get up to 6 segments from their approved Brand DNA that you'd use, a written description gives a usable segment list, and the Ilorin leads are ranked by buyer signals with a plain-words top reason.
+5. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
    - Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes.
-5. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.
+6. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.
    - Done when: you contact 10 real leads using only the tool, and every outcome is logged.
-6. **Phase 5: Hardening.** `checkLimit` on every paid action, usage and cost per workspace on an admin page, an eval set of 20 saved leads that reruns after any prompt change, error states, retries, and alerts.
+7. **Phase 5: Hardening.** `checkLimit` on every paid action, usage and cost per workspace on an admin page, an eval set of 20 saved leads that reruns after any prompt change, error states, retries, and alerts.
    - Done when: a prompt change runs against the eval set and shows a side-by-side before and after, and the admin page shows each workspace's monthly cost.
 
 After phase 5, Daniekeys and Afriment use it for real for two to four weeks before any new scope gets added.
