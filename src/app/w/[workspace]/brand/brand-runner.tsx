@@ -195,7 +195,9 @@ export function BrandRunner({
                 </span>
               </label>
               <label className="flex flex-col gap-1.5 text-sm font-medium">
-                Instagram handle <span className="font-normal text-muted-foreground">(optional)</span>
+                <span>
+                  Instagram handle <span className="font-normal text-muted-foreground">(optional)</span>
+                </span>
                 <input
                   name="instagram"
                   type="text"
