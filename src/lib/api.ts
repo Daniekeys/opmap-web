@@ -5,6 +5,7 @@ import { cache } from "react";
 import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
 import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
 import type { ApiErrorResponse } from "./api-types/errors";
+import type { CampaignDetailResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
@@ -44,6 +45,19 @@ export const getBrand = (workspaceId: string) => apiGet<BrandOverviewResponse>(`
 
 export const getBrandProfile = (workspaceId: string, profileId: string) =>
   apiGet<ProfileDetailResponse>(`/api/w/${workspaceId}/brand/profiles/${encodeURIComponent(profileId)}`);
+
+export const listCampaigns = (workspaceId: string) => apiGet<CampaignsResponse>(`/api/w/${workspaceId}/campaigns`);
+
+const campaignPath = (workspaceId: string, campaignId: string) => `/api/w/${workspaceId}/campaigns/${encodeURIComponent(campaignId)}`;
+
+export const getCampaign = (workspaceId: string, campaignId: string) =>
+  apiGet<CampaignDetailResponse>(campaignPath(workspaceId, campaignId));
+
+export const getCampaignLeads = (workspaceId: string, campaignId: string) =>
+  apiGet<LeadsResponse>(`${campaignPath(workspaceId, campaignId)}/leads`);
+
+export const getCampaignEstimate = (workspaceId: string, campaignId: string) =>
+  apiGet<EstimateResponse>(`${campaignPath(workspaceId, campaignId)}/estimate`);
 
 // Owners only; the API answers 403 to a member.
 export const listPendingInvites = (workspaceId: string) =>

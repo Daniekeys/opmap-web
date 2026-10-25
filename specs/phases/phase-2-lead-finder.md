@@ -5,7 +5,7 @@ Read: Core pipelines > 2, Lead sourcing, Data accuracy, Location. Image: `refere
 Build:
 - Campaign screen: business type, target kind (Haiku router, user can override), locations from `geo_areas` at any level.
 - Seed `geo_areas` with Nigeria's 36 states, the FCT and their main towns. GeoProvider geocodes anything else and caches the boundary.
-- Tile search: boundary to a grid of about 2 km in cities, Places Text Search restricted to each tile's rectangle, page to 60, split any tile that returns 60 into 4 (stop at about 250 m). AI neighbourhood queries run on top as extras.
+- Tile search: boundary to a grid of tiles about 4 km across, keeping only tiles that overlap the boundary circle or polygon (square corners dropped), Places Text Search restricted to each tile's rectangle, page to 60, split any tile that returns 60 into 4 (stop at about 250 m). AI neighbourhood queries run on top as extras.
 - `search_coverage` written per tile and query; re-runs and expansions skip fresh tiles.
 - Field mask limited to the Lead sourcing list (Enterprise tier). Drop non-operational businesses.
 - Every Places call goes through checkLimit: hard stop at 950 a month and 30 a day, with "paused until tomorrow" shown on the campaign.

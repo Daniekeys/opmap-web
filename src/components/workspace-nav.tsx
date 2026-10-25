@@ -8,6 +8,7 @@ export function WorkspaceNav({ slug, isOwner }: { slug: string; isOwner: boolean
   const pathname = usePathname();
   const links = [
     { href: `/w/${slug}`, label: "Overview" },
+    { href: `/w/${slug}/campaigns`, label: "Campaigns" },
     { href: `/w/${slug}/brand`, label: "Brand DNA" },
     ...(isOwner
       ? [
