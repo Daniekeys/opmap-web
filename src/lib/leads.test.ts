@@ -36,6 +36,9 @@ describe("phones", () => {
     expect(formatPhone("+2348033718771")).toBe("0803 371 8771");
     expect(formatPhone("+447700900123")).toBe("+447700900123");
     expect(whatsappHref("+2348033718771")).toBe("https://wa.me/2348033718771");
+    // A wa.me/message link has no number: linked as it is.
+    expect(whatsappHref("https://wa.me/message/EO2NVG7LHIROG1")).toBe("https://wa.me/message/EO2NVG7LHIROG1");
+    expect(formatPhone("https://wa.me/message/EO2NVG7LHIROG1")).toBe("WhatsApp link");
   });
 
   it("filters leads with a phone or WhatsApp, and spots leads with no contact at all", () => {

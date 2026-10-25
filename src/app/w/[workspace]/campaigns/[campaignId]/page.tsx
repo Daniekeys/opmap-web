@@ -8,6 +8,7 @@ import type { Campaign } from "@/lib/api-types/leads";
 import { pausedUntil, TARGET_KINDS } from "@/lib/leads";
 import { AutoRefresh } from "./auto-refresh";
 import { ConfirmPanel } from "./confirm-panel";
+import { LeadsList } from "./leads-list";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
@@ -62,9 +63,14 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         />
       )}
 
-      <p className="text-sm text-muted-foreground">
-        {leads.length} leads, {possibleCount} possible.
-      </p>
+      <LeadsList
+        key={campaign.id}
+        workspaceId={workspace.id}
+        campaignId={campaign.id}
+        leads={leads}
+        possibleCount={possibleCount}
+        searched={!startable}
+      />
     </>
   );
 }

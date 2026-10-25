@@ -43,13 +43,15 @@ export function labelText(group: ContactKindGroup, label: string): LabelText {
 
 // "+2348033718771" as Nigerians write it: "0803 371 8771". Other countries
 // keep the international form.
+// A WhatsApp value can be a link with no number (wa.me/message/...).
 export function formatPhone(e164: string) {
+  if (/^https?:/.test(e164)) return "WhatsApp link";
   const ng = /^\+234(\d{3})(\d{3})(\d{4})$/.exec(e164);
   return ng ? `0${ng[1]} ${ng[2]} ${ng[3]}` : e164;
 }
 
 export const telHref = (e164: string) => `tel:${e164}`;
-export const whatsappHref = (e164: string) => `https://wa.me/${e164.replace(/\D/g, "")}`;
+export const whatsappHref = (value: string) => (/^https?:/.test(value) ? value : `https://wa.me/${value.replace(/\D/g, "")}`);
 
 // "bakery" -> "Bakery", "cake_shop" -> "Cake shop".
 export function categoryText(type: string | null) {
