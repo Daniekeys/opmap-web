@@ -165,7 +165,7 @@ A router picks the data source before any search runs, because local businesses,
 3. Dedupe and save to `businesses` (see Data accuracy).
 4. Claude Haiku quick fit check on name and category, before any money is spent on the lead.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
-6. For fit leads without a website: one web search (the only search-API call in v1) for `"<name>" <city> instagram` to find their socials. Most Nigerian SMEs live there.
+6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
 
 No LinkedIn scraping. A decision maker's name comes only from the business's own pages, Google review owner replies, or (later) an approved people-data API.
 
@@ -179,9 +179,9 @@ contact_points is owned by the research module because it references sources. Th
 
 | Detail | Sources, best first | Check | Labels shown |
 | --- | --- | --- | --- |
-| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram and Linktree links are filed as socials, not websites | verified, unverified, dead |
+| Website | Places, then search | Loads, and mentions the business name, phone or city. Facebook, Instagram, Linktree and other link-in-bio pages (about.me, beacons.ai...) are filed as socials, not websites. A short link (tinyurl, bit.ly...) is followed to where it lands first. Dead only when its host has no DNS record, or two checks at least 6 hours apart both fail; a single failure is unverified | verified, unverified, dead |
 | Phone | Places, their website, their Instagram bio | libphonenumber parse to E.164, mobile or landline | confirmed (2 sources agree), single source |
-| WhatsApp | `wa.me` link on their site or bio | Never auto-pinged | confirmed, likely (mobile number) |
+| WhatsApp | `wa.me` link on their site, in their Places listing, or in their bio | Never auto-pinged | confirmed (a `wa.me` link they published), likely (a mobile number with no `wa.me` link) |
 | Email | Their own site, then pattern guess, then a paid finder (later) | MX check; paid verification only for fit leads | found on site, verified, catch-all, guessed |
 | Person | About or team page, Google owner replies | Their source must name the company or domain | sourced, none |
 | Socials | Their site, Places, one search | Handle bio mentions the business name or city | verified, unverified |
@@ -319,7 +319,7 @@ These are built into v1, not added later, because they're what make the tool tru
 - The suppression list is checked before any draft is shown
 - Every email draft ends with an opt-out line and the sender's real business identity
 - No LinkedIn scraping. Public websites, Maps and approved APIs only
-- Places content is refreshed per campaign. Place IDs and your own analysis are what get stored long-term
+- Place ids are stored long-term. Coordinates and other Places fields are refreshed or cleared within 30 days. Data our crawler finds on a business's own site is ours to keep.
 - A privacy notice on the website explains data sources, use and opt-out, in line with Nigeria's NDPA
 - API keys and future mailbox credentials are encrypted and never sent to the browser
 

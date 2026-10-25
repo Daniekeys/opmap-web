@@ -11,7 +11,8 @@ Build:
 - Every Places call goes through checkLimit: hard stop at 950 a month and 30 a day, with "paused until tomorrow" shown on the campaign.
 - Dedupe on place id, normalised domain, E.164 phone, and fuzzy name within 200 m.
 - Haiku fit filter on name and category, 20 businesses per call, through the Batch API when not urgent.
-- For fit leads: crawl the website for emails, phones, `wa.me` links, socials, owner names and schema.org data. For leads with no website, one Claude web search for their socials. Everything lands in `contact_points` with source, confidence and label.
+- For fit leads with a website: crawl it for emails, phones, `wa.me` links, socials, owner names and schema.org data. Everything lands in `contact_points` with source, confidence and label.
+- For fit leads without a website: no search at lead-finding time (spec, Lead sourcing > Local business flow 6). When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city. Built in Phase 2 as the `lead_socials` pipeline behind `research.openLead`; the Phase 3 lead page calls it.
 - Cost estimate on the campaign confirm button (tiles x queries x pages).
 - Leads table: name, category, city, rating and reviews, best phone, email and WhatsApp with their labels, fit, and a "Researched / Not yet" status so people know what opening a lead will do. On phones the table becomes stacked cards.
 
