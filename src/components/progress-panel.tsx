@@ -32,10 +32,13 @@ export function ProgressPanel({
   workspaceId,
   runId,
   onFinished,
+  title,
 }: {
   workspaceId: string;
   runId: string | null;
   onFinished?: Finished;
+  // What the run is called; defaults to its pipeline type.
+  title?: string;
 }) {
   return (
     <section aria-labelledby="progress-heading" className="flex flex-col gap-2">
@@ -44,7 +47,7 @@ export function ProgressPanel({
       </h2>
       {runId ? (
         // Keyed, so a new run starts from a clean loading state.
-        <RunProgress key={runId} workspaceId={workspaceId} runId={runId} onFinished={onFinished} />
+        <RunProgress key={runId} workspaceId={workspaceId} runId={runId} onFinished={onFinished} title={title} />
       ) : (
         <Notice>No run yet. Start one and its steps will show up here.</Notice>
       )}
@@ -52,7 +55,7 @@ export function ProgressPanel({
   );
 }
 
-function RunProgress({ workspaceId, runId, onFinished }: { workspaceId: string; runId: string; onFinished?: Finished }) {
+function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: string; runId: string; onFinished?: Finished; title?: string }) {
   const [poll, setPoll] = useState<Poll>({ data: null, at: 0, problem: null, polling: true });
   const [restarts, setRestarts] = useState(0);
   // Kept in a ref so a new callback from the parent doesn't restart polling.
@@ -158,7 +161,7 @@ function RunProgress({ workspaceId, runId, onFinished }: { workspaceId: string; 
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium capitalize">{run.type} run</p>
+            <p className={title ? "truncate font-medium" : "truncate font-medium capitalize"}>{title ?? `${run.type} run`}</p>
             <p className="text-sm text-muted-foreground">
               {finishedSteps} {finishedSteps === 1 ? "step" : "steps"} done
               {runMs !== null && `, ${formatDuration(runMs)}`}

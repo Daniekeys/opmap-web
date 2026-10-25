@@ -7,6 +7,7 @@ import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/b
 import type { ApiErrorResponse } from "./api-types/errors";
 import type { CampaignDetailResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
+import type { LeadResearchResponse } from "./api-types/research";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
 // `use cache`, so nothing is stored on the server or shared between users.
@@ -79,3 +80,7 @@ export async function getInvite(
   }
   throw new Error(`API answered ${res.status} for the invite`);
 }
+
+// The lead page: the lead, its deep-dive and its opportunity cards.
+export const getLeadResearch = (workspaceId: string, campaignId: string, leadId: string) =>
+  apiGet<LeadResearchResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}`);

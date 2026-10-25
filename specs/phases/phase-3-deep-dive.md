@@ -1,14 +1,16 @@
 # Phase 3 - Deep-dive
 
-Read: Core pipelines > 3, Quality guardrails.
+Read: Core pipelines > 3, Lead sourcing > Local business flow 6, Data accuracy, Quality guardrails.
 
 Build:
-- Lead page opens the deep-dive on first view only. Show a loading state that reads from `step_runs` (same progress panel as Phase 0). The job must be safe if two people open the same lead at once, so it runs once, and it goes through `checkLimit` like any paid action. Saved results load for free. Leads older than 90 days show a refresh button instead of re-running on their own. Check the page at phone width.
-- Crawl the lead's site and save every page read to `sources`.
-- For a lead with no website of its own, call `research.openLead` on first view: it starts the one social search (`lead_socials`, built in Phase 2; spec, Lead sourcing > Local business flow 6) and does nothing after that or for a lead with a website.
-- Signals: has a website, works on mobile, booking or order flow, social links, what they sell, who they serve.
-- Claude Sonnet 5.5 writes up to three opportunity cards from approved facts only: what to offer, why they need it, the angle, confidence, evidence links. Brand DNA goes in a cached prompt prefix.
+- Lead page (`/w/<workspace>/campaigns/<campaign>/leads/<lead>`, linked from the leads list) opens the deep-dive on first view only, through `research.openLead`. Show a loading state that reads from `step_runs` (same progress panel as Phase 0). The job must be safe if two people open the same lead at once, so it runs once (the lead is claimed in `deep_dives` first; one running row per lead), and it goes through `checkLimit` like any paid action. Saved results load for free. Leads researched more than 90 days ago show a refresh button instead of re-running on their own. A run that died is marked failed when the lead is next opened, with a try-again button. Check the page at phone width.
+- Crawl the lead's site (up to 8 pages in 45 seconds) and save every page read to `sources` with its text.
+- For a lead with no website of its own (or a site that can't be read that day), the deep-dive runs the one social search (`deepdive.search`, the same search as `lead_socials`, built in Phase 2; spec, Lead sourcing > Local business flow 6). A social is kept only if its cited text has the lead's phone (verified) or names the business and its city (single source).
+- Signals: has a website, has a mobile layout tag (named that way: it doesn't show the site works well on phones), order or booking flow on the pages read, social accounts, what they sell, who they serve (Haiku, quoted word for word).
+- Claude Sonnet 5.5 writes up to three opportunity cards from approved facts only, plus the campaign's buyer segment (its pain and what to pitch first): what to offer, the gap, why it matters, the angle, confidence, evidence links. Brand DNA goes in a cached prompt prefix.
 - Claude Haiku checks every claim against its cited source; unsupported claims are removed. Too little data gives a "Not enough information" card.
-- Explee's draft pitched "brand identities and websites for food businesses" with no specific gap. Our cards must name the gap.
+- Explee's draft pitched "brand identities and websites for food businesses" with no specific gap. Our cards must name the gap: a gap that cites nothing about this business is dropped in code, and Haiku drops one that isn't specific.
+- Evidence links open the source page, and each quote is shown under its claim on the lead page, so a claim can be checked without leaving it. Removed claims are listed too.
+- Each step (crawl, search, signals, cards, check, save) is timed in `step_runs`.
 
 Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes and under $0.10.

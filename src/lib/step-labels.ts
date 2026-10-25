@@ -6,6 +6,12 @@ const STEP_LABELS: Record<string, string> = {
   "brand.describe": "Reading your description",
   "brand.extract": "Drafting your profile",
   "brand.save": "Saving",
+  "deepdive.crawl": "Reading their website",
+  "deepdive.search": "Searching for their socials",
+  "deepdive.signals": "Noting what they sell and lack",
+  "deepdive.cards": "Writing opportunity cards",
+  "deepdive.check": "Checking every claim against its source",
+  "deepdive.save": "Saving",
 };
 
 export function stepLabel(name: string) {

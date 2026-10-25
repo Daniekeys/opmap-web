@@ -80,7 +80,7 @@ Claude handles every AI step, paid from the $1,000 in Claude API credits. Railwa
 
 ## Data model
 
-Twenty-five tables, plus Better Auth's own (user, session, account, verification) cover v1 and the next two years of features. Tables marked "later" get created in phase 0 but stay empty until their feature ships, which is what removes the migration pain.
+Twenty-eight tables, plus Better Auth's own (user, session, account, verification) cover v1 and the next two years of features. Tables marked "later" get created in phase 0 but stay empty until their feature ships, which is what removes the migration pain.
 
 | Table | Module | Key columns | Why it exists |
 | --- | --- | --- | --- |
@@ -102,8 +102,9 @@ Twenty-five tables, plus Better Auth's own (user, session, account, verification
 | `geo_areas` | leads | level, name, parent_id, country, bbox, population | The location ladder |
 | `search_coverage` | leads | query, tile_bbox, geo_area_id, searched_at, result_count | Which tiles were searched and when. Shared across workspaces |
 | `sources` | research | business_id, url, type, fetched_at, excerpt | Every page and listing the AI read, so every claim can point to one |
-| `signals` | research | business_id, kind, value, source_id | Facts found: no website, slow mobile site, active Instagram, and so on |
-| `opportunities` | research | lead_id, service, need, angle, confidence, evidence (json), prompt_version | The opportunity cards |
+| `signals` | research | business_id, kind, value, source_id | Facts found: no website, a mobile layout tag, no order flow, an Instagram account, what they sell, who they serve. Each cites the source that shows it. Written as one set per read of the business and reused for 90 days |
+| `deep_dives` | research | workspace_id, lead_id, run_id, status (running, done, failed), brand_profile_version, outcome (json), cost_usd, duration_ms, started_at, finished_at | One deep-dive of one lead. At most one running row per lead (a partial unique index), so two people opening a lead start one run. The newest done row is the lead's research; a refresh adds a row |
+| `opportunities` | research | lead_id, deep_dive_id, rank, service, need, angle, confidence, evidence (json: every claim with what it cites), prompt_version | The opportunity cards |
 | `outreach_drafts` | outreach | lead_id, opportunity_id, channel, subject, body, highlights (json), prompt_version | Email, WhatsApp, LinkedIn and call drafts |
 | `outcomes` | outcomes | lead_id, type, channel, note, created_by | Sent, replied, meeting, won, lost |
 | `suppression_list` | outcomes | workspace_id, email, domain, phone | People who opted out. Checked before any draft is shown |
@@ -140,12 +141,12 @@ A version is only used (by segments, campaigns, deep-dives and outreach) when it
 
 **3. Lead deep-dive**
 
-Trigger: the first time a user opens a lead. The result is saved, so opening it again costs nothing. A stale lead (older than 90 days) offers a refresh button instead of re-running on its own.
+Trigger: the first time a user opens a lead (`research.openLead`). It goes through `checkLimit` before it starts, and the lead is claimed first (`deep_dives`), so two people opening it at once start one run. The result is saved, so opening it again costs nothing. A deep-dive older than 90 days offers a refresh button instead of re-running on its own. The lead page shows the run's steps from `step_runs` while it runs, and every step is timed there. The whole run should take under 2 minutes and cost under $0.10.
 
-1. Crawl the lead's website if it has one, and save every page read to `sources`
-2. Extract signals: has a website, works on mobile, has a booking or order flow, social links, what they sell, who they serve
-3. Match the seller's Brand DNA against those signals and produce up to three opportunity cards: what to offer, why they need it, the angle, a confidence level
-4. Claude Haiku checks each claim against its cited source. Unsupported claims are removed. Too little data produces a "Not enough information" card instead of a guess
+1. Crawl the lead's website if it has one: up to 8 pages in 45 seconds (the crawl is the slow part), and save every page read to `sources` with its text. A lead with no website of its own, or one whose site can't be read, gets the one social search instead (Lead sourcing, step 6)
+2. Extract signals. Code checks: has a website, has a mobile layout tag (a viewport set to the device width; it only shows the page declares a phone layout, so it is named that way and no card may claim the site works well or badly on phones from it), has an order or booking flow on the pages read, social accounts. Claude Haiku says what they sell and who they serve, each with a word-for-word quote that code finds in its source, or it is dropped. The Google Maps listing is a source too. Signals and sources are shared across workspaces and reused for 90 days
+3. Claude Sonnet matches the seller's approved facts (in a cached prefix) and the campaign's buyer segment (its pain and what to pitch first) against those signals and produces up to three opportunity cards: what to offer, the gap at this business, why it matters to them, the angle, a confidence level. Every claim cites what shows it: a source with a word-for-word quote, a signal, or an approved fact. Code drops evidence whose quote isn't in its source, an offer that cites no approved fact, and a gap that cites nothing about this business, so a generic pitch ("brand identities for food businesses") never survives
+4. Claude Haiku checks each claim against what it cites, and each gap for being specific to this business. Unsupported claims are removed; a card that loses its offer, gap or angle is dropped. No card left, or too little data to start with (no website, no social, nothing said about what they sell, and fewer than 5 reviews, with no Sonnet call), produces a "Not enough information" card instead of a guess. The lead page shows each quote under its claim, with a link that opens the source page, and lists the claims that were removed
 
 **4. Outreach and outcomes**
 
@@ -173,7 +174,7 @@ A buyer segment marked reachable is searched on Places as a local business whate
 3. Dedupe and save to `businesses` (see Data accuracy).
 4. Claude Haiku quick fit check on name and category, before any money is spent on the lead. Code settles the name signal from the campaign's word lists, made from its segment (words for this kind must be specific to it: words that commonly name other businesses too, like "auto", "store" or "market", are left out; a word for this kind of business names it, even next to another kind: "Cakes and Events"; only a word for another kind, such as "Events Palace", names another kind) and applies the rubric. The rubric must pass (match or likely) before the buyer score counts: code then scores each lead against the campaign's buyer segment (reviews, rating, website, socials, fit) and the leads table is ordered by it, with the top reason in plain words. A lead below likely scores 0 and sits last, unless the user promoted it by hand ("Promoted by you"), which keeps its score. The score is worked out again when enrichment finds a website or socials. The lead's note is Haiku's sentence on the name and category, followed by what the listing shows (reviews, website, socials), built by code from current data each time the lead is read.
 5. For fit leads with a website: crawl up to about 10 pages and pull emails, phones, `wa.me` links, Instagram and Facebook handles, owner names from about or team pages, and schema.org LocalBusiness or Organization data.
-6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city.
+6. For fit leads without a website: no search at lead-finding time. When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name (also when its website can't be read that day), and saves a social only if its cited text contains that phone (verified), or names the business and its city (single source).
 
 No LinkedIn scraping. A decision maker's name comes only from the business's own pages, Google review owner replies, or (later) an approved people-data API.
 
@@ -311,7 +312,8 @@ These are built into v1, not added later, because they're what make the tool tru
 
 **Quality**
 
-- No claim without a source. Every opportunity and every draft sentence links to a page in `sources` or an approved fact
+- No claim without a source. Every opportunity and every draft sentence links to a page in `sources` or an approved fact. A quote from a source must appear in it word for word, checked in code
+- An opportunity names a gap seen at this business, backed by its own sources or signals. The seller's facts alone never show a gap
 - "Not enough information" is a valid answer, and it's always better than a guess
 - Fixed output schemas, pinned model versions and a saved prompt version on every result
 - The 20-lead eval set reruns after every prompt or model change

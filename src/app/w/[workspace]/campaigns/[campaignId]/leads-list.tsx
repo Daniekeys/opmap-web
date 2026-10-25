@@ -1,7 +1,8 @@
 "use client";
 
 import { Globe, Mail, MessageCircle, Phone, Star, TrendingUp } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Contact, Lead, Possible, PossiblesResponse } from "@/lib/api-types/leads";
@@ -45,6 +46,9 @@ export function LeadsList({
   possibleCount: number;
   searched: boolean;
 }) {
+  // Each lead's page sits under this campaign's.
+  const campaignPath = usePathname();
+  const leadHref = (lead: Lead) => `${campaignPath}/leads/${lead.leadId}`;
   const [phoneOnly, setPhoneOnly] = useState(false);
   const shown = useMemo(() => (phoneOnly ? leads.filter(hasPhoneOrWhatsapp) : leads), [leads, phoneOnly]);
   const withPhone = useMemo(() => leads.filter(hasPhoneOrWhatsapp).length, [leads]);
@@ -81,11 +85,11 @@ export function LeadsList({
           <ul className="flex flex-col gap-3 lg:hidden">
             {shown.map((lead) => (
               <li key={lead.leadId}>
-                <LeadCard lead={lead} />
+                <LeadCard lead={lead} href={leadHref(lead)} />
               </li>
             ))}
           </ul>
-          <LeadsTable leads={shown} />
+          <LeadsTable leads={shown} hrefOf={leadHref} />
         </>
       )}
 
@@ -216,13 +220,17 @@ function WhatsappLink({ contact, big }: { contact: Contact; big?: boolean }) {
 }
 
 // One lead on a phone: the big tap targets are the phone and WhatsApp.
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({ lead, href }: { lead: Lead; href: string }) {
   const { phone, whatsapp, email, person } = lead.contacts;
   const category = categoryText(lead.category);
   return (
     <article className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <div className="flex flex-col gap-1">
-        <h3 className="font-medium wrap-break-word">{lead.name}</h3>
+        <h3 className="font-medium wrap-break-word">
+          <Link href={href} className="-my-2 inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">
+            {lead.name}
+          </Link>
+        </h3>
         <p className="text-sm text-muted-foreground">{[category, lead.city].filter(Boolean).join(" · ") || "No category"}</p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <Rating lead={lead} />
@@ -273,7 +281,7 @@ function LeadCard({ lead }: { lead: Lead }) {
 }
 
 // From 1024px wide: one row per lead.
-function LeadsTable({ leads }: { leads: Lead[] }) {
+function LeadsTable({ leads, hrefOf }: { leads: Lead[]; hrefOf: (lead: Lead) => string }) {
   return (
     <div className="hidden overflow-x-auto rounded-xl border bg-card lg:block">
       <table className="w-full text-sm">
@@ -296,7 +304,9 @@ function LeadsTable({ leads }: { leads: Lead[] }) {
             return (
               <tr key={lead.leadId} className="align-top">
                 <td className="max-w-56 px-3 py-3">
-                  <p className="font-medium wrap-break-word">{lead.name}</p>
+                  <Link href={hrefOf(lead)} className="font-medium wrap-break-word text-primary underline-offset-4 hover:underline">
+                    {lead.name}
+                  </Link>
                   <p className="text-muted-foreground">{[categoryText(lead.category), lead.city].filter(Boolean).join(" · ")}</p>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
