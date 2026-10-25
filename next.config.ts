@@ -10,6 +10,9 @@ if (!apiUrl) {
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    agentUpgrade: "security",
+  },
   // The browser only ever talks to this origin. /api/* is forwarded to
   // opmap-api, so the Better Auth cookie is same-origin and there is no CORS.
   async rewrites() {
