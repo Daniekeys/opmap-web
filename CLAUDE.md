@@ -69,3 +69,4 @@ AI is the Claude API through the official Anthropic TypeScript SDK, inside the a
 - No LinkedIn scraping. Public websites, Google Places and approved APIs only.
 - Suppression list checked before any draft is shown. Every email draft ends with an opt-out line and the sender's real business identity.
 - Store place ids long-term; refresh other Places content per campaign.
+- Never approve Brand DNA facts or drafts, promote leads, or log outcomes on a user's behalf. Those are human decisions. If a step needs one, stop and ask.
