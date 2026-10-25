@@ -8,6 +8,8 @@ export type ProfileStatus = "draft" | "approved" | "archived" | "retired";
 
 export type Fact = {
   id: string;
+  // The member who typed it in (origin "user"), by name; null otherwise.
+  addedBy: string | null;
   kind: FactKind;
   text: string;
   // Null for a fact the user typed in (origin "user").
@@ -92,6 +94,10 @@ export type EditFactBody = { text: string };
 
 // POST .../brand/profiles/:profileId/facts (201)
 export type AddFactBody = { kind: FactKind; text: string };
+
+// POST /api/w/:workspaceId/brand/facts, 201: "Add a fact" from the Brand screen.
+// The fact went into the draft (made from the approved version if needed).
+export type AddToBrandResponse = { profileId: string; version: number; fact: Fact };
 
 // POST .../brand/profiles/:profileId/approve (owner)
 export type ApproveProfileResponse = { profile: ProfileSummary };

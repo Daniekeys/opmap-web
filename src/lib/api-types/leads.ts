@@ -35,6 +35,10 @@ export type BuyerSignals = {
   categories: string[];
 };
 
+// Words in business names: ones that say it is this kind of business, and
+// ones for other kinds that rule a name out.
+export type NameWords = { thisKind: string[]; otherKinds: string[] };
+
 export type BuyerSegment = {
   rank: number;
   name: string;
@@ -47,6 +51,8 @@ export type BuyerSegment = {
   buyerSignals: BuyerSignals;
   // What to look for that Google Maps can't check ("recently funded").
   signalNotes: string[];
+  // Null for older sets, or when the words couldn't be made.
+  nameWords: NameWords | null;
   suggestedPlaces: { name: string; areaId: string | null }[];
   reachability: "places" | "not_yet";
   reachabilityReason: string;
@@ -96,6 +102,9 @@ export type Campaign = {
   targetKind: TargetKind | null;
   // The segment as the user kept it, and whether they changed it.
   buyerSegment: (CampaignSegment & { edited: boolean }) | null;
+  // The words the fit check classifies business names with. Read-only; null
+  // until made (from the segment, or before the first fit check).
+  nameWords: NameWords | null;
   brandProfileVersion: number | null;
   locations: GeoArea[];
   status: CampaignStatus;

@@ -1,4 +1,4 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CampaignStatusBadge } from "@/components/campaign-status";
@@ -48,6 +48,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
           {kind && <span>{kind.label}</span>}
           <span>Searching for: {campaign.queries.join(", ")}</span>
         </div>
+        <NameWordsPanel campaign={campaign} />
       </div>
 
       <StatusNote campaign={campaign} leadCount={leads.length} />
@@ -72,6 +73,55 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         searched={!startable}
       />
     </>
+  );
+}
+
+// The words the fit check classifies business names with, read-only, so the
+// user can see why a name passed or failed. A name with a word for this kind
+// counts as this kind; one with only a word for another kind doesn't.
+function NameWordsPanel({ campaign }: { campaign: Campaign }) {
+  const words = campaign.nameWords;
+  return (
+    <details className="group rounded-xl border bg-card text-sm">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-medium">
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+        Words used to check names
+      </summary>
+      <div className="flex flex-col gap-3 border-t px-4 py-3">
+        {!words ? (
+          <p className="text-muted-foreground">Not made yet. They are made from this campaign&apos;s segment before its first fit check.</p>
+        ) : (
+          <>
+            <WordList
+              label="This kind"
+              hint="A name with one of these is this kind of business, even if it also names another kind."
+              words={words.thisKind}
+            />
+            <WordList label="Other kinds" hint="A name with only one of these is another kind of business." words={words.otherKinds} />
+          </>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function WordList({ label, hint, words }: { label: string; hint: string; words: string[] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className="text-muted-foreground">{hint}</p>
+      {words.length === 0 ? (
+        <p className="text-muted-foreground">None</p>
+      ) : (
+        <ul className="flex flex-wrap gap-1.5">
+          {words.map((w) => (
+            <li key={w} className="rounded-full bg-muted px-2 py-1 text-xs">
+              {w}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

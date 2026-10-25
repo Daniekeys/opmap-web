@@ -5,6 +5,7 @@ import { PageLoading } from "@/components/page-loading";
 import { getBrand, getBrandProfile, getWorkspace } from "@/lib/api";
 import type { ProfileSummary } from "@/lib/api-types/brand";
 import { formatDateTime } from "@/lib/format";
+import { AddFactButton } from "./add-fact-button";
 import { BrandRunner } from "./brand-runner";
 import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "./facts";
 
@@ -67,6 +68,7 @@ async function Brand({ params }: { params: Props["params"] }) {
               Approved {formatDateTime(approved.profile.approvedAt!)} from {sourceLabel(approved.profile)}.{" "}
               {approved.profile.facts.approved} facts.
             </p>
+            <AddFactButton workspaceId={workspace.id} brandHref={base} hasDraft={brand.draft !== null} />
             {KINDS.map(({ kind, label }) => {
               const facts = approved.facts.filter((f) => f.kind === kind && f.status === "approved");
               if (facts.length === 0) return null;

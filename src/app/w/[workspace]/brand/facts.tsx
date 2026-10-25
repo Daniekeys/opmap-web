@@ -22,13 +22,14 @@ export function sourceLabel(profile: Pick<ProfileSummary, "source" | "website" |
   return profile.instagram ? `your description (Instagram @${profile.instagram})` : "your description";
 }
 
-// Where a fact comes from: its page and the words on it, or the user.
-export function FactSource({ fact }: { fact: Pick<Fact, "sourceUrl" | "excerpt" | "origin"> }) {
+// Where a fact comes from: its page and the words on it, or the member who
+// typed it in.
+export function FactSource({ fact }: { fact: Pick<Fact, "sourceUrl" | "excerpt" | "origin"> & { addedBy?: string | null } }) {
   if (!fact.sourceUrl) {
     return (
       <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <UserPen className="size-4 shrink-0" aria-hidden />
-        Added by you. No source page.
+        Added by {fact.addedBy ?? "hand"}. No source page.
       </p>
     );
   }
