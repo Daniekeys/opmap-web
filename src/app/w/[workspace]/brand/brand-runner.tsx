@@ -124,7 +124,7 @@ export function BrandRunner({
     <>
       {isOwner ? (
         <form onSubmit={start} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div role="radiogroup" aria-label="Read from" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          <div role="group" aria-label="Read from" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             {(
               [
                 ["website", "My website"],
@@ -134,8 +134,7 @@ export function BrandRunner({
               <button
                 key={value}
                 type="button"
-                role="radio"
-                aria-checked={mode === value}
+                aria-pressed={mode === value}
                 onClick={() => {
                   setMode(value);
                   setError(null);

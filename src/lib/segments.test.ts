@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseSearchTerms, signalsInWords } from "./segments";
+import { parseSearchTerms, ratingOptions, signalsInWords } from "./segments";
+
+describe("ratingOptions", () => {
+  it("adds a suggested rating that isn't in the list, so the select can show it", () => {
+    expect(ratingOptions(null)).toEqual([3, 3.5, 4, 4.5]);
+    expect(ratingOptions(4)).toEqual([3, 3.5, 4, 4.5]);
+    expect(ratingOptions(4.2)).toEqual([3, 3.5, 4, 4.2, 4.5]);
+    expect(ratingOptions(2)).toEqual([2, 3, 3.5, 4, 4.5]);
+  });
+});
 
 describe("signalsInWords", () => {
   it("says each signal plainly and skips the ones that say nothing", () => {

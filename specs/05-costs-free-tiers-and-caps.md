@@ -41,13 +41,21 @@ Notes:
 A fully worked lead (deep-dive plus 4 drafts) costs about 6.5 cents. Brand DNA is about $0.15 per workspace. Buyer segments are one Opus call per approved Brand DNA version, about $0.09 (Daniekeys, 2026-10-25).
 
 ## Monthly picture
-- Normal (8 campaigns): about $45 of Claude credit and about 640 Google calls. The credit lasts about 2 years.
-- Heavy (20 campaigns, 100 deep-dives each): about $165 of Claude credit a month, so about 6 months. It also needs about 1,600 Google calls; the 600 over the free tier cost about $21 in cash.
+- Normal (8 campaigns): about $45 of Claude credit and about 640 Google calls, just inside production's 650 a month. The credit lasts about 2 years.
+- Heavy (20 campaigns, 100 deep-dives each): about $165 of Claude credit a month, so about 6 months. It also needs about 1,600 Google calls; the 600 over the free tier cost about $21 in cash. Production's cap of 650 a month stops it well before that, so heavy use needs the caps raised first.
 - Railway: about $9 to $12 a month for `api` with the worker and Postgres. `web` is on Vercel Pro.
 
 ## Caps that keep it at $0
 1. Maps lives in its own Google Cloud project (`opmap-maps`).
-2. Our code: checkLimit stops at 950 Text Search calls a month and 30 a day, counted in America/Los_Angeles time because that's when Google resets its quotas. This is the real guarantee.
+2. Our code: checkLimit stops Text Search calls at a cap set per environment in config, counted in America/Los_Angeles time because that's when Google resets its quotas. This is the real guarantee.
+
+   | Environment | A day | A month |
+   |---|---|---|
+   | Production | 20 | 650 |
+   | Development (local) | 10 | 300 |
+   | Both together | 30 | 950 |
+
+   Local and production may share one Google key, and neither can see the other's ledger, so each gets its own share and the two together stay inside the Google Cloud quota. Tests use the production numbers.
 3. Google Cloud quotas: Text Search set to 10 per minute and 30 per day.
 4. A $1 budget with alerts, scoped to `opmap-maps` only. The optional kill switch or a spend cap is still open. Billing data can lag up to 48 hours, so this is the last line, not the main one.
 5. API key restricted to Places API (New) and Geocoding, server-side only.

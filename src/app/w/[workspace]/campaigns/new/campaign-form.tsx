@@ -21,7 +21,7 @@ import type {
 } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
 import { TARGET_KINDS } from "@/lib/leads";
-import { parseSearchTerms } from "@/lib/segments";
+import { parseSearchTerms, ratingOptions } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
 const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", city: "City", neighbourhood: "Area" };
@@ -254,7 +254,7 @@ export function CampaignForm({
               className={inputClass}
             >
               <option value="">Any</option>
-              {[3, 3.5, 4, 4.5].map((r) => (
+              {ratingOptions(signals.minRating).map((r) => (
                 <option key={r} value={r}>
                   {r.toFixed(1)}
                 </option>

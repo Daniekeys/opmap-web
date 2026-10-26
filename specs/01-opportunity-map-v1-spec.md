@@ -320,7 +320,7 @@ These are built into v1, not added later, because they're what make the tool tru
 
 **Cost**
 
-- Google Places daily cap in config, plus the quota cap in Google Cloud
+- Google Places daily and monthly caps in config, per environment (production 20 a day and 650 a month, development 10 a day and 300 a month), plus the quota cap in Google Cloud (30 a day) that the two share
 - Every paid call writes its real cost to `usage_ledger`
 - Research on a business is reused across workspaces and only refreshed when it's stale
 - Claude Haiku filters cheaply before the expensive LLM calls run

@@ -72,11 +72,14 @@ export function SegmentPicker({
   if (load.state === "loading") return <PageLoading />;
   if (load.state === "error") {
     return (
-      <div role="alert" className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-        <p className="text-destructive">{load.message}</p>
-        <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("GET")}>
-          <RotateCw className="size-4" aria-hidden /> Try again
-        </Button>
+      <div className="flex flex-col gap-3">
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <p className="text-destructive">{load.message}</p>
+          <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("GET")}>
+            <RotateCw className="size-4" aria-hidden /> Try again
+          </Button>
+        </div>
+        {own}
       </div>
     );
   }

@@ -58,7 +58,7 @@ AI is the Claude API through the official Anthropic TypeScript SDK, inside the a
 - Keep Haiku prompts under 100K tokens; above that the price goes up.
 
 ## Money guardrails (non-negotiable)
-- Every Google Places call goes through checkLimit. Hard stop at 950 Text Search calls a month and 30 a day. When the cap is hit, the campaign pauses with a clear message. Google is never called past the cap.
+- Every Google Places call goes through checkLimit. Hard stop on Text Search calls, set per environment in config: production 20 a day and 650 a month, development 10 a day and 300 a month. Together they stay inside Google Cloud's 30 a day, because local and production may share one Google key and can't see each other's ledger. When the cap is hit, the campaign pauses with a clear message. Google is never called past the cap.
 - Places field mask is fixed to the fields listed in the spec's Lead sourcing section. Adding a field can move every call to a pricier tier, so field mask changes need a note in the PR.
 - Every paid call (Claude tokens, Places, web search) writes its real cost to `usage_ledger`.
 - API keys stay server-side, never in the browser or the repo. Use environment variables.
