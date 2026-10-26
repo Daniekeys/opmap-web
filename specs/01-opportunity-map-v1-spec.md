@@ -344,3 +344,4 @@ These are built into v1, not added later, because they're what make the tool tru
 - [ ] What is Daniekeys' first campaign: the segment and two or three cities? (deferred until Phase 2)
 - [x] Who are the first users in each workspace, and who owns each one? Daniel owns both workspaces. One shared login per workspace (Daniekeys Studios, Afriment) as members, seeded from env. Real team members get their own accounts through invites later.
 - [ ] Which approved facts can Daniekeys use from day one? (needed by Phase 1)
+- [ ] Should thin listings (4 or fewer reviews, no site, no socials found) get a code-built "basic presence" card instead of "Not enough information", when the seller has an approved web or social offer? Decide after Phase 4 reply data.
