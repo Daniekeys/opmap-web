@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { formatPhone, hasAnyContact, hasPhoneOrWhatsapp, labelText, pausedUntil, statusText, whatsappHref } from "./leads";
+import { formatPhone, hasAnyContact, hasPhoneOrWhatsapp, labelText, pausedUntil, resumeDue, statusText, whatsappHref } from "./leads";
 
 const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   leadId: "l",
@@ -59,5 +59,13 @@ describe("campaign status", () => {
     expect(pausedUntil("2026-10-26T07:00:00Z", now)).toBe("tomorrow, 08:00");
     expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z" }, now)).toBe("Paused until tomorrow, 08:00");
     expect(statusText({ status: "done", resumeAt: null }, now)).toBe("Complete");
+  });
+
+  it("offers Resume search only once the resume time has passed", () => {
+    expect(resumeDue("2026-10-25T14:59:59Z", now)).toBe(true);
+    expect(resumeDue("2026-10-25T15:00:00Z", now)).toBe(true);
+    expect(resumeDue("2026-10-26T07:00:00Z", now)).toBe(false);
+    expect(resumeDue(null, now)).toBe(false);
+    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, now)).toBe("Paused, limit lifted");
   });
 });

@@ -8,7 +8,7 @@ Build:
 - Tile search: boundary to a grid of tiles about 4 km across, keeping only tiles that overlap the boundary circle or polygon (square corners dropped), Places Text Search restricted to each tile's rectangle, page to 60, split any tile that returns 60 into 4 (stop at about 250 m). AI neighbourhood queries run on top as extras.
 - `search_coverage` written per tile and query; re-runs and expansions skip fresh tiles.
 - Field mask limited to the Lead sourcing list (Enterprise tier). Drop non-operational businesses.
-- Every Places call goes through checkLimit: hard stop at the per-environment cap (production 20 a day and 650 a month, development 10 a day and 300 a month), with "paused until tomorrow" shown on the campaign.
+- Every Places call goes through checkLimit: hard stop at the per-environment cap (production 20 a day and 650 a month, development 10 a day and 300 a month), with "paused until tomorrow" shown on the campaign. Production resumes it by itself when the cap lifts; development only on an owner's Resume search, once the cap has lifted (judged by Postgres's clock).
 - Dedupe on place id, normalised domain, E.164 phone, and fuzzy name within 200 m.
 - Haiku fit filter on name and category, 20 businesses per call, through the Batch API when not urgent.
 - For fit leads with a website: crawl it for emails, phones, `wa.me` links, socials, owner names and schema.org data. Everything lands in `contact_points` with source, confidence and label.
