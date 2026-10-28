@@ -6,7 +6,7 @@ import { PageLoading } from "@/components/page-loading";
 import { getCampaign, getCampaignEstimate, getCampaignLeads, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
 import { pausedUntil, resumeDue, TARGET_KINDS } from "@/lib/leads";
-import { AutoRefresh } from "./auto-refresh";
+import { AutoRefresh, RefreshAt } from "./auto-refresh";
 import { ConfirmPanel } from "./confirm-panel";
 import { LeadsList } from "./leads-list";
 import { ResumeButton } from "./resume-button";
@@ -142,6 +142,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
           {leadCount === 1 ? "is" : "are"} below.
         </p>
         {due && isOwner && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
+        {!due && campaign.resumeAt && <RefreshAt at={campaign.resumeAt} />}
       </div>
     );
   }

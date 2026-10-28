@@ -34,7 +34,7 @@ Notes:
 | Haiku fit check | 9 calls, about 140 pass | $0.006 |
 | Website crawl for contacts | 42 sites | $0.08 |
 | Socials lookup | 98 web searches | $1.18 |
-| Deep-dives (Sonnet + Haiku checks) | 50 leads at about $0.04 | $2.00 |
+| Deep-dives (Sonnet cards and claim checks) | 50 leads at about $0.04 | $2.00 |
 | Drafts, 4 per lead | 50 leads at about $0.025 | $1.25 |
 | Total | | About $4.52 of Claude credit |
 

@@ -16,7 +16,12 @@ type Props = { workspaceId: string; slug: string; campaignId: string; initial: L
 // What happened when we asked for a run, when it isn't a run to follow.
 type Ask = { state: "idle" } | { state: "asking" } | { state: "limit"; reason: string } | { state: "error" };
 
-const linkClass = "text-primary underline-offset-4 hover:underline wrap-anywhere";
+// How many times to ask again (1.5 s apart) for a run someone else just claimed.
+const MAX_WAITS = 20;
+// The API's text for a removed entry that is a whole card, not one claim.
+const WHOLE_CARD = "(whole card)";
+
+const linkClass ="text-primary underline-offset-4 hover:underline wrap-anywhere";
 
 // The lead page's live part: opens the deep-dive on first view (once; the API
 // makes sure two people opening it start one run), follows its progress, and
@@ -45,15 +50,37 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
       if (!res.ok) throw new Error(String(res.status));
       const result: OpenLeadResponse = await res.json();
       if (result.state === "limit") return setAsk({ state: "limit", reason: result.reason });
-      setAsk({ state: "idle" });
-      if ((result.state === "started" || result.state === "running") && result.runId) setRunId(result.runId);
-      // Someone else's run, claimed a moment ago: its id is set right after.
-      else if (result.state === "running") setTimeout(() => void open(false), 1_500);
-      else await reload();
+      if ((result.state === "started" || result.state === "running") && result.runId) {
+        waits.current = 0;
+        setAsk({ state: "idle" });
+        setRunId(result.runId);
+      } else if (result.state === "running" && waits.current < MAX_WAITS) {
+        // Someone else's run, claimed a moment ago: its id is set right after.
+        // Stay "asking" while we wait, so the progress section doesn't flicker.
+        waits.current += 1;
+        if (alive.current) retry.current = setTimeout(() => void open(false), 1_500);
+      } else {
+        // Done, or still no id after the waits: show what the API has.
+        waits.current = 0;
+        setAsk({ state: "idle" });
+        await reload();
+      }
     } catch {
       setAsk({ state: "error" });
     }
   }
+
+  // The wait for a claimed run's id: stopped when the page closes.
+  const retry = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waits = useRef(0);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      if (retry.current) clearTimeout(retry.current);
+    };
+  }, []);
 
   // First view only: no deep-dive has ever been asked for this lead.
   const opened = useRef(false);
@@ -271,7 +298,17 @@ function OpportunityCardView({ card }: { card: OpportunityCard }) {
           ))}
         </div>
       )}
-      {card.angle && <ClaimBlock label="Angle" claim={card.angle} quoteStyle />}
+      {card.angle ? (
+        <ClaimBlock label="Angle" claim={card.angle} quoteStyle />
+      ) : (
+        // A card stands on its offer and gap; its angle may have failed the check.
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Angle</p>
+          <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+            No opening line passed the check. Open with the gap above, in your own words.
+          </p>
+        </div>
+      )}
       {card.confidenceReason && <p className="text-xs text-muted-foreground">{card.confidenceReason}</p>}
     </article>
   );
@@ -338,12 +375,16 @@ function CiteView({ cite }: { cite: Cite }) {
 }
 
 function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["result"]>["removed"] }) {
-  const claims = removed.filter((r) => r.text !== "(whole card)");
+  // The summary counts every entry the list shows: claims, and whole cards dropped.
+  const cards = removed.filter((r) => r.text === WHOLE_CARD).length;
+  const claims = removed.length - cards;
+  const parts = [
+    claims > 0 && `${claims} ${claims === 1 ? "claim" : "claims"}`,
+    cards > 0 && `${cards} ${cards === 1 ? "card" : "cards"}`,
+  ].filter(Boolean);
   return (
     <details className="rounded-xl border bg-card p-4 text-sm">
-      <summary className="cursor-pointer font-medium">
-        {claims.length} {claims.length === 1 ? "claim" : "claims"} removed: their sources didn&apos;t back them
-      </summary>
+      <summary className="cursor-pointer font-medium">{parts.join(" and ")} removed: their sources didn&apos;t back them</summary>
       <ul className="mt-3 flex flex-col gap-2">
         {removed.map((r, i) => (
           <li key={i} className="flex flex-col gap-0.5">

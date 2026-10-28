@@ -52,7 +52,7 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 TypeScript everywhere. Next.js App Router, Tailwind, shadcn/ui. Express 5, Drizzle with plain SQL migrations, Postgres with pgvector, pg-boss, Better Auth, Zod, Playwright + Cheerio, Vitest. API and Postgres on Railway, web on Vercel Pro.
 
 AI is the Claude API through the official Anthropic TypeScript SDK, inside the adapters only:
-- `DecisionProvider`: Claude Haiku 5.5 for fit checks, routing, claim and draft checks. Use the Batch API when the result isn't needed right away.
+- `DecisionProvider`: Claude Haiku 5.5 for fit checks and routing, Claude Sonnet 5.5 for claim and draft checks, because Haiku's verdicts contradicted its own reasons on richer sites. The model is set per task in config. Use the Batch API when the result isn't needed right away.
 - `LlmProvider`: Claude Sonnet 5.5 for opportunity cards and drafts, Claude Opus 5.5 for Brand DNA.
 - Put Brand DNA and system prompts in a cached prefix (prompt caching).
 - Keep Haiku prompts under 100K tokens; above that the price goes up.
