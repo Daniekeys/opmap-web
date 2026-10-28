@@ -5,10 +5,11 @@ import { CampaignStatusBadge } from "@/components/campaign-status";
 import { PageLoading } from "@/components/page-loading";
 import { getCampaign, getCampaignEstimate, getCampaignLeads, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
-import { pausedUntil, TARGET_KINDS } from "@/lib/leads";
-import { AutoRefresh } from "./auto-refresh";
+import { pausedUntil, resumeDue, TARGET_KINDS } from "@/lib/leads";
+import { AutoRefresh, RefreshAt } from "./auto-refresh";
 import { ConfirmPanel } from "./confirm-panel";
 import { LeadsList } from "./leads-list";
+import { ResumeButton } from "./resume-button";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
@@ -51,7 +52,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         <NameWordsPanel campaign={campaign} />
       </div>
 
-      <StatusNote campaign={campaign} leadCount={leads.length} />
+      <StatusNote campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={workspace.role === "owner"} />
       {campaign.status === "running" && <AutoRefresh seconds={15} />}
 
       {estimate && (
@@ -126,17 +127,22 @@ function WordList({ label, hint, words }: { label: string; hint: string; words: 
 }
 
 // What the campaign's state means for the user, in a sentence.
-function StatusNote({ campaign, leadCount }: { campaign: Campaign; leadCount: number }) {
+function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: Campaign; leadCount: number; workspaceId: string; isOwner: boolean }) {
   if (campaign.status === "paused") {
+    // The limit has lifted: an owner can restart it (the only way in
+    // development, where nothing restarts it by itself).
+    const due = resumeDue(campaign.resumeAt);
     return (
       <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         <p className="font-medium">
-          Paused until {campaign.resumeAt ? pausedUntil(campaign.resumeAt) : "the limit resets"} (Lagos time)
+          {due ? "Paused: the limit has lifted" : `Paused until ${campaign.resumeAt ? pausedUntil(campaign.resumeAt) : "the limit resets"} (Lagos time)`}
         </p>
         <p className="mt-1">
-          {campaign.pauseReason ?? "Today's Google searches are used up."} It carries on by itself; the {leadCount}{" "}
-          {leadCount === 1 ? "lead" : "leads"} found so far are below.
+          {campaign.pauseReason ?? "Today's Google searches are used up."} The {leadCount} {leadCount === 1 ? "lead" : "leads"} found so far{" "}
+          {leadCount === 1 ? "is" : "are"} below.
         </p>
+        {due && isOwner && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
+        {!due && campaign.resumeAt && <RefreshAt at={campaign.resumeAt} />}
       </div>
     );
   }

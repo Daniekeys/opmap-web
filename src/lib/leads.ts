@@ -91,6 +91,10 @@ export const TARGET_KINDS: { kind: TargetKind; label: string; help: string; supp
 const dayOf = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(d);
 const timeOf = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
 
+// Whether a paused campaign's limit has lifted, so an owner can resume it
+// (the API checks again with the database's clock).
+export const resumeDue = (resumeAt: string | null, now = new Date()) => resumeAt !== null && new Date(resumeAt).getTime() <= now.getTime();
+
 // "Paused until tomorrow, 08:00" (Lagos time), or the date when it's later.
 export function pausedUntil(resumeAt: string, now = new Date()) {
   const at = new Date(resumeAt);
@@ -107,6 +111,7 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt">, now 
     case "running":
       return "Searching";
     case "paused":
+      if (resumeDue(campaign.resumeAt, now)) return "Paused, limit lifted";
       return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, now)}` : "Paused";
     case "done":
       return "Complete";

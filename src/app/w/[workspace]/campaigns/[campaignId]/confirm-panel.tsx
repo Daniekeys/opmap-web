@@ -66,7 +66,7 @@ export function ConfirmPanel({
       </p>
       <p className="text-sm text-muted-foreground">
         {estimate.callsLeft.today} searches left today and {estimate.callsLeft.month} this month, shared by every workspace. When today&apos;s run
-        out, the campaign pauses until tomorrow and carries on by itself.
+        out, the campaign pauses until tomorrow, then carries on by itself (in development, when an owner taps Resume search).
       </p>
       {estimate.warning && (
         <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">

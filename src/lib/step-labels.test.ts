@@ -9,6 +9,11 @@ describe("stepLabel", () => {
     expect(stepLabel("brand.save")).toBe("Saving");
   });
 
+  it("names the deep-dive steps in plain words", () => {
+    expect(stepLabel("deepdive.crawl")).toBe("Reading their website");
+    expect(stepLabel("deepdive.check")).toBe("Checking every claim against its source");
+  });
+
   it("shows the raw name of a step it has no label for", () => {
     expect(stepLabel("leads.search")).toBe("leads.search");
   });

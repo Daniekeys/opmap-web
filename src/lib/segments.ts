@@ -14,7 +14,13 @@ export function signalsInWords(s: BuyerSignals) {
   return words;
 }
 
-// "car wash, auto spa" -> ["car wash", "auto spa"]: 1 to 3 Google Maps searches.
+// The "Rated at least" choices, plus a suggested rating that isn't one of
+// them (say 4.2), so the select shows it instead of falling back to "Any".
+const RATINGS = [3, 3.5, 4, 4.5];
+export const ratingOptions = (current: number | null) =>
+  current === null || RATINGS.includes(current) ? RATINGS : [...RATINGS, current].sort((a, b) => a - b);
+
+// "car wash, auto spa" ->["car wash", "auto spa"]: 1 to 3 Google Maps searches.
 export function parseSearchTerms(text: string) {
   return [...new Set(text.split(/[,\n]/).map((t) => t.trim().toLowerCase().replace(/\s+/g, " ")).filter((t) => t.length >= 2))].slice(0, 3);
 }

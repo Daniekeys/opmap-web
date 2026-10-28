@@ -52,13 +52,13 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 TypeScript everywhere. Next.js App Router, Tailwind, shadcn/ui. Express 5, Drizzle with plain SQL migrations, Postgres with pgvector, pg-boss, Better Auth, Zod, Playwright + Cheerio, Vitest. API and Postgres on Railway, web on Vercel Pro.
 
 AI is the Claude API through the official Anthropic TypeScript SDK, inside the adapters only:
-- `DecisionProvider`: Claude Haiku 5.5 for fit checks, routing, claim and draft checks. Use the Batch API when the result isn't needed right away.
+- `DecisionProvider`: Claude Haiku 5.5 for fit checks and routing, Claude Sonnet 5.5 for claim and draft checks, because Haiku's verdicts contradicted its own reasons on richer sites. The model is set per task in config. Use the Batch API when the result isn't needed right away.
 - `LlmProvider`: Claude Sonnet 5.5 for opportunity cards and drafts, Claude Opus 5.5 for Brand DNA.
 - Put Brand DNA and system prompts in a cached prefix (prompt caching).
 - Keep Haiku prompts under 100K tokens; above that the price goes up.
 
 ## Money guardrails (non-negotiable)
-- Every Google Places call goes through checkLimit. Hard stop at 950 Text Search calls a month and 30 a day. When the cap is hit, the campaign pauses with a clear message. Google is never called past the cap.
+- Every Google Places call goes through checkLimit. Hard stop on Text Search calls, set per environment in config: production 20 a day and 650 a month, development 10 a day and 300 a month. Together they stay inside Google Cloud's 30 a day, because local and production may share one Google key and can't see each other's ledger. When the cap is hit, the campaign pauses with a clear message. Google is never called past the cap.
 - Places field mask is fixed to the fields listed in the spec's Lead sourcing section. Adding a field can move every call to a pricier tier, so field mask changes need a note in the PR.
 - Every paid call (Claude tokens, Places, web search) writes its real cost to `usage_ledger`.
 - API keys stay server-side, never in the browser or the repo. Use environment variables.

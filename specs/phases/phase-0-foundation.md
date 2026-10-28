@@ -11,7 +11,7 @@ Build:
 - Mobile-first layout from the start: design for 380px width, then widen (CLAUDE.md rule 9). The shell, workspace switcher and progress panel must work on a phone.
 - `pipeline_runs` and `step_runs` logging, and a live progress panel that reads `step_runs` (feel of `reference/explee/03-step1-agent-log-research-company.png`, our own styling).
 - Every adapter as an interface with a fake implementation: LlmProvider (Claude Sonnet and Opus), DecisionProvider (Claude Haiku), PlacesProvider, GeoProvider (geocoding), CrawlerProvider, EnrichmentProvider (Claude web search), MailProvider (later).
-- `checkLimit(workspace, action)` and the usage ledger, including the global Google call caps (950 a month, 30 a day) even though Places is still faked.
+- `checkLimit(workspace, action)` and the usage ledger, including the global Google call caps (per environment since 2026-10-26: production 20 a day and 650 a month, development 10 a day and 300 a month) even though Places is still faked.
 - Deploy `opmap-api` and Postgres to Railway, and `opmap-web` to Vercel Pro. Vercel forwards `/api/*` to the API's public URL so cookies and login work without CORS.
 
 Done when: you log in on the live URL, switch between the two workspaces, a test job runs in the worker and shows in `step_runs`, and the workspace leak tests pass.
