@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, HelpCircle, Star } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
@@ -54,19 +54,16 @@ export function Possibles({ workspaceId, campaignId, count }: { workspaceId: str
 
   const open = view.state !== "hidden";
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <section className="flex flex-col gap-3 rounded-card border border-border bg-surface px-5 py-4">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => (open ? setView({ state: "hidden" }) : void load())}
         className="flex min-h-11 items-center gap-3 text-left"
       >
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning-ink" aria-hidden>
-          <HelpCircle className="size-4" />
-        </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-sm font-semibold">Possible businesses ({count})</span>
-          <span className="text-xs text-muted">The fit check wasn&apos;t sure about these. Promote any that fit.</span>
+          <span className="font-semibold">Possible businesses <span className="font-normal text-muted tabular-nums">{count}</span></span>
+          <span className="text-sm text-muted">The fit check wasn&apos;t sure about these. Promote any that fit.</span>
         </span>
         <ChevronDown className={cn("size-4 shrink-0 text-muted transition-transform", open && "rotate-180")} aria-hidden />
       </button>
@@ -97,17 +94,12 @@ export function Possibles({ workspaceId, campaignId, count }: { workspaceId: str
             {view.possibles.map((p) => (
               <li key={p.businessId} className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center">
                 <div className="flex min-w-0 flex-1 gap-3">
-                  <Avatar name={p.name} size="sm" />
+                  <Avatar name={p.name} seed={p.businessId} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium wrap-break-word">{p.name}</p>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                       {[categoryText(p.category), p.city].filter(Boolean).join(" · ")}
-                      {p.rating !== null && (
-                        <span className="inline-flex items-center gap-0.5">
-                          <Star className="size-3 fill-warning-ink text-warning-ink" aria-hidden />
-                          {p.rating.toFixed(1)}
-                        </span>
-                      )}
+                      {p.rating !== null && <span className="tabular-nums">{p.rating.toFixed(1)} ({p.reviewCount ?? 0})</span>}
                     </p>
                     <p className="mt-1 text-xs text-muted">Why it&apos;s unsure: {p.reason}</p>
                   </div>

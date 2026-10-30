@@ -52,6 +52,8 @@
   --container-detail: 880px;
   --container-list: 440px;
   --container-list-min: 360px;
+  /* The campaign workspace: list (440) + gutter (24) + detail content (880). */
+  --container-workspace: 1344px;
   --spacing-sidebar: 240px;
 }
 

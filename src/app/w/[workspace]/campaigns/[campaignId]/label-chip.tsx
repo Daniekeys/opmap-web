@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TONES = {
   good: "bg-positive-soft text-positive-ink",
-  fair: "bg-raised text-foreground",
+  fair: "bg-neutral-soft text-neutral-ink",
   weak: "bg-warning-soft text-warning-ink",
 };
 

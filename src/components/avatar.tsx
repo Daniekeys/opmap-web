@@ -25,19 +25,22 @@ export function initials(name: string) {
   return (words[0]![0]! + words[1]![0]!).toUpperCase();
 }
 
-// A stable hash of the name, so a business keeps its tint everywhere.
-export function toneOf(name: string) {
+// A stable hash (of the business id, where there is one), so a business keeps
+// its tint everywhere.
+export function toneOf(seed: string) {
   let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  for (const ch of seed) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
   return TONES[hash % TONES.length]!;
 }
 
 // A business's monogram: we show no photos, so the tint carries recognition.
-export function Avatar({ name, size = "md", className }: { name: string; size?: keyof typeof SIZES; className?: string }) {
+// `seed` picks the tint: pass the business id so the colour never depends on
+// how the name is spelled.
+export function Avatar({ name, seed, size = "md", className }: { name: string; seed?: string; size?: keyof typeof SIZES; className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("inline-flex shrink-0 items-center justify-center rounded-control font-semibold", toneOf(name), SIZES[size], className)}
+      className={cn("inline-flex shrink-0 items-center justify-center rounded-control font-semibold", toneOf(seed ?? name), SIZES[size], className)}
     >
       {initials(name)}
     </span>

@@ -18,11 +18,11 @@ export const hostOf = (url: string) => {
   }
 };
 
-// One row: a coloured icon tile, the value, and its label chip.
-function Row({ icon, tone, label, children, chip }: { icon: ReactNode; tone: string; label: string; children: ReactNode; chip?: ReactNode }) {
+// One row: a grey icon beside the kind, the value, and its label chip.
+function Row({ icon, label, children, chip }: { icon: ReactNode; label: string; children: ReactNode; chip?: ReactNode }) {
   return (
-    <li className="flex items-start gap-3 py-2.5">
-      <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-lg", tone)} aria-hidden>
+    <li className="flex items-start gap-3 border-b border-rule py-2.5 last:border-b-0">
+      <span className="mt-0.5 inline-flex shrink-0 text-muted [&_svg]:size-4" aria-hidden>
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -37,36 +37,50 @@ function Row({ icon, tone, label, children, chip }: { icon: ReactNode; tone: str
 }
 
 // Every contact point found for a lead, each with how sure we are of it.
-export function LeadContacts({ lead }: { lead: Lead }) {
+// `linked` is false for a business on the opt-out list: values show as text,
+// with no WhatsApp, call or mail links.
+export function LeadContacts({ lead, linked = true }: { lead: Lead; linked?: boolean }) {
   const { phone, whatsapp, email, website, person, socials } = lead.contacts;
   if (!hasAnyContact(lead) && !person) {
     return <p className="rounded-lg bg-raised px-3 py-3 text-sm text-muted">No contact found for this business.</p>;
   }
   return (
-    <ul className="flex flex-col divide-y">
+    <ul className="flex flex-col">
       {whatsapp && (
-        <Row icon={<MessageCircle className="size-4" />} tone="bg-positive-soft text-positive-ink" label="WhatsApp" chip={<LabelChip group="whatsapp" label={whatsapp.label} />}>
-          <a href={whatsappHref(whatsapp.value)} target="_blank" rel="noreferrer noopener" className={linkClass}>
-            {formatPhone(whatsapp.value)}
-          </a>
+        <Row icon={<MessageCircle className="size-4" />} label="WhatsApp" chip={<LabelChip group="whatsapp" label={whatsapp.label} />}>
+          {linked ? (
+            <a href={whatsappHref(whatsapp.value)} target="_blank" rel="noreferrer noopener" className={linkClass}>
+              {formatPhone(whatsapp.value)}
+            </a>
+          ) : (
+            <span>{formatPhone(whatsapp.value)}</span>
+          )}
         </Row>
       )}
       {phone && (
-        <Row icon={<Phone className="size-4" />} tone="bg-accent-soft text-accent-ink" label="Phone" chip={<LabelChip group="phone" label={phone.label} />}>
-          <a href={telHref(phone.value)} className={cn(linkClass, "whitespace-nowrap")}>
-            {formatPhone(phone.value)}
-          </a>
+        <Row icon={<Phone className="size-4" />} label="Phone" chip={<LabelChip group="phone" label={phone.label} />}>
+          {linked ? (
+            <a href={telHref(phone.value)} className={cn(linkClass, "whitespace-nowrap")}>
+              {formatPhone(phone.value)}
+            </a>
+          ) : (
+            <span className="whitespace-nowrap">{formatPhone(phone.value)}</span>
+          )}
         </Row>
       )}
       {email && (
-        <Row icon={<Mail className="size-4" />} tone="bg-neutral-soft text-neutral-ink" label="Email" chip={<LabelChip group="email" label={email.label} />}>
-          <a href={`mailto:${email.value}`} className={linkClass}>
-            {email.value}
-          </a>
+        <Row icon={<Mail className="size-4" />} label="Email" chip={<LabelChip group="email" label={email.label} />}>
+          {linked ? (
+            <a href={`mailto:${email.value}`} className={linkClass}>
+              {email.value}
+            </a>
+          ) : (
+            <span className="wrap-anywhere">{email.value}</span>
+          )}
         </Row>
       )}
       {website && (
-        <Row icon={<Globe className="size-4" />} tone="bg-accent-soft text-accent-ink" label="Website" chip={<LabelChip group="website" label={website.label} />}>
+        <Row icon={<Globe className="size-4" />} label="Website" chip={<LabelChip group="website" label={website.label} />}>
           {website.label === "dead" ? (
             <span className="text-muted line-through wrap-anywhere">{hostOf(website.value)}</span>
           ) : (
@@ -77,12 +91,12 @@ export function LeadContacts({ lead }: { lead: Lead }) {
         </Row>
       )}
       {person && (
-        <Row icon={<UserRound className="size-4" />} tone="bg-warning-soft text-warning-ink" label="Contact person" chip={<LabelChip group="person" label={person.label} />}>
+        <Row icon={<UserRound className="size-4" />} label="Contact person" chip={<LabelChip group="person" label={person.label} />}>
           <span>{person.value}</span>
         </Row>
       )}
       {socials.map((s) => (
-        <Row key={s.kind} icon={<AtSign className="size-4" />} tone="bg-accent-soft text-accent-ink" label={socialName(s.kind)} chip={<LabelChip group="social" label={s.label} />}>
+        <Row key={s.kind} icon={<AtSign className="size-4" />} label={socialName(s.kind)} chip={<LabelChip group="social" label={s.label} />}>
           <a href={s.value} target="_blank" rel="noreferrer noopener" className={linkClass}>
             {hostOf(s.value)}
           </a>

@@ -1,37 +1,23 @@
 "use client";
 
-import {
-  AlertTriangle,
-  ChevronDown,
-  Compass,
-  ExternalLink,
-  FileSearch,
-  Lightbulb,
-  MessageCircle,
-  MessagesSquare,
-  Phone,
-  Quote,
-  RotateCw,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  TriangleAlert,
-} from "lucide-react";
+import { AlertTriangle, ChevronDown, ExternalLink, MessageCircle, Phone, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { TileMark } from "@/components/logo";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/api-types/leads";
 import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
 import type { Cite, Claim, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import { readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { categoryText, formatPhone, telHref, whatsappHref } from "@/lib/leads";
+import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
-import { LeadContacts } from "../../lead-contacts";
-import { CardDrafts, OutcomePanel, StageChip } from "./outreach-panel";
+import { hostOf, LeadContacts } from "../../lead-contacts";
+import { CardDrafts, OutcomePanel } from "./outreach-panel";
 
 type Props = {
   workspaceId: string;
@@ -52,11 +38,13 @@ const MAX_WAITS = 20;
 // The API's text for a removed entry that is a whole card, not one claim.
 const WHOLE_CARD = "(whole card)";
 
-const linkClass = "text-accent-ink underline-offset-4 hover:underline wrap-anywhere";
+const linkClass = "font-medium text-accent-ink underline-offset-4 hover:text-accent hover:underline wrap-anywhere";
+const outlineLink = "inline-flex h-11 items-center justify-center gap-2 rounded-control border border-control bg-surface px-3.5 text-sm font-medium whitespace-nowrap hover:bg-raised sm:h-10";
 
-// The lead page's live part: opens the deep-dive on first view (once; the API
-// makes sure two people opening it start one run), follows its progress, and
-// shows the cards, "Not enough information", or what went wrong.
+// The lead page's live part (Main.dc.html's open business; MobileDetail.dc.html
+// on a phone): opens the deep-dive on first view (once; the API makes sure two
+// people opening it start one run), follows its progress, and shows the
+// opportunity cards, "Not enough information", or what went wrong.
 export function LeadView({ workspaceId, slug, campaignId, initial, initialOutreach, listLead }: Props) {
   const [data, setData] = useState(initial);
   const [outreach, setOutreach] = useState(initialOutreach);
@@ -64,7 +52,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   // A run this page started or joined, before the GET shows it.
   const [runId, setRunId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("opportunity");
-  // The card whose messages the Messages tab shows.
+  // The card shown in full on the Opportunity tab, and written from on Messages.
   const [cardId, setCardId] = useState<string | null>(null);
   const base = `/api/w/${workspaceId}/campaigns/${campaignId}/leads/${data.lead.leadId}`;
 
@@ -136,155 +124,177 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   }, []);
 
   const following = runId ?? (data.run?.status === "running" ? data.run.runId : null);
+  const researching = following !== null || ask.state === "asking" || (data.run?.status === "running" && !data.run.runId);
   const failed = !following && data.run?.status === "failed";
   const cards = data.result?.cards ?? [];
   const chosenCard = cards.find((c) => c.id === cardId) ?? cards[0] ?? null;
   const draftCount = outreach.cards.reduce((n, c) => n + c.drafts.length, 0);
+  const suppressed = outreach.suppressed;
+  const chosenWritten = chosenCard ? (outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.drafts.length ?? 0) > 0 : false;
 
   function writeFor(id: string) {
     setCardId(id);
     setTab("messages");
   }
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; badge?: React.ReactNode }[] = [
-    { key: "opportunity", label: "Opportunity", icon: <Lightbulb className="size-4" aria-hidden />, badge: cards.length > 0 ? cards.length : undefined },
-    { key: "messages", label: "Messages", icon: <MessagesSquare className="size-4" aria-hidden />, badge: draftCount > 0 ? draftCount : undefined },
-    { key: "outcome", label: "Outcome", icon: <Trophy className="size-4" aria-hidden /> },
-    { key: "details", label: "Details", icon: <FileSearch className="size-4" aria-hidden /> },
+  const tabs: { key: Tab; label: string; count?: number }[] = [
+    { key: "opportunity", label: "Opportunity", count: cards.length || undefined },
+    { key: "messages", label: "Messages", count: draftCount || undefined },
+    { key: "outcome", label: "Outcome" },
+    { key: "details", label: "Details" },
   ];
 
+  // The one primary action, in the header on wide screens and in the bottom
+  // bar on a phone. Never shown for a business on the opt-out list.
+  const primary = !suppressed && chosenCard && (
+    <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={() => writeFor(chosenCard.id)}>
+      <MessageCircle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+      {chosenWritten ? "Open messages" : "Write messages"}
+    </Button>
+  );
+
   return (
-    <div className="flex flex-col gap-5">
-      <LeadHeader lead={data.lead} stage={outreach.stage} researched={data.result !== null} />
+    <div className="flex flex-col gap-4 pb-28 sm:pb-0">
+      <section aria-label={data.lead.name} className="flex flex-col sm:rounded-card sm:border sm:border-border sm:bg-surface">
+        <LeadHeader lead={data.lead} stage={outreach.stage} suppressed={suppressed} primary={primary} />
 
-      {ask.state === "limit" && (
-        <Notice tone="warn" title="Spending limit reached">
-          {ask.reason} The deep-dive will run once there is budget again.
-        </Notice>
-      )}
-      {ask.state === "error" && (
-        <Notice tone="error" title="Couldn't start the research">
-          Check your connection and try again.
-          <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)}>
-            <RotateCw className="size-4" aria-hidden /> Try again
-          </Button>
-        </Notice>
-      )}
+        <div role="tablist" aria-label="Lead" className="-mx-4 flex gap-6 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-6">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "-mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 text-body",
+                tab === t.key ? "border-accent font-semibold text-ink" : "border-transparent text-muted hover:text-ink",
+              )}
+            >
+              {t.label}
+              {t.key === "outcome" && outreach.stage !== "new" ? (
+                <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", STAGE_TONES[outreach.stage])}>{STAGE_NAMES[outreach.stage]}</span>
+              ) : (
+                t.count !== undefined && <span className="font-normal text-muted tabular-nums">{t.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
 
-      {(following || ask.state === "asking" || (data.run?.status === "running" && !data.run.runId)) && (
-        <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4" aria-label="Research in progress">
-          <p className="flex items-center gap-2 text-sm font-medium" role="status">
-            <Sparkles className="size-4 animate-pulse text-accent" aria-hidden />
-            Researching this business: reading what it publishes, then writing and checking opportunity cards. About a minute.
-          </p>
-          {following ? (
-            <ProgressPanel workspaceId={workspaceId} runId={following} title="Deep-dive" onFinished={() => void reload().catch(() => setAsk({ state: "error" }))} />
-          ) : (
-            <CardsLoading />
+        <div className="flex flex-col gap-4 pt-4 sm:px-6 sm:pt-5 sm:pb-6">
+          {ask.state === "limit" && (
+            <Notice tone="warn" title="Spending limit reached">
+              {ask.reason} The research will run once there is budget again.
+            </Notice>
           )}
-        </section>
-      )}
-
-      {failed && !data.result && (
-        <Notice tone="error" title="The research didn't finish">
-          {failureText(data.run?.errorCode ?? null, data.run?.error ?? null, slug)}
-          {data.run?.errorCode !== "brand_not_usable" && (
-            <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)} disabled={ask.state === "asking"}>
-              <RotateCw className="size-4" aria-hidden /> Try again
-            </Button>
+          {ask.state === "error" && (
+            <Notice tone="error" title="We couldn't start the research">
+              Check your connection and try again.
+              <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)}>
+                <RotateCw aria-hidden /> Try again
+              </Button>
+            </Notice>
           )}
-        </Notice>
-      )}
 
-      <div role="tablist" aria-label="Lead" className="sticky top-14 z-30 -mx-4 flex gap-1 overflow-x-auto border-b bg-ground px-4 lg:top-0 lg:mx-0 lg:px-0">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "relative flex h-12 shrink-0 items-center gap-2 px-3 text-sm font-medium transition-colors",
-              tab === t.key ? "text-foreground" : "text-muted hover:text-foreground",
-            )}
-          >
-            <span className={cn(tab === t.key && "text-accent-ink")}>{t.icon}</span>
-            {t.label}
-            {t.key === "outcome" && outreach.stage !== "new" ? (
-              <StageChip stage={outreach.stage} small />
-            ) : (
-              t.badge !== undefined && <span className="rounded-md bg-raised px-1.5 text-xs tabular-nums text-muted">{t.badge}</span>
-            )}
-            {tab === t.key && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" aria-hidden />}
-          </button>
-        ))}
-      </div>
-
-      {tab === "opportunity" &&
-        (data.result ? (
-          <Result result={data.result} onRefresh={() => open(true)} refreshing={ask.state === "asking" || following !== null} failedRefresh={failed} onWrite={writeFor} outreach={outreach} />
-        ) : (
-          !following && ask.state !== "asking" && !failed && <Waiting />
-        ))}
-
-      {tab === "messages" &&
-        (chosenCard ? (
-          <section aria-label="Messages" className="flex flex-col gap-4">
-            {cards.length > 1 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium text-muted">Written from</p>
-                <div className="flex flex-wrap gap-2">
-                  {cards.map((c, i) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      aria-pressed={c.id === chosenCard.id}
-                      onClick={() => setCardId(c.id)}
-                      className={cn(
-                        "inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 text-left text-sm",
-                        c.id === chosenCard.id ? "border-accent/40 bg-accent-soft text-accent-ink" : "bg-card hover:bg-raised",
-                      )}
-                    >
-                      <span className="text-xs font-semibold">#{i + 1}</span>
-                      <span className="truncate">{c.offer?.text ?? "Opportunity"}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex items-start gap-3 rounded-2xl border border-accent/30 p-4">
-              <Target className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
-              <div className="flex min-w-0 flex-col gap-0.5 text-sm">
-                <span className="font-semibold text-accent-ink">{chosenCard.offer?.text ?? "Opportunity"}</span>
-                {chosenCard.gap && <span className="text-accent-ink">{chosenCard.gap.text}</span>}
-              </div>
+          {researching && (
+            <div className="flex flex-col gap-3" aria-label="Research in progress">
+              <p className="text-sm text-muted" role="status">
+                Researching this business: reading what it publishes, then writing and checking opportunity cards. About a minute.
+              </p>
+              {following ? (
+                <ProgressPanel workspaceId={workspaceId} runId={following} title="Research" onFinished={() => void reload().catch(() => setAsk({ state: "error" }))} />
+              ) : (
+                <CardsLoading />
+              )}
             </div>
-            <CardDrafts key={chosenCard.id} base={base} workspaceId={workspaceId} slug={slug} opportunityId={chosenCard.id} outreach={outreach} onChange={reloadOutreach} />
-          </section>
-        ) : (
-          <EmptyTab icon={<MessagesSquare className="size-5" />} title="No messages yet">
-            Messages are written from an opportunity card, so every sentence has a source. {data.result ? "This business has none to write from." : "They can be written once the research finishes."}
-          </EmptyTab>
-        ))}
-
-      {tab === "outcome" && <OutcomePanel base={base} outreach={outreach} onChange={reloadOutreach} />}
-
-      {tab === "details" && (
-        <div className="grid gap-5 xl:grid-cols-2">
-          <section aria-labelledby="contacts-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
-            <h2 id="contacts-heading" className="text-sm font-semibold">
-              Contact points
-            </h2>
-            {listLead ? <LeadContacts lead={listLead} /> : <p className="text-sm text-muted">Not found in this campaign&apos;s list.</p>}
-          </section>
-          {data.signals.length > 0 ? (
-            <Signals signals={data.signals} />
-          ) : (
-            <EmptyTab icon={<FileSearch className="size-5" />} title="Nothing found yet">
-              What the research reads about this business shows here.
-            </EmptyTab>
           )}
+
+          {failed && !data.result && (
+            <Notice tone="error" title="The research didn't finish">
+              {failureText(data.run?.errorCode ?? null, data.run?.error ?? null, slug)}
+              {data.run?.errorCode !== "brand_not_usable" && (
+                <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)} disabled={ask.state === "asking"}>
+                  <RotateCw aria-hidden /> Try again
+                </Button>
+              )}
+            </Notice>
+          )}
+
+          {tab === "opportunity" &&
+            (data.result ? (
+              <Result
+                result={data.result}
+                chosen={chosenCard}
+                onChoose={setCardId}
+                onRefresh={() => open(true)}
+                refreshing={researching}
+                failedRefresh={failed}
+                listLead={listLead}
+              />
+            ) : (
+              !researching && !failed && <Waiting />
+            ))}
+
+          {tab === "messages" &&
+            (chosenCard ? (
+              <section aria-label="Messages" className="flex flex-col gap-4">
+                {cards.length > 1 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-muted">Written from</p>
+                    <div className="flex flex-wrap gap-2">
+                      {cards.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          aria-pressed={c.id === chosenCard.id}
+                          onClick={() => setCardId(c.id)}
+                          className={cn(
+                            "inline-flex min-h-10 max-w-full items-center rounded-control border px-3 text-left text-sm",
+                            c.id === chosenCard.id ? "border-primary bg-primary font-medium text-on-primary" : "border-control bg-surface hover:bg-raised",
+                          )}
+                        >
+                          <span className="truncate">{c.offer?.text ?? "Opportunity"}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-sm text-muted">
+                  Offer: <span className="text-ink">{chosenCard.offer?.text ?? "Opportunity"}</span>
+                </p>
+                <CardDrafts key={chosenCard.id} base={base} workspaceId={workspaceId} slug={slug} opportunityId={chosenCard.id} outreach={outreach} onChange={reloadOutreach} />
+              </section>
+            ) : (
+              <EmptyState title="No messages yet">
+                Messages are written from an opportunity card, so every sentence has a source.{" "}
+                {data.result ? "This business has none to write from." : "They can be written once the research finishes."}
+              </EmptyState>
+            ))}
+
+          {tab === "outcome" && <OutcomePanel base={base} outreach={outreach} onChange={reloadOutreach} />}
+
+          {tab === "details" && (
+            <div className="flex flex-col gap-6">
+              <section aria-labelledby="contacts-heading" className="flex flex-col gap-2">
+                <h3 id="contacts-heading" className="font-semibold">
+                  Contact points
+                </h3>
+                {listLead ? <LeadContacts lead={listLead} linked={!suppressed} /> : <p className="text-sm text-muted">Not found in this campaign&apos;s list.</p>}
+              </section>
+              {data.signals.length > 0 ? (
+                <Signals signals={data.signals} />
+              ) : (
+                <EmptyState title="Nothing found yet">What the research reads about this business shows here.</EmptyState>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Phone: the one action in thumb reach. */}
+      {tab === "opportunity" && (primary || suppressed) && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-5 sm:hidden">
+          {suppressed ? <OptedOutNote /> : primary}
         </div>
       )}
     </div>
@@ -305,247 +315,241 @@ function failureText(code: string | null, error: string | null, slug: string) {
   return error ?? "Something went wrong while researching this business.";
 }
 
-function LeadHeader({ lead, stage, researched }: { lead: LeadResearchResponse["lead"]; stage: LeadOutreachResponse["stage"]; researched: boolean }) {
-  const details = [categoryText(lead.category), lead.city].filter(Boolean).join(" · ");
+function OptedOutNote() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-card p-4 sm:p-5">
-      <div className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full to-transparent" aria-hidden />
-      <div className="relative flex flex-col gap-4">
-        <div className="flex items-start gap-4">
-          <Avatar name={lead.name} size="lg" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight wrap-break-word sm:text-2xl">{lead.name}</h1>
-              <StageChip stage={stage} />
-              {researched && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-ink">
-                  <Sparkles className="size-3" aria-hidden /> Researched
-                </span>
-              )}
-            </div>
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-              {details && <span>{details}</span>}
-              {lead.rating !== null && (
-                <span className="inline-flex items-center gap-1 text-foreground">
-                  <Star className="size-3.5 fill-warning-ink text-warning-ink" aria-hidden />
-                  <span className="font-medium">{lead.rating.toFixed(1)}</span>
-                  <span className="text-muted">({lead.reviewCount ?? 0} reviews)</span>
-                </span>
-              )}
-            </p>
+    <p className="flex flex-col gap-0.5 text-sm" role="note">
+      <span className="font-semibold text-negative-ink">On your opt-out list</span>
+      <span className="text-muted">They asked not to be contacted, so no messages are written or shown.</span>
+    </p>
+  );
+}
+
+// "Cake shop in Ilorin, 4.7 stars from 35 reviews".
+function describe(lead: LeadResearchResponse["lead"]) {
+  const kind = categoryText(lead.category);
+  const where = kind && lead.city ? `${kind} in ${lead.city}` : (kind ?? lead.city);
+  const rating = lead.rating !== null ? `${lead.rating.toFixed(1)} stars from ${lead.reviewCount ?? 0} ${lead.reviewCount === 1 ? "review" : "reviews"}` : null;
+  return [where, rating].filter(Boolean).join(", ");
+}
+
+function LeadHeader({
+  lead,
+  stage,
+  suppressed,
+  primary,
+}: {
+  lead: LeadResearchResponse["lead"];
+  stage: LeadOutreachResponse["stage"];
+  suppressed: boolean;
+  primary: React.ReactNode;
+}) {
+  const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
+  return (
+    <div className="flex flex-col gap-4 pb-4 sm:border-b sm:border-rule sm:px-6 sm:py-5">
+      <div className="flex items-center gap-3 sm:gap-3.5">
+        <Avatar name={lead.name} seed={lead.businessId} size="lg" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h2 className="text-[22px] leading-7 font-bold tracking-[-0.01em] wrap-break-word sm:text-xl sm:leading-[26px] sm:font-semibold sm:tracking-normal">{lead.name}</h2>
+            {suppressed ? (
+              <span className="rounded-full bg-negative-soft px-2 text-xs/[22px] font-medium text-negative-ink">On your opt-out list</span>
+            ) : (
+              stage !== "new" && <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>
+            )}
           </div>
+          <span className="text-sm text-muted">{describe(lead)}</span>
         </div>
-        {(lead.phone || lead.whatsapp || lead.website) && (
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            {lead.whatsapp && (
-              <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={cn(tapClass, "border-transparent bg-positive text-on-primary hover:bg-positive")}>
-                <MessageCircle className="size-4" aria-hidden /> WhatsApp
-              </a>
-            )}
-            {lead.phone && (
-              <a href={telHref(lead.phone.value)} className={tapClass}>
-                <Phone className="size-4 text-accent-ink" aria-hidden /> {formatPhone(lead.phone.value)}
-              </a>
-            )}
-            {lead.website && lead.website.label !== "dead" && (
-              <a href={lead.website.value} target="_blank" rel="noreferrer noopener" className={tapClass}>
-                <ExternalLink className="size-4 text-accent-ink" aria-hidden /> Website
-              </a>
-            )}
-          </div>
-        )}
       </div>
+      {suppressed ? (
+        <div className="hidden sm:block">
+          <OptedOutNote />
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <span className="hidden sm:contents">{primary}</span>
+          {lead.whatsapp && (
+            <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+              <MessageCircle className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Chat on WhatsApp
+            </a>
+          )}
+          {lead.phone && (
+            <a href={telHref(lead.phone.value)} className={outlineLink}>
+              <Phone className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> {formatPhone(lead.phone.value)}
+            </a>
+          )}
+          {website && (
+            <a href={website.value} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+              <ExternalLink className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Website
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-const tapClass = "inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-card px-4 text-sm font-medium whitespace-nowrap hover:bg-raised";
-
 function Result({
   result,
+  chosen,
+  onChoose,
   onRefresh,
   refreshing,
   failedRefresh,
-  onWrite,
-  outreach,
+  listLead,
 }: {
   result: NonNullable<LeadResearchResponse["result"]>;
+  chosen: OpportunityCard | null;
+  onChoose: (id: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
   failedRefresh: boolean;
-  onWrite: (cardId: string) => void;
-  outreach: LeadOutreachResponse;
+  listLead: Lead | null;
 }) {
+  const others = result.cards.filter((c) => c.id !== chosen?.id);
   return (
     <section aria-label="Opportunities" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt)}</p>}
-        {result.stale && (
-          <Button type="button" variant="outline" className="h-11" onClick={onRefresh} disabled={refreshing}>
-            <RotateCw className="size-4" aria-hidden /> Refresh research
+      {result.stale && (
+        <div className="flex flex-col gap-2 rounded-card bg-warning-soft px-4 py-3 text-sm text-warning-ink sm:flex-row sm:items-center sm:justify-between">
+          <span>This research is over 90 days old. Refresh it before reaching out.</span>
+          <Button type="button" variant="outline" className="h-11 shrink-0 sm:h-9" onClick={onRefresh} disabled={refreshing}>
+            <RotateCw aria-hidden /> Refresh research
           </Button>
-        )}
-      </div>
-      {result.stale && <p className="text-sm text-muted">This research is over 90 days old. Refresh it before reaching out.</p>}
+        </div>
+      )}
       {failedRefresh && <p className="text-sm text-negative-ink">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
 
-      {result.cards.length === 0 ? (
-        <NotEnough reason={result.notEnough} read={result.read} />
+      {chosen ? (
+        <article className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted">{rankText(chosen, result.cards.length)}</span>
+            <Confidence card={chosen} />
+          </div>
+          <h3 className="text-section font-semibold wrap-break-word">{chosen.offer?.text ?? "Opportunity"}</h3>
+          {chosen.offer && chosen.offer.cites.length > 0 && <ClaimSource claim={chosen.offer} readAt={result.finishedAt} />}
+          {chosen.gap && <ClaimBlock claim={chosen.gap} readAt={result.finishedAt} />}
+          {chosen.why.map((w) => (
+            <ClaimBlock key={w.id} claim={w} readAt={result.finishedAt} />
+          ))}
+          {chosen.angle ? (
+            <ClaimBlock claim={chosen.angle} readAt={result.finishedAt} lead="Angle." muted />
+          ) : (
+            // A card stands on its offer and gap; its angle may have failed the check.
+            <p className="text-muted">Angle. No opening line passed the check. Open with the gap above, in your own words.</p>
+          )}
+          {chosen.confidenceReason && <p className="text-xs text-muted">{chosen.confidenceReason}</p>}
+
+          {listLead && <ContactWell lead={listLead} />}
+
+          {others.length > 0 && (
+            <div className="flex flex-col border-t border-rule pt-1.5">
+              {others.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onChoose(c.id)}
+                  className="flex min-h-11 items-center justify-between gap-3 py-2 text-left hover:text-accent-ink"
+                >
+                  <span className="min-w-0">{c.offer?.text ?? "Opportunity"}</span>
+                  <span className={cn("shrink-0 text-xs", (CONFIDENCE[c.confidence]?.word ?? "") === "High" ? "text-positive" : "text-warning-ink")}>
+                    {CONFIDENCE[c.confidence]?.word ?? c.confidence}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
       ) : (
-        <ol className="flex flex-col gap-4">
-          {result.cards.map((card, i) => {
-            const written = (outreach.cards.find((c) => c.opportunityId === card.id)?.drafts.length ?? 0) > 0;
-            return (
-              <li key={card.id}>
-                <OpportunityCardView card={card} index={i + 1} written={written} onWrite={() => onWrite(card.id)} />
-              </li>
-            );
-          })}
-        </ol>
+        <NotEnough reason={result.notEnough} read={result.read} />
       )}
 
       {result.removed.length > 0 && <Removed removed={result.removed} />}
+      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt)}</p>}
     </section>
   );
 }
 
+function rankText(card: OpportunityCard, total: number) {
+  if (total === 1) return "The one opportunity found";
+  return card.rank === 1 ? `Best of ${total} opportunities` : `Opportunity ${card.rank} of ${total}`;
+}
+
+const CONFIDENCE: Record<string, { word: string; tone: string }> = {
+  high: { word: "High", tone: "bg-positive-soft text-positive-ink" },
+  medium: { word: "Medium", tone: "bg-warning-soft text-warning-ink" },
+  low: { word: "Low", tone: "bg-warning-soft text-warning-ink" },
+};
+
+function Confidence({ card }: { card: OpportunityCard }) {
+  const c = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-neutral-soft text-neutral-ink" };
+  return <span className={cn("shrink-0 rounded-full px-2 text-xs/[22px] font-medium", c.tone)}>{c.word} confidence</span>;
+}
+
+// "Not enough information" as its own designed state: the tile grid with
+// nothing lit, what was read, and what to do instead. Never a blank space.
 function NotEnough({ reason, read }: { reason: string | null; read: NonNullable<LeadResearchResponse["result"]>["read"] }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-dashed bg-card p-5">
-      <p className="flex items-center gap-2 font-semibold">
-        <FileSearch className="size-4 shrink-0 text-muted" aria-hidden /> Not enough information
-      </p>
-      <p className="text-sm">{reason ?? "We couldn't tie any of your offers to something specific at this business."}</p>
+    <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+      <span className="grid w-fit grid-cols-4 gap-1" aria-hidden>
+        {Array.from({ length: 8 }, (_, i) => (
+          <span key={i} className="size-3.5 rounded-tile bg-rule" />
+        ))}
+      </span>
+      <h3 className="text-section font-semibold">Not enough information</h3>
+      <p>{reason ?? "We couldn't tie any of your offers to something specific at this business."}</p>
       {read && (
-        <p className="text-sm text-muted">
-          Read: {read.pages} website {read.pages === 1 ? "page" : "pages"}, {read.socials} social {read.socials === 1 ? "account" : "accounts"}, the Google Maps listing.
-        </p>
+        <div className="rounded-control bg-raised px-3.5 py-3 text-sm">
+          <span className="font-medium">What we read: </span>
+          {read.pages} website {read.pages === 1 ? "page" : "pages"}, {read.socials} social {read.socials === 1 ? "account" : "accounts"} and the Google Maps listing.
+        </div>
       )}
       <p className="text-sm text-muted">We don&apos;t guess. Call them, or look them up yourself, before pitching.</p>
     </div>
   );
 }
 
-const CONFIDENCE: Record<string, { word: string; tone: string; bar: string }> = {
-  high: { word: "High confidence", tone: "bg-positive-soft text-positive-ink", bar: "" },
-  medium: { word: "Medium confidence", tone: "bg-neutral-soft text-neutral-ink", bar: "" },
-  low: { word: "Low confidence", tone: "bg-warning-soft text-warning-ink", bar: "" },
-};
-
-function OpportunityCardView({ card, index, written, onWrite }: { card: OpportunityCard; index: number; written: boolean; onWrite: () => void }) {
-  const confidence = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-raised", bar: "" };
+// A claim's text, with its sourced part marked, and where it came from.
+function ClaimBlock({ claim, readAt, lead, muted }: { claim: Claim; readAt: string | null; lead?: string; muted?: boolean }) {
+  const sourced = claim.cites.some((c) => c.kind !== "fact");
   return (
-    <article className="overflow-hidden rounded-2xl border bg-card">
-      <div className={cn("h-1.5", confidence.bar)} aria-hidden />
-      <div className="flex flex-col gap-5 p-4 sm:p-5">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-muted">Opportunity {index}</span>
-            <span className={cn("rounded-full px-2 py-0.5 font-medium", confidence.tone)} title={card.confidenceReason ?? undefined}>
-              {confidence.word}
-            </span>
-          </div>
-          {card.offer && (
-            <>
-              <h3 className="text-lg font-semibold tracking-tight wrap-break-word">{card.offer.text}</h3>
-              <Evidence claim={card.offer} />
-            </>
-          )}
-        </div>
-
-        {card.gap && (
-          <Section icon={<TriangleAlert className="size-4" />} tone="bg-negative-soft text-negative-ink" label="The gap">
-            <p className="text-sm">{card.gap.text}</p>
-            <Evidence claim={card.gap} />
-          </Section>
+    <div className="flex flex-col gap-1.5">
+      <p className={cn(muted && "text-muted")}>
+        {lead && <span className="text-muted">{lead} </span>}
+        {sourced ? (
+          <mark className="rounded-tile bg-accent-soft px-0.5 text-accent-ink underline decoration-accent decoration-2 underline-offset-[3px] box-decoration-clone">{claim.text}</mark>
+        ) : (
+          claim.text
         )}
-
-        {card.why.length > 0 && (
-          <Section icon={<Compass className="size-4" />} tone="bg-warning-soft text-warning-ink" label="Why it matters to them">
-            {card.why.map((w) => (
-              <div key={w.id} className="flex flex-col gap-1">
-                <p className="text-sm">{w.text}</p>
-                <Evidence claim={w} />
-              </div>
-            ))}
-          </Section>
-        )}
-
-        <Section icon={<Quote className="size-4" />} tone="bg-accent-soft text-accent-ink" label="Angle">
-          {card.angle ? (
-            <>
-              <p className="rounded-xl border-l-4 border-accent/30 bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink">{card.angle.text}</p>
-              <Evidence claim={card.angle} />
-            </>
-          ) : (
-            // A card stands on its offer and gap; its angle may have failed the check.
-            <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted">No opening line passed the check. Open with the gap above, in your own words.</p>
-          )}
-        </Section>
-
-        {card.confidenceReason && <p className="text-xs text-muted">{card.confidenceReason}</p>}
-
-        <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted">{written ? "Messages are written for this opportunity." : "Turn this into WhatsApp, email and call messages."}</p>
-          <Button type="button" className="h-11 gap-2 px-5" onClick={onWrite}>
-            <MessagesSquare className="size-4" aria-hidden /> {written ? "Open messages" : "Write messages"}
-          </Button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function Section({ icon, tone, label, children }: { icon: React.ReactNode; tone: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg", tone)} aria-hidden>
-        {icon}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="pt-1.5 text-xs font-semibold tracking-wide text-muted uppercase">{label}</p>
-        {children}
-      </div>
+      </p>
+      <ClaimSource claim={claim} readAt={readAt} />
     </div>
   );
 }
 
-const SOURCE_NAMES: Record<string, string> = { places: "Google Maps listing", website: "Their website", search: "Search result" };
-
-const pageName = (url: string) => {
-  try {
-    const u = new URL(url);
-    // Google Maps, not other Google pages (a Google Sites website is the business's own).
-    if (u.hostname.startsWith("maps.") || (u.hostname.includes("google.") && u.pathname.startsWith("/maps"))) return "Google Maps";
-    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
-  } catch {
-    return url;
-  }
-};
-
-// The evidence under a claim, folded to a "2 sources" chip and readable
-// without leaving the page: each quote in full, with a link to its page.
-function Evidence({ claim }: { claim: Claim }) {
+// Where a claim came from, always visible ("Instagram bio, read 26 Oct"),
+// opening to the quotes themselves.
+function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null }) {
   const [open, setOpen] = useState(false);
   if (claim.cites.length === 0) return null;
-  const n = claim.cites.length;
+  const names = [...new Set(claim.cites.map(citeName))];
+  const quoted = claim.cites.filter((c) => c.kind !== "fact");
+  const label = `${names.join(", ")}${quoted.length > 0 ? `, ${readOn(readAt)}` : ""}`;
   return (
     <div className="flex flex-col gap-1.5">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border bg-background px-3 text-xs font-medium text-muted hover:text-foreground"
+        className="inline-flex min-h-8 items-center gap-1 self-start text-left text-xs text-muted hover:text-ink"
       >
-        <FileSearch className="size-3.5" aria-hidden />
-        {open ? "Hide" : "Show"} {n} {n === 1 ? "source" : "sources"}
-        <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} aria-hidden />
+        {label}
+        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
+        <span className="sr-only">{open ? "Hide the evidence" : "Show the evidence"}</span>
       </button>
       {open && (
         <ul className="flex flex-col gap-1.5">
           {claim.cites.map((c) => (
-            <li key={`${claim.id}-${c.ref}`} className="rounded-xl bg-raised px-3 py-2 text-sm">
-              <CiteView cite={c} />
+            <li key={`${claim.id}-${c.ref}`} className="flex flex-col gap-0.5 rounded-control bg-raised px-3.5 py-3">
+              <CiteView cite={c} readAt={readAt} />
             </li>
           ))}
         </ul>
@@ -554,27 +558,82 @@ function Evidence({ claim }: { claim: Claim }) {
   );
 }
 
-function CiteView({ cite }: { cite: Cite }) {
+const SOCIAL_HOSTS: [RegExp, string][] = [
+  [/instagram\.com$/, "Instagram bio"],
+  [/facebook\.com$/, "Facebook page"],
+  [/tiktok\.com$/, "TikTok profile"],
+  [/(^|\.)x\.com$|twitter\.com$/, "X profile"],
+  [/linkedin\.com$/, "LinkedIn page"],
+];
+
+// The page, listing or bio a piece of evidence came from.
+function citeName(cite: Cite) {
+  if (cite.kind === "fact") return "Your approved fact";
+  if (cite.kind === "signal") return "Our check";
+  if (cite.sourceType === "places") return "Google Maps listing";
+  if (cite.sourceType === "search") return "A search result";
+  try {
+    const host = new URL(cite.url).hostname.replace(/^www\./, "");
+    const social = SOCIAL_HOSTS.find(([re]) => re.test(host));
+    if (social) return social[1];
+  } catch {
+    // Not a URL: fall through to the plain name.
+  }
+  return "Their website";
+}
+
+function CiteView({ cite, readAt }: { cite: Cite; readAt: string | null }) {
   if (cite.kind === "fact") {
     return (
-      <p>
-        <span className="text-muted">Your approved fact: </span>
-        {cite.text}
-      </p>
+      <>
+        <span>{cite.text}</span>
+        <span className="text-xs text-muted">Your approved fact</span>
+      </>
     );
   }
   const text = cite.kind === "source" ? `“${cite.quote}”` : cite.text;
-  const from = cite.kind === "source" ? (SOURCE_NAMES[cite.sourceType] ?? "Source") : "Our check";
   return (
-    <div className="flex flex-col gap-1">
-      <p className={cn(cite.kind === "source" && "italic")}>{text}</p>
-      <p className="text-xs text-muted">
-        {from} ·{" "}
-        <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1")}>
-          {pageName(cite.url)} <ExternalLink className="size-3" aria-hidden />
+    <>
+      <span>{text}</span>
+      <span className="text-xs text-muted">
+        {citeName(cite)}, {readOn(readAt)} ·{" "}
+        <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 font-normal")}>
+          {(cite.kind === "source" && cite.sourceType === "places") || /google\./.test(cite.url) ? "Open the listing" : hostOf(cite.url)} <ExternalLink className="size-3" aria-hidden />
         </a>
-      </p>
-    </div>
+      </span>
+    </>
+  );
+}
+
+const PILL = { good: "bg-positive-soft text-positive-ink", fair: "bg-neutral-soft text-neutral-ink", weak: "bg-warning-soft text-warning-ink" };
+
+// WhatsApp, email and website at a glance, each with how sure we are.
+function ContactWell({ lead }: { lead: Lead }) {
+  const { whatsapp, phone, email, website } = lead.contacts;
+  const rows: { key: string; label: string; value: string; pill: { word: string; tone: string } }[] = [];
+  const pill = (group: Parameters<typeof labelText>[0], label: string) => {
+    const t = labelText(group, label);
+    return { word: t.word, tone: PILL[t.tone] };
+  };
+  if (whatsapp) rows.push({ key: "w", label: "WhatsApp", value: formatPhone(whatsapp.value), pill: pill("whatsapp", whatsapp.label) });
+  else if (phone) rows.push({ key: "p", label: "Phone", value: formatPhone(phone.value), pill: pill("phone", phone.label) });
+  else rows.push({ key: "w", label: "WhatsApp", value: "-", pill: { word: "None found", tone: PILL.fair } });
+  rows.push(email ? { key: "e", label: "Email", value: email.value, pill: pill("email", email.label) } : { key: "e", label: "Email", value: "-", pill: { word: "None found", tone: PILL.fair } });
+  rows.push(
+    website ? { key: "s", label: "Website", value: hostOf(website.value), pill: pill("website", website.label) } : { key: "s", label: "Website", value: "-", pill: { word: "Not listed", tone: PILL.fair } },
+  );
+  return (
+    <dl className="grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 border-t border-rule pt-3.5 text-sm">
+      {rows.map((r) => (
+        <div key={r.key} className="contents">
+          <dt className="text-muted">{r.label}</dt>
+          <dd className={cn("truncate tabular-nums", r.value === "-" && "text-muted")}>{r.value}</dd>
+          <dd>
+            <span className={cn("rounded-full px-2 text-xs/[22px] font-medium whitespace-nowrap", r.pill.tone)}>{r.pill.word}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -584,12 +643,15 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
   const claims = removed.length - cards;
   const parts = [claims > 0 && `${claims} ${claims === 1 ? "claim" : "claims"}`, cards > 0 && `${cards} ${cards === 1 ? "card" : "cards"}`].filter(Boolean);
   return (
-    <details className="rounded-2xl border bg-card p-4 text-sm">
-      <summary className="cursor-pointer font-medium">{parts.join(" and ")} removed: their sources didn&apos;t back them</summary>
-      <ul className="mt-3 flex flex-col gap-2">
+    <details className="group text-sm">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-muted hover:text-ink">
+        <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+        {parts.join(" and ")} removed: their sources didn&apos;t back them
+      </summary>
+      <ul className="flex flex-col gap-2 pb-1 pl-5.5">
         {removed.map((r, i) => (
           <li key={i} className="flex flex-col gap-0.5">
-            <span className="line-through decoration-muted-foreground/60">{r.text}</span>
+            <span className="text-muted line-through">{r.text}</span>
             <span className="text-xs text-muted">
               Card {r.card}, {r.field}: {r.reason}
             </span>
@@ -602,17 +664,17 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
 
 function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
   return (
-    <section aria-labelledby="signals-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
-      <h2 id="signals-heading" className="text-sm font-semibold">
+    <section aria-labelledby="signals-heading" className="flex flex-col gap-2">
+      <h3 id="signals-heading" className="font-semibold">
         What we found
-      </h2>
-      <ul className="flex flex-col divide-y">
+      </h3>
+      <ul className="flex flex-col">
         {signals.map((s, i) => (
-          <li key={i} className="flex flex-col gap-0.5 py-2.5 text-sm">
-            <span className="text-xs font-medium text-accent-ink">{s.label}</span>
+          <li key={i} className="flex flex-col gap-0.5 border-b border-rule py-2.5 text-sm last:border-b-0">
+            <span className="text-xs text-muted">{s.label}</span>
             <span className="wrap-break-word">{s.text}</span>
-            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs text-muted")}>
-              {pageName(s.sourceUrl)} <ExternalLink className="size-3" aria-hidden />
+            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs font-normal")}>
+              {hostOf(s.sourceUrl)} <ExternalLink className="size-3" aria-hidden />
             </a>
           </li>
         ))}
@@ -624,39 +686,31 @@ function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
 function CardsLoading() {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="Loading">
-      <div className="h-32 animate-pulse rounded-xl bg-raised" />
-      <div className="h-32 animate-pulse rounded-xl bg-raised" />
+      <div className="h-6 w-2/3 animate-pulse rounded-control bg-raised" />
+      <div className="h-20 animate-pulse rounded-control bg-raised" />
+      <div className="h-20 animate-pulse rounded-control bg-raised" />
     </div>
   );
 }
 
 function Waiting() {
-  return (
-    <EmptyTab icon={<Sparkles className="size-5" />} title="Not researched yet">
-      The research starts when this page opens. If it hasn&apos;t, reload the page.
-    </EmptyTab>
-  );
+  return <EmptyState title="Not researched yet">The research starts when this page opens. If it hasn&apos;t, reload the page.</EmptyState>;
 }
 
-function EmptyTab({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function EmptyState({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center">
-      <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-raised text-muted" aria-hidden>
-        {icon}
-      </span>
+    <div className="flex flex-col items-start gap-2 rounded-card border border-border bg-surface p-4 sm:border-0 sm:bg-transparent sm:p-0">
+      <TileMark className="size-6 opacity-60" />
       <p className="font-semibold">{title}</p>
-      <p className="max-w-sm text-sm text-muted">{children}</p>
+      <p className="max-w-md text-sm text-muted">{children}</p>
     </div>
   );
 }
 
 function Notice({ tone, title, children }: { tone: "warn" | "error"; title: string; children: React.ReactNode }) {
   return (
-    <div
-      role="alert"
-      className={cn("flex flex-col gap-1 rounded-2xl border p-4 text-sm", tone === "error" ? "border-negative/40 bg-negative-soft" : "border-warning-ink/30 bg-warning-soft text-warning-ink")}
-    >
-      <p className="flex items-center gap-2 font-medium">
+    <div role="alert" className={cn("flex flex-col gap-1 rounded-card px-4 py-3 text-sm", tone === "error" ? "bg-negative-soft text-negative-ink" : "bg-warning-soft text-warning-ink")}>
+      <p className="flex items-center gap-2 font-semibold">
         <AlertTriangle className="size-4 shrink-0" aria-hidden /> {title}
       </p>
       <div className="flex flex-col">{children}</div>

@@ -1,22 +1,21 @@
-import { ChevronLeft, MapPin, MessageSquareReply, Search, SquareKanban, Sparkles, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CampaignStatusBadge } from "@/components/campaign-status";
-import { PageLoading } from "@/components/page-loading";
 import { getCampaign, getCampaignLeads, getPipeline, getWorkspace } from "@/lib/api";
 import type { Stage } from "@/lib/api-types/outcomes";
-import { TARGET_KINDS } from "@/lib/leads";
+import { findingSentence } from "@/lib/campaign-view";
 import { cn } from "@/lib/utils";
 import { CampaignFrame } from "./campaign-frame";
 import { LeadRail } from "./lead-rail";
 
 type Props = LayoutProps<"/w/[workspace]/campaigns/[campaignId]">;
 
-// A campaign's workspace: its header and numbers, the list of its leads, and
-// beside it whatever is open (the campaign itself, a lead, or the pipeline).
+// A campaign's workspace (design/screens/Main.dc.html): its title, the one
+// finding that matters, its figures, the list of its leads, and beside it
+// whatever is open (the campaign itself, a lead, or the pipeline).
 export default function CampaignLayout({ params, children }: Props) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<WorkspaceLoading />}>
       <Workspace params={params}>{children}</Workspace>
     </Suspense>
   );
@@ -25,7 +24,7 @@ export default function CampaignLayout({ params, children }: Props) {
 async function Workspace({ params, children }: { params: Props["params"]; children: React.ReactNode }) {
   const { workspace: slug, campaignId } = await params;
   const workspace = await getWorkspace(slug);
-  const [{ campaign }, { leads }, pipeline] = await Promise.all([
+  const [{ campaign, possibleCount }, { leads }, pipeline] = await Promise.all([
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
     getPipeline(workspace.id, campaignId),
@@ -33,63 +32,44 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
   const stages: Record<string, Stage> = {};
   for (const s of pipeline.stages) for (const l of s.leads) stages[l.leadId] = s.stage;
   const count = (wanted: Stage[]) => pipeline.stages.filter((s) => wanted.includes(s.stage)).reduce((n, s) => n + s.count, 0);
-  const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
   const base = `/w/${slug}/campaigns/${campaign.id}`;
-  const budget = campaign.settings.maxCalls;
+  const messaged = count(["sent", "replied", "meeting", "won", "lost"]);
+  const replied = count(["replied", "meeting", "won"]);
+  const meetings = count(["meeting", "won"]);
 
   const header = (
-    <div className="flex flex-col gap-5">
-      <Link
-        href={`/w/${slug}/campaigns`}
-        className="-mt-2 -ml-2 inline-flex h-9 items-center gap-1 self-start px-2 text-sm text-muted hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" aria-hidden /> All campaigns
-      </Link>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight wrap-break-word sm:text-3xl">{campaign.name}</h1>
-            <CampaignStatusBadge campaign={campaign} />
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            {kind && <span className="rounded-full bg-secondary px-2.5 py-1 font-medium text-secondary-foreground">{kind.label}</span>}
-            {campaign.queries.map((q) => (
-              <span key={q} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted">
-                <Search className="size-3" aria-hidden /> {q}
-              </span>
-            ))}
-            {campaign.locations.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted">
-                <MapPin className="size-3" aria-hidden /> {l.name}
-              </span>
-            ))}
-          </div>
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] wrap-break-word sm:text-title sm:tracking-[-0.02em]">{campaign.name}</h1>
+          <CampaignStatusBadge campaign={campaign} />
         </div>
-        {leads.length > 0 && (
-          <Link
-            href={`${base}/pipeline`}
-            className="inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-xl border bg-card px-4 text-sm font-medium hover:bg-raised"
-          >
-            <SquareKanban className="size-4 text-accent-ink" aria-hidden /> Pipeline
-          </Link>
-        )}
+        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status })}</p>
       </div>
+      {leads.length > 0 && (
+        <Link
+          href={`${base}/pipeline`}
+          className="inline-flex h-11 shrink-0 items-center rounded-control border border-control bg-surface px-3.5 text-sm font-medium hover:bg-raised sm:h-9"
+        >
+          Replies and deals
+        </Link>
+      )}
     </div>
   );
 
   const stats = (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat icon={<Store className="size-4" />} tone="" label="Leads" value={leads.length} />
-        <Stat icon={<Sparkles className="size-4" />} tone="" label="Researched" value={leads.filter((l) => l.researched).length} />
-        <Stat icon={<Users className="size-4" />} tone="" label="Contacted" value={count(["sent", "replied", "meeting", "won", "lost"])} />
-        <Stat icon={<MessageSquareReply className="size-4" />} tone="" label="Replied or better" value={count(["replied", "meeting", "won"])} />
-      </div>
-      <p className="text-xs text-muted">
-        {campaign.callsUsed}
-        {budget !== null ? ` of ${budget}` : ""} Google {campaign.callsUsed === 1 ? "search" : "searches"} used
-      </p>
-    </div>
+    <section aria-label="Campaign figures" className="grid grid-cols-3 rounded-card border border-border bg-surface sm:grid-cols-4">
+      <Figure label="Good fits" value={leads.length} note={`of ${leads.length + possibleCount} found`} />
+      <Figure label="Researched" value={leads.filter((l) => l.researched).length} note="opened so far" className="hidden sm:flex" />
+      <Figure label="Messaged" value={messaged} note={messaged === 1 ? "business" : "businesses"} />
+      <Figure
+        label="Replied"
+        value={replied}
+        of={messaged > 0 ? `of ${messaged}` : undefined}
+        note={meetings > 0 ? `${meetings} ${meetings === 1 ? "meeting" : "meetings"} booked` : "no meetings yet"}
+        noteClass={meetings > 0 ? "text-positive" : undefined}
+      />
+    </section>
   );
 
   return (
@@ -104,15 +84,31 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
   );
 }
 
-function Stat({ icon, tone, label, value }: { icon: React.ReactNode; tone: string; label: string; value: number }) {
+// A figure: small muted label, big tabular number, and a short note.
+function Figure({ label, value, of, note, noteClass, className }: { label: string; value: number; of?: string; note: string; noteClass?: string; className?: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 sm:p-4">
-      <span className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-raised text-ink", tone)} aria-hidden>
-        {icon}
+    <div className={cn("flex min-w-0 flex-col gap-1 border-l border-rule px-3 py-2.5 first:border-l-0 sm:px-5 sm:py-4.5", className)}>
+      <span className="text-xs text-muted">{label}</span>
+      <span className="text-[20px] leading-[26px] font-medium tabular-nums sm:text-figure">
+        {value}
+        {of && <span className="ml-1 text-sm font-normal text-muted sm:text-body">{of}</span>}
       </span>
-      <div className="flex min-w-0 flex-col">
-        <span className="text-xl font-semibold tabular-nums leading-tight">{value}</span>
-        <span className="truncate text-xs text-muted">{label}</span>
+      <span className={cn("hidden truncate text-xs text-muted sm:block", noteClass)}>{note}</span>
+    </div>
+  );
+}
+
+function WorkspaceLoading() {
+  return (
+    <div className="flex w-full max-w-workspace flex-col gap-6" role="status" aria-label="Loading">
+      <div className="flex flex-col gap-2">
+        <div className="h-8 w-64 animate-pulse rounded-control bg-raised" />
+        <div className="h-5 w-96 max-w-full animate-pulse rounded-control bg-raised" />
+      </div>
+      <div className="h-24 animate-pulse rounded-card bg-raised" />
+      <div className="flex gap-6">
+        <div className="h-96 w-full animate-pulse rounded-card bg-raised lg:w-list" />
+        <div className="hidden h-96 flex-1 animate-pulse rounded-card bg-raised lg:block" />
       </div>
     </div>
   );

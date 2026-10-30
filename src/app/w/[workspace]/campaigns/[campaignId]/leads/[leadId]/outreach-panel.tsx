@@ -89,8 +89,8 @@ export function CardDrafts({
 
   if (outreach.suppressed) {
     return (
-      <Box icon={<Ban className="size-4" aria-hidden />} title="Asked not to be contacted">
-        This business is on your suppression list, so no messages are shown.
+      <Box icon={<Ban className="size-4" aria-hidden />} title="On your opt-out list" tone="negative">
+        They asked not to be contacted, so no messages are written or shown, and there is nothing to copy or send.
       </Box>
     );
   }
@@ -145,45 +145,29 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
   }
   const failed = card?.run?.status === "failed";
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-5 py-8 text-center">
-      <div className="flex -space-x-2" aria-hidden>
-        {(["whatsapp", "email", "linkedin", "call"] as Channel[]).map((c) => (
-          <span key={c} className={cn("inline-flex size-10 items-center justify-center rounded-full ring-4 ring-card", CHANNEL_TONES[c].icon)}>
-            {ICONS[c]}
-          </span>
-        ))}
-      </div>
+    <div className="flex flex-col items-start gap-3 rounded-card border border-border bg-surface p-4 sm:p-5">
+      <p className="text-sm text-muted">WhatsApp, email, LinkedIn and a call opener, written from this offer.</p>
       {failed && <p className="text-sm text-negative-ink">{card?.run?.error ?? "Writing the messages failed."}</p>}
       <Button type="button" className={cn(bigTap, "sm:w-auto sm:px-6")} onClick={onWrite} disabled={ask.state === "asking"}>
         {failed ? <RotateCw className="size-4" aria-hidden /> : <PenLine className="size-4" aria-hidden />}
-        {failed ? "Try again" : ask.state === "asking" ? "Starting" : "Write WhatsApp, email, LinkedIn and call messages"}
+        {failed ? "Try again" : ask.state === "asking" ? "Starting" : "Write messages"}
       </Button>
-      {!failed && <p className="max-w-sm text-xs text-muted">Written from this opportunity only, and checked sentence by sentence. Costs a few cents, once.</p>}
+      {!failed && <p className="max-w-md text-xs text-muted">Every sentence is checked against its source. Costs a few cents, once.</p>}
     </div>
   );
 }
 
-const ICONS: Record<Channel, React.ReactNode> = {
-  whatsapp: <MessageCircle className="size-4" aria-hidden />,
-  email: <Mail className="size-4" aria-hidden />,
-  linkedin: <ExternalLink className="size-4" aria-hidden />,
-  call: <Phone className="size-4" aria-hidden />,
-};
-
-// Each channel's colour: its icon chip, its selected tab, and its send button.
-const CHANNEL_TONES: Record<Channel, { icon: string; tab: string; send: string }> = {
-  whatsapp: { icon: "bg-positive-soft text-positive-ink", tab: "bg-positive text-on-primary", send: "bg-positive hover:bg-positive" },
-  email: { icon: "bg-neutral-soft text-neutral-ink", tab: "bg-primary text-on-primary", send: "bg-primary hover:bg-primary" },
-  linkedin: { icon: "bg-neutral-soft text-neutral-ink", tab: "bg-primary text-on-primary", send: "bg-primary hover:bg-primary" },
-  call: { icon: "bg-accent-soft text-accent-ink", tab: "bg-primary text-on-primary", send: "bg-primary hover:bg-primary" },
-};
+// The selected channel is a white segment on the raised track; every send
+// button is the one near-black primary. Channels carry no colour of their own.
+const TAB_ON = "bg-surface font-semibold text-ink";
+const SEND = "bg-primary font-semibold text-on-primary hover:bg-primary/85";
 
 function DraftTabs({ base, drafts, outreach, onChange }: { base: string; drafts: Draft[]; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
   const [open, setOpen] = useState<Channel>(drafts[0]!.channel);
   const draft = drafts.find((d) => d.channel === open) ?? drafts[0]!;
   return (
     <div className="flex flex-col gap-3">
-      <div role="tablist" aria-label="Messages" className="grid grid-cols-4 gap-1 rounded-xl border bg-card p-1">
+      <div role="tablist" aria-label="Channel" className="grid grid-cols-4 gap-0.5 rounded-card bg-raised p-[3px]">
         {drafts.map((d) => (
           <button
             key={d.channel}
@@ -192,11 +176,10 @@ function DraftTabs({ base, drafts, outreach, onChange }: { base: string; drafts:
             aria-selected={d.channel === open}
             onClick={() => setOpen(d.channel)}
             className={cn(
-              "flex h-12 flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-medium transition-colors sm:flex-row sm:gap-1.5 sm:text-sm",
-              d.channel === open ? cn(CHANNEL_TONES[d.channel].tab, "") : "text-muted hover:bg-raised hover:text-foreground",
+              "flex h-11 items-center justify-center rounded-control text-sm transition-colors sm:h-9",
+              d.channel === open ? TAB_ON : "text-muted hover:text-ink",
             )}
           >
-            {ICONS[d.channel]}
             <span className="truncate">{d.channel === "linkedin" ? "LinkedIn" : d.channel === "call" ? "Call" : CHANNEL_NAMES[d.channel]}</span>
             {d.status !== "ready" && <span className="sr-only">(not ready)</span>}
           </button>
@@ -254,9 +237,6 @@ function DraftView({ base, draft, outreach, onChange }: { base: string; draft: D
       <div className="overflow-hidden rounded-2xl border bg-card">
         <div className="flex items-center gap-3 border-b px-4 py-2.5 text-sm">
           <span className="w-12 shrink-0 text-xs text-muted">To</span>
-          <span className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md", CHANNEL_TONES[draft.channel].icon)} aria-hidden>
-            {ICONS[draft.channel]}
-          </span>
           <span className="min-w-0 truncate font-medium">{target ? showValue(target.kind, target.value) : "No checked contact"}</span>
         </div>
         {draft.subject && (
@@ -294,12 +274,12 @@ function DraftView({ base, draft, outreach, onChange }: { base: string; draft: D
   );
 }
 
-const sendBase = "inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap text-on-primary sm:w-auto";
+const sendBase = "inline-flex h-12 w-full items-center justify-center gap-2 rounded-control px-4 text-sm whitespace-nowrap sm:h-10 sm:w-auto";
 
 function SendLinks({ draft, target, onSend }: { draft: Draft; target: Target | null; onSend: (via: SendVia) => void }) {
   if (!target) return null;
   const open = { target: "_blank", rel: "noreferrer noopener" } as const;
-  const sendClass = cn(sendBase, CHANNEL_TONES[draft.channel].send);
+  const sendClass = cn(sendBase, SEND);
   if (draft.channel === "whatsapp") {
     return (
       <a href={whatsappSendHref(target.value, draft.body)} {...open} className={sendClass} onClick={() => onSend("whatsapp")}>
@@ -314,7 +294,7 @@ function SendLinks({ draft, target, onSend }: { draft: Draft; target: Target | n
         <a href={gmailHref(target.value, subject, draft.body)} {...open} className={sendClass} onClick={() => onSend("gmail")}>
           <Mail className="size-4" aria-hidden /> Open in Gmail
         </a>
-        <a href={outlookHref(target.value, subject, draft.body)} {...open} className={cn(sendBase, "border bg-background text-foreground hover:bg-raised")} onClick={() => onSend("outlook")}>
+        <a href={outlookHref(target.value, subject, draft.body)} {...open} className={cn(sendBase, "border border-control bg-surface font-medium text-ink hover:bg-raised")} onClick={() => onSend("outlook")}>
           <Mail className="size-4" aria-hidden /> Open in Outlook
         </a>
       </>
@@ -366,9 +346,9 @@ function Lines({ lines }: { lines: DraftLine[] }) {
               type="button"
               onClick={() => setOpen(open === i ? null : i)}
               aria-expanded={open === i}
-              className="-mx-1 rounded px-1 py-0.5 text-left decoration-amber-500/70 decoration-dotted underline-offset-4 hover:bg-warning-soft [&]:underline"
+              className="-mx-0.5 rounded-tile px-0.5 text-left"
             >
-              <span className="bg-warning-soft box-decoration-clone">{line.text}</span>
+              <span className="rounded-tile bg-accent-soft px-0.5 text-accent-ink underline decoration-accent decoration-2 underline-offset-[3px] box-decoration-clone">{line.text}</span>
               <ChevronDown className={cn("ml-1 inline size-3.5 text-muted transition-transform", open === i && "rotate-180")} aria-hidden />
             </button>
             {open === i && <LineCites cites={line.cites} span={line.span} />}
@@ -434,10 +414,10 @@ function RemovedList({ removed }: { removed: Draft["removed"] }) {
   );
 }
 
-function Box({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function Box({ icon, title, tone, children }: { icon: React.ReactNode; title: string; tone?: "negative"; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-dashed px-3 py-3 text-sm">
-      <p className="flex items-center gap-2 font-medium">
+    <div className={cn("flex flex-col gap-1 rounded-card px-4 py-3 text-sm", tone === "negative" ? "bg-negative-soft" : "border border-border bg-surface")}>
+      <p className={cn("flex items-center gap-2 font-semibold", tone === "negative" && "text-negative-ink")}>
         {icon} {title}
       </p>
       <p className="text-muted">{children}</p>
@@ -447,12 +427,12 @@ function Box({ icon, title, children }: { icon: React.ReactNode; title: string; 
 
 // ---- outcomes ----------------------------------------------------------------
 
-const STAGE_BUTTONS: { type: "sent" | "replied" | "meeting" | "won" | "lost"; label: string; icon: React.ReactNode; on: string }[] = [
-  { type: "sent", label: "Sent", icon: <Send className="size-4" aria-hidden />, on: "border-muted/30 bg-primary text-on-primary hover:bg-primary" },
-  { type: "replied", label: "Replied", icon: <MessageSquareReply className="size-4" aria-hidden />, on: "border-accent/30 bg-primary text-on-primary hover:bg-primary" },
-  { type: "meeting", label: "Meeting", icon: <CalendarCheck className="size-4" aria-hidden />, on: "border-warning-ink/30 bg-warning-ink text-on-primary hover:bg-warning-ink" },
-  { type: "won", label: "Won", icon: <Trophy className="size-4" aria-hidden />, on: "border-positive/30 bg-positive text-on-primary hover:bg-positive" },
-  { type: "lost", label: "Lost", icon: <X className="size-4" aria-hidden />, on: "border-muted/30 bg-primary text-on-primary hover:bg-primary" },
+const STAGE_BUTTONS: { type: "sent" | "replied" | "meeting" | "won" | "lost"; label: string; icon: React.ReactNode }[] = [
+  { type: "sent", label: "Sent", icon: <Send className="size-4" aria-hidden /> },
+  { type: "replied", label: "Replied", icon: <MessageSquareReply className="size-4" aria-hidden /> },
+  { type: "meeting", label: "Meeting", icon: <CalendarCheck className="size-4" aria-hidden /> },
+  { type: "won", label: "Won", icon: <Trophy className="size-4" aria-hidden /> },
+  { type: "lost", label: "Lost", icon: <X className="size-4" aria-hidden /> },
 ];
 
 const FEEDBACK: Record<ContactRow["kind"], { type: "wrong_number" | "bounced" | "not_owner"; label: string }[]> = {
@@ -500,11 +480,11 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
   }
 
   return (
-    <section aria-labelledby="outcome-heading" className="flex flex-col gap-5 rounded-2xl border bg-card p-4 sm:p-5">
+    <section aria-labelledby="outcome-heading" className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="outcome-heading" className="text-lg font-semibold">
-          What happened?
-        </h2>
+        <h3 id="outcome-heading" className="text-section font-semibold">
+          After you send, tap what happened
+        </h3>
         <StageChip stage={outreach.stage} />
       </div>
 
@@ -514,7 +494,7 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
             key={b.type}
             type="button"
             variant="outline"
-            className={cn("h-14 flex-col gap-1 rounded-xl text-sm sm:h-12 sm:flex-row sm:gap-2", outreach.stage === b.type && b.on)}
+            className={cn("h-14 flex-col gap-1 text-sm sm:h-10 sm:flex-row sm:gap-2", outreach.stage === b.type && "border-primary bg-primary text-on-primary hover:bg-primary/85")}
             disabled={busy !== null}
             aria-pressed={outreach.stage === b.type}
             onClick={() => void tap({ type: b.type }, b.type)}
@@ -537,10 +517,10 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
 
       {outreach.contacts.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium tracking-wide text-muted uppercase">Contact details wrong?</p>
-          <ul className="flex flex-col divide-y rounded-lg border">
+          <p className="font-medium">Contact details wrong?</p>
+          <ul className="flex flex-col rounded-card border border-border">
             {outreach.contacts.map((c) => (
-              <li key={`${c.kind}-${c.value}`} className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <li key={`${c.kind}-${c.value}`} className="flex flex-col gap-2 border-b border-rule px-3.5 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm">
                   <span className="text-muted">{KIND_NAMES[c.kind]}: </span>
                   <span className="wrap-anywhere">{showValue(c.kind, c.value)}</span>
@@ -576,7 +556,7 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
         <Button
           type="button"
           variant="destructive"
-          className="h-12 w-full gap-2 sm:w-auto sm:self-start sm:px-5"
+          className="h-12 w-full gap-2 sm:h-10 sm:w-auto sm:self-start sm:px-3"
           disabled={busy !== null}
           onClick={() => void tap({ type: "opted_out" }, "opted_out", "They asked not to be contacted? Their email, website domain and numbers go on your suppression list, and no messages will be shown for them.")}
         >
@@ -586,7 +566,7 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
 
       {outreach.outcomes.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-medium tracking-wide text-muted uppercase">History</p>
+          <p className="font-medium">History</p>
           <ul className="flex flex-col gap-1 text-sm">
             {outreach.outcomes.slice(0, 10).map((o) => (
               <li key={o.id} className="flex flex-wrap justify-between gap-x-3">
@@ -602,5 +582,5 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
 }
 
 export function StageChip({ stage, small }: { stage: Stage; small?: boolean }) {
-  return <span className={cn("rounded-full font-medium", small ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>;
+  return <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", small && "px-1.5", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>;
 }

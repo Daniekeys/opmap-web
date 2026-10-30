@@ -31,9 +31,9 @@ async function LeadPageView({ params }: { params: Props["params"] }) {
     <>
       <Link
         href={`/w/${slug}/campaigns/${campaignId}`}
-        className="-mt-2 -ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm text-muted hover:text-foreground lg:hidden"
+        className="-mt-1 -ml-1.5 inline-flex h-11 items-center gap-0.5 self-start pr-2 text-body font-medium text-ink lg:hidden"
       >
-        <ChevronLeft className="size-4" aria-hidden /> All businesses
+        <ChevronLeft className="size-5.5" strokeWidth={1.75} aria-hidden /> Leads
       </Link>
       <LeadView
         key={leadId}
@@ -51,9 +51,15 @@ async function LeadPageView({ params }: { params: Props["params"] }) {
 function DetailLoading() {
   return (
     <div className="flex flex-col gap-4" role="status" aria-label="Loading">
-      <div className="h-40 animate-pulse rounded-2xl bg-raised" />
-      <div className="h-12 animate-pulse rounded-xl bg-raised" />
-      <div className="h-64 animate-pulse rounded-2xl bg-raised" />
+      <div className="flex items-center gap-3.5">
+        <div className="size-12 animate-pulse rounded-control bg-raised" />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-5 w-1/2 animate-pulse rounded-control bg-raised" />
+          <div className="h-4 w-1/3 animate-pulse rounded-control bg-raised" />
+        </div>
+      </div>
+      <div className="h-11 animate-pulse rounded-control bg-raised" />
+      <div className="h-64 animate-pulse rounded-card bg-raised" />
     </div>
   );
 }
