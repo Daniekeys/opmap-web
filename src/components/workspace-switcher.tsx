@@ -25,12 +25,12 @@ export function WorkspaceSwitcher({ workspaces, current }: { workspaces: Workspa
   }
 
   return (
-    <div className={cn("relative w-full sm:w-60", pending && "opacity-60")}>
+    <div className={cn("relative w-full", pending && "opacity-60")}>
       <select
         aria-label="Workspace"
         value={selected}
         onChange={(event) => switchTo(event.target.value)}
-        className="h-11 w-full appearance-none truncate rounded-lg border border-input bg-background pr-9 pl-3 text-base font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="h-11 w-full appearance-none truncate rounded-lg border border-sidebar-border bg-sidebar-accent/60 pr-9 pl-3 text-sm font-medium text-white outline-none hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 [&>option]:text-foreground"
       >
         {workspaces.map((workspace) => (
           <option key={workspace.id} value={workspace.slug}>
@@ -39,7 +39,7 @@ export function WorkspaceSwitcher({ workspaces, current }: { workspaces: Workspa
         ))}
       </select>
       <ChevronsUpDown
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-sidebar-foreground/60"
         aria-hidden
       />
     </div>

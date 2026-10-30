@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { goToLogin } from "@/lib/go-to-login";
 import { cn } from "@/lib/utils";
 
-export function SignOutButton({ className }: { className?: string }) {
+export function SignOutButton({ className, variant = "outline" }: { className?: string; variant?: "outline" | "ghost" }) {
   const [pending, setPending] = useState(false);
 
   async function signOut() {
@@ -21,7 +21,7 @@ export function SignOutButton({ className }: { className?: string }) {
   }
 
   return (
-    <Button variant="outline" className={cn("h-11 px-3", className)} disabled={pending} onClick={signOut}>
+    <Button variant={variant} className={cn("h-11 px-3", className)} disabled={pending} onClick={signOut}>
       <LogOut />
       {pending ? "Signing out" : "Sign out"}
     </Button>

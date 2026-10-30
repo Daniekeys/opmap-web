@@ -1,6 +1,7 @@
 import { ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Avatar } from "@/components/avatar";
 import { CampaignStatusBadge } from "@/components/campaign-status";
 import { PageLoading } from "@/components/page-loading";
 import { getWorkspace, listCampaigns } from "@/lib/api";
@@ -31,7 +32,7 @@ async function Campaigns({ params }: { params: Props["params"] }) {
         </div>
         <Link
           href={`${base}/new`}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground hover:bg-primary/80"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 shadow-md shadow-primary/25 text-base font-medium text-primary-foreground hover:bg-primary/80"
         >
           <Plus className="size-4" aria-hidden />
           New campaign
@@ -43,12 +44,13 @@ async function Campaigns({ params }: { params: Props["params"] }) {
           No campaigns yet. Start one to find businesses to contact.
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {campaigns.map((c) => (
             <li key={c.id}>
-              <Link href={`${base}/${c.id}`} className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-muted/50">
+              <Link href={`${base}/${c.id}`} className="flex h-full min-h-11 items-center gap-3 rounded-2xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-md">
+                <Avatar name={c.name} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <p className="font-medium wrap-break-word">{c.name}</p>
+                  <p className="font-semibold wrap-break-word">{c.name}</p>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                     <CampaignStatusBadge campaign={c} />
                     <span>

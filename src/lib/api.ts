@@ -53,11 +53,13 @@ export const listCampaigns = (workspaceId: string) => apiGet<CampaignsResponse>(
 
 const campaignPath = (workspaceId: string, campaignId: string) => `/api/w/${workspaceId}/campaigns/${encodeURIComponent(campaignId)}`;
 
-export const getCampaign = (workspaceId: string, campaignId: string) =>
-  apiGet<CampaignDetailResponse>(campaignPath(workspaceId, campaignId));
+// The campaign layout and its pages both read these: cache() shares one
+// request's answer between them (per request only, like getMe).
+export const getCampaign = cache((workspaceId: string, campaignId: string) =>
+  apiGet<CampaignDetailResponse>(campaignPath(workspaceId, campaignId)));
 
-export const getCampaignLeads = (workspaceId: string, campaignId: string) =>
-  apiGet<LeadsResponse>(`${campaignPath(workspaceId, campaignId)}/leads`);
+export const getCampaignLeads = cache((workspaceId: string, campaignId: string) =>
+  apiGet<LeadsResponse>(`${campaignPath(workspaceId, campaignId)}/leads`));
 
 export const getCampaignEstimate = (workspaceId: string, campaignId: string) =>
   apiGet<EstimateResponse>(`${campaignPath(workspaceId, campaignId)}/estimate`);
@@ -92,4 +94,4 @@ export const getLeadOutreach = (workspaceId: string, campaignId: string, leadId:
   apiGet<LeadOutreachResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}/outreach`);
 
 // The campaign's leads by stage.
-export const getPipeline = (workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`);
+export const getPipeline = cache((workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`));

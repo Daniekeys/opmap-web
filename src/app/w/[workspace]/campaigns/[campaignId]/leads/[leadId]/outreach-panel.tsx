@@ -1,6 +1,23 @@
 "use client";
 
-import { Ban, Check, ChevronDown, Copy, ExternalLink, Mail, MessageCircle, PenLine, Phone, RotateCw, ShieldAlert } from "lucide-react";
+import {
+  Ban,
+  CalendarCheck,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Mail,
+  MessageCircle,
+  MessageSquareReply,
+  PenLine,
+  Phone,
+  RotateCw,
+  Send,
+  ShieldAlert,
+  Trophy,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ProgressPanel } from "@/components/progress-panel";
@@ -79,8 +96,7 @@ export function CardDrafts({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t pt-4">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Messages</p>
+    <div className="flex flex-col gap-3">
       {following ? (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground" role="status">
@@ -129,13 +145,20 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
   }
   const failed = card?.run?.status === "failed";
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-5 py-8 text-center">
+      <div className="flex -space-x-2" aria-hidden>
+        {(["whatsapp", "email", "linkedin", "call"] as Channel[]).map((c) => (
+          <span key={c} className={cn("inline-flex size-10 items-center justify-center rounded-full ring-4 ring-card", CHANNEL_TONES[c].icon)}>
+            {ICONS[c]}
+          </span>
+        ))}
+      </div>
       {failed && <p className="text-sm text-destructive">{card?.run?.error ?? "Writing the messages failed."}</p>}
-      <Button type="button" className={cn(bigTap, "sm:w-auto sm:self-start sm:px-5")} onClick={onWrite} disabled={ask.state === "asking"}>
+      <Button type="button" className={cn(bigTap, "sm:w-auto sm:px-6")} onClick={onWrite} disabled={ask.state === "asking"}>
         {failed ? <RotateCw className="size-4" aria-hidden /> : <PenLine className="size-4" aria-hidden />}
-        {failed ? "Try again" : "Write WhatsApp, email, LinkedIn and call messages"}
+        {failed ? "Try again" : ask.state === "asking" ? "Starting" : "Write WhatsApp, email, LinkedIn and call messages"}
       </Button>
-      {!failed && <p className="text-xs text-muted-foreground">Written from this card only, and checked sentence by sentence. Costs a few cents, once.</p>}
+      {!failed && <p className="max-w-sm text-xs text-muted-foreground">Written from this opportunity only, and checked sentence by sentence. Costs a few cents, once.</p>}
     </div>
   );
 }
@@ -147,12 +170,20 @@ const ICONS: Record<Channel, React.ReactNode> = {
   call: <Phone className="size-4" aria-hidden />,
 };
 
+// Each channel's colour: its icon chip, its selected tab, and its send button.
+const CHANNEL_TONES: Record<Channel, { icon: string; tab: string; send: string }> = {
+  whatsapp: { icon: "bg-emerald-100 text-emerald-700", tab: "bg-emerald-600 text-white", send: "bg-emerald-600 hover:bg-emerald-700" },
+  email: { icon: "bg-sky-100 text-sky-700", tab: "bg-sky-600 text-white", send: "bg-sky-600 hover:bg-sky-700" },
+  linkedin: { icon: "bg-blue-100 text-blue-700", tab: "bg-blue-700 text-white", send: "bg-blue-700 hover:bg-blue-800" },
+  call: { icon: "bg-violet-100 text-violet-700", tab: "bg-violet-600 text-white", send: "bg-violet-600 hover:bg-violet-700" },
+};
+
 function DraftTabs({ base, drafts, outreach, onChange }: { base: string; drafts: Draft[]; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
   const [open, setOpen] = useState<Channel>(drafts[0]!.channel);
   const draft = drafts.find((d) => d.channel === open) ?? drafts[0]!;
   return (
     <div className="flex flex-col gap-3">
-      <div role="tablist" aria-label="Messages" className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
+      <div role="tablist" aria-label="Messages" className="grid grid-cols-4 gap-1 rounded-xl border bg-card p-1 shadow-xs">
         {drafts.map((d) => (
           <button
             key={d.channel}
@@ -161,8 +192,8 @@ function DraftTabs({ base, drafts, outreach, onChange }: { base: string; drafts:
             aria-selected={d.channel === open}
             onClick={() => setOpen(d.channel)}
             className={cn(
-              "flex h-11 flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium sm:flex-row sm:gap-1.5 sm:text-sm",
-              d.channel === open ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground",
+              "flex h-12 flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-medium transition-colors sm:flex-row sm:gap-1.5 sm:text-sm",
+              d.channel === open ? cn(CHANNEL_TONES[d.channel].tab, "shadow-sm") : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             {ICONS[d.channel]}
@@ -220,28 +251,36 @@ function DraftView({ base, draft, outreach, onChange }: { base: string; draft: D
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 rounded-lg border bg-background p-3 sm:p-4">
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+        <div className="flex items-center gap-3 border-b px-4 py-2.5 text-sm">
+          <span className="w-12 shrink-0 text-xs text-muted-foreground">To</span>
+          <span className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md", CHANNEL_TONES[draft.channel].icon)} aria-hidden>
+            {ICONS[draft.channel]}
+          </span>
+          <span className="min-w-0 truncate font-medium">{target ? showValue(target.kind, target.value) : "No checked contact"}</span>
+        </div>
         {draft.subject && (
-          <div className="flex items-start justify-between gap-2 border-b pb-2">
-            <p className="text-sm">
-              <span className="text-muted-foreground">Subject: </span>
-              <span className="font-medium">{draft.subject}</span>
-            </p>
-            <Button type="button" variant="ghost" className="h-11 shrink-0 px-3" onClick={() => void copy("subject")} aria-label="Copy subject">
+          <div className="flex items-center gap-3 border-b px-4 py-1 text-sm">
+            <span className="w-12 shrink-0 text-xs text-muted-foreground">Subject</span>
+            <span className="min-w-0 flex-1 font-semibold">{draft.subject}</span>
+            <Button type="button" variant="ghost" className="h-10 shrink-0 px-3" onClick={() => void copy("subject")} aria-label="Copy subject">
               {copied === "subject" ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
             </Button>
           </div>
         )}
-        <Lines lines={draft.lines} />
-      </div>
-      <p className="text-xs text-muted-foreground">Highlighted sentences are claims: tap one to see what shows it.</p>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Button type="button" variant={target ? "outline" : "default"} className={bigTap} onClick={() => void copy("body")}>
-          {copied === "body" ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-          {copied === "body" ? "Copied" : "Copy message"}
-        </Button>
-        <SendLinks draft={draft} target={target} onSend={(via) => void logSend(via)} />
+        <div className="px-4 py-4 sm:px-5">
+          <Lines lines={draft.lines} />
+        </div>
+        <div className="flex flex-col gap-2 border-t bg-muted/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <p className="text-xs text-muted-foreground">Highlighted sentences are claims: tap one to see what shows it.</p>
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:shrink-0">
+            <Button type="button" variant={target ? "outline" : "default"} className={cn(bigTap, "sm:w-auto sm:px-4")} onClick={() => void copy("body")}>
+              {copied === "body" ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+              {copied === "body" ? "Copied" : "Copy"}
+            </Button>
+            <SendLinks draft={draft} target={target} onSend={(via) => void logSend(via)} />
+          </div>
+        </div>
       </div>
       <TargetLine channel={draft.channel} target={target} />
       {draft.channel === "email" && outreach.country.emailNote && (
@@ -255,11 +294,12 @@ function DraftView({ base, draft, outreach, onChange }: { base: string; draft: D
   );
 }
 
-const sendClass = "inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/85";
+const sendBase = "inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap text-white shadow-sm sm:w-auto";
 
 function SendLinks({ draft, target, onSend }: { draft: Draft; target: Target | null; onSend: (via: SendVia) => void }) {
   if (!target) return null;
   const open = { target: "_blank", rel: "noreferrer noopener" } as const;
+  const sendClass = cn(sendBase, CHANNEL_TONES[draft.channel].send);
   if (draft.channel === "whatsapp") {
     return (
       <a href={whatsappSendHref(target.value, draft.body)} {...open} className={sendClass} onClick={() => onSend("whatsapp")}>
@@ -274,7 +314,7 @@ function SendLinks({ draft, target, onSend }: { draft: Draft; target: Target | n
         <a href={gmailHref(target.value, subject, draft.body)} {...open} className={sendClass} onClick={() => onSend("gmail")}>
           <Mail className="size-4" aria-hidden /> Open in Gmail
         </a>
-        <a href={outlookHref(target.value, subject, draft.body)} {...open} className={cn(sendClass, "border bg-background text-foreground hover:bg-muted sm:col-span-2")} onClick={() => onSend("outlook")}>
+        <a href={outlookHref(target.value, subject, draft.body)} {...open} className={cn(sendBase, "border bg-background text-foreground hover:bg-muted")} onClick={() => onSend("outlook")}>
           <Mail className="size-4" aria-hidden /> Open in Outlook
         </a>
       </>
@@ -407,12 +447,12 @@ function Box({ icon, title, children }: { icon: React.ReactNode; title: string; 
 
 // ---- outcomes ----------------------------------------------------------------
 
-const STAGE_BUTTONS: { type: "sent" | "replied" | "meeting" | "won" | "lost"; label: string }[] = [
-  { type: "sent", label: "Sent" },
-  { type: "replied", label: "Replied" },
-  { type: "meeting", label: "Meeting" },
-  { type: "won", label: "Won" },
-  { type: "lost", label: "Lost" },
+const STAGE_BUTTONS: { type: "sent" | "replied" | "meeting" | "won" | "lost"; label: string; icon: React.ReactNode; on: string }[] = [
+  { type: "sent", label: "Sent", icon: <Send className="size-4" aria-hidden />, on: "border-sky-600 bg-sky-600 text-white hover:bg-sky-600" },
+  { type: "replied", label: "Replied", icon: <MessageSquareReply className="size-4" aria-hidden />, on: "border-violet-600 bg-violet-600 text-white hover:bg-violet-600" },
+  { type: "meeting", label: "Meeting", icon: <CalendarCheck className="size-4" aria-hidden />, on: "border-amber-500 bg-amber-500 text-white hover:bg-amber-500" },
+  { type: "won", label: "Won", icon: <Trophy className="size-4" aria-hidden />, on: "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600" },
+  { type: "lost", label: "Lost", icon: <X className="size-4" aria-hidden />, on: "border-zinc-600 bg-zinc-600 text-white hover:bg-zinc-600" },
 ];
 
 const FEEDBACK: Record<ContactRow["kind"], { type: "wrong_number" | "bounced" | "not_owner"; label: string }[]> = {
@@ -460,10 +500,10 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
   }
 
   return (
-    <section aria-labelledby="outcome-heading" className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+    <section aria-labelledby="outcome-heading" className="flex flex-col gap-5 rounded-2xl border bg-card p-4 shadow-xs sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="outcome-heading" className="text-lg font-semibold">
-          Outcome
+          What happened?
         </h2>
         <StageChip stage={outreach.stage} />
       </div>
@@ -473,12 +513,13 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
           <Button
             key={b.type}
             type="button"
-            variant={outreach.stage === b.type ? "default" : "outline"}
-            className="h-12 text-sm"
+            variant="outline"
+            className={cn("h-14 flex-col gap-1 rounded-xl text-sm sm:h-12 sm:flex-row sm:gap-2", outreach.stage === b.type && b.on)}
             disabled={busy !== null}
             aria-pressed={outreach.stage === b.type}
             onClick={() => void tap({ type: b.type }, b.type)}
           >
+            {b.icon}
             {b.label}
           </Button>
         ))}
@@ -560,6 +601,6 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
   );
 }
 
-export function StageChip({ stage }: { stage: Stage }) {
-  return <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>;
+export function StageChip({ stage, small }: { stage: Stage; small?: boolean }) {
+  return <span className={cn("rounded-full font-medium", small ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>;
 }
