@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lekki bakeries, campaign workspace</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6B1D3E}a:hover{color:#B8336A}
+button,input{font-family:inherit}
+.row:hover{background:#FBF7F8}
+</style>
+</helmet>
+<!-- Grid: 1440 = 240 sidebar + 24 + 1152 + 24. Strip row: 560 + 24 + 568 = 1152. Panes: 560 + 24 + 568 = 1152. -->
+<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #FBF7F8; color: #17131A; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+  <div style="flex: 0 0 240px;"><dc-import name="Sidebar" active="campaigns" hint-size="240px,900px"></dc-import></div>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 32px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em;">Lekki bakeries</h1>
+        <p style="margin: 0; color: #5F5A62;">12 strong fits haven't been contacted yet. 7 of them are in Lekki Phase 1 and Ikate.</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-size: 14px; font-weight: 500; cursor: pointer;">Edit segment</button>
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-size: 14px; font-weight: 500; cursor: pointer;">Search more of Lagos</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px;">
+      <section aria-label="Campaign figures" style="flex: 1 1 520px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px;">
+        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 13px; color: #5F5A62;">Good fits</span><span style="font-size: 24px; line-height: 30px; font-weight: 500; font-variant-numeric: tabular-nums;">159</span><span style="font-size: 13px; color: #5F5A62;">of 183 found</span></div>
+        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-left: 1px solid #F2EDEF;"><span style="font-size: 13px; color: #5F5A62;">Researched</span><span style="font-size: 24px; line-height: 30px; font-weight: 500; font-variant-numeric: tabular-nums;">23</span><span style="font-size: 13px; color: #5F5A62;">opened so far</span></div>
+        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-left: 1px solid #F2EDEF;"><span style="font-size: 13px; color: #5F5A62;">Messaged</span><span style="font-size: 24px; line-height: 30px; font-weight: 500; font-variant-numeric: tabular-nums;">9</span><span style="font-size: 13px; color: #5F5A62;">since 21 Oct</span></div>
+        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-left: 1px solid #F2EDEF;"><span style="font-size: 13px; color: #5F5A62;">Replied</span><span style="font-size: 24px; line-height: 30px; font-weight: 500; font-variant-numeric: tabular-nums;">3 <span style="font-size: 15px; color: #5F5A62;">of 9</span></span><span style="font-size: 13px; color: #247B50;">1 meeting booked</span></div>
+      </section>
+
+      <section aria-label="Where the fits are" style="flex: 1 1 520px; padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; display: flex; gap: 20px; align-items: center;">
+        <div role="img" aria-label="Lekki cut into 46 map tiles. The most good fits are in Lekki Phase 1, 14, and Ikate, 12." style="display: grid; grid-template-columns: repeat(12, 14px); gap: 3px;">
+          <sc-for list="{{tiles}}" as="t" hint-placeholder-count="48">
+            <span style="width: 14px; height: 14px; border-radius: 3px; background: {{t}};"></span>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 20px;">
+          <span style="font-weight: 600;">Where the fits are</span>
+          <span style="color: #5F5A62;">Lekki Phase 1: 14, Ikate: 12, Osapa: 11, Chevron: 9. 46 tiles searched.</span>
+          <a href="Progress.dc.html" style="font-weight: 500; text-decoration: none;">Open the map</a>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+      <section aria-label="Businesses" style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column;">
+        <div role="tablist" style="display: flex; gap: 24px; border-bottom: 1px solid #EAE4E6;">
+          <a role="tab" aria-selected="true" href="Main.dc.html" style="padding: 8px 0; margin-bottom: -1px; border-bottom: 2px solid #B8336A; color: #17131A; font-weight: 600; text-decoration: none;">Businesses <span style="color: #5F5A62; font-weight: 400;">159</span></a>
+          <a role="tab" aria-selected="false" href="Main.dc.html" style="padding: 8px 0; color: #5F5A62; text-decoration: none;">Opportunities <span>23</span></a>
+          <a role="tab" aria-selected="false" href="Composer.dc.html" style="padding: 8px 0; color: #5F5A62; text-decoration: none;">Messages <span>9</span></a>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 16px 0 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; width: 260px; height: 34px; padding: 0 12px; box-sizing: border-box; background: #FFFFFF; border: 1px solid #D6CDD1; border-radius: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5A62" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input type="search" aria-label="Search businesses" placeholder="Search name or area" style="border: 0; outline: none; background: transparent; font-size: 14px; width: 100%; color: #17131A;">
+          </label>
+          <span style="font-size: 13px; color: #5F5A62;">Not contacted, best fit first</span>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; overflow: hidden;">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+            <a class="row" href="Main.dc.html" aria-current="{{r.cur}}" style="display: flex; align-items: center; gap: 12px; height: 72px; padding: 0 16px; border-bottom: 1px solid #F2EDEF; color: #17131A; text-decoration: none; background: {{r.bg}};">
+              <span style="flex: none; width: 40px; height: 40px; border-radius: 6px; background: {{r.mbg}}; color: {{r.mfg}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">{{r.ini}}</span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
+                <span style="font-size: 13px; line-height: 18px; color: #5F5A62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.meta}}</span>
+              </span>
+              <span style="flex: none; width: 112px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                <span style="font-size: 13px; line-height: 18px; color: {{r.fitFg}}; font-weight: 500;">{{r.fit}}</span>
+                <span style="display: block; width: 112px; height: 4px; border-radius: 999px; background: #F2EDEF;"><span style="display: block; width: {{r.fitW}}; height: 4px; border-radius: 999px; background: #B8336A;"></span></span>
+              </span>
+            </a>
+          </sc-for>
+          <a href="Main.dc.html" style="display: flex; justify-content: center; align-items: center; height: 44px; font-size: 14px; font-weight: 500; text-decoration: none;">View all 159</a>
+        </div>
+      </section>
+
+      <section aria-label="Crumbs and Co. Bakery" style="flex: 1 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; display: flex; flex-direction: column;">
+        <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #F2EDEF;">
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <span style="flex: none; width: 48px; height: 48px; border-radius: 6px; background: #F9E0EA; color: #9B2456; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 17px;">CC</span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+              <h2 style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600;">Crumbs and Co. Bakery</h2>
+              <span style="font-size: 14px; color: #5F5A62;">Bakery in Lekki Phase 1, 4.6 stars from 210 reviews</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <a href="Composer.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5z"></path></svg>Write WhatsApp message</a>
+            <a href="Composer.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid #D6CDD1; color: #17131A; font-weight: 500; font-size: 14px; text-decoration: none;">Email or call opener</a>
+          </div>
+        </div>
+
+        <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: #5F5A62;">Best of 3 opportunities</span>
+            <span style="flex: none; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #DCFCE7; color: #14532D; font-weight: 500;">High confidence</span>
+          </div>
+          <h3 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600;">A cake order page that sends each order to their WhatsApp</h3>
+          <p style="margin: 0;">They have no website. Their Instagram bio says <mark style="background: #FDF2F7; color: #6B1D3E; text-decoration: underline; text-decoration-color: #B8336A; text-decoration-thickness: 2px; text-underline-offset: 3px; padding: 0 2px; border-radius: 2px;">DM to order, 3 days notice for custom cakes</mark>, and 4 of their last 20 reviews mention waiting for a reply.</p>
+          <p style="margin: 0; color: #5F5A62;">Angle: weekend celebration orders, each one with a date and a deposit, none lost in DMs.</p>
+          <div style="background: #F5EFF1; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;">
+            <span>"DM to order. 3 days notice for custom cakes."</span>
+            <span style="font-size: 13px; color: #5F5A62;">Instagram bio, read 28 Oct</span>
+          </div>
+          <dl style="margin: 0; display: grid; grid-template-columns: 96px 1fr auto; row-gap: 10px; column-gap: 12px; align-items: center; font-size: 14px;">
+            <dt style="color: #5F5A62;">WhatsApp</dt><dd style="margin: 0; font-variant-numeric: tabular-nums;">0803 ••• 4417</dd><dd style="margin: 0;"><span style="font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #DCFCE7; color: #14532D; font-weight: 500; white-space: nowrap;">Confirmed, 2 sources</span></dd>
+            <dt style="color: #5F5A62;">Email</dt><dd style="margin: 0; color: #5F5A62;">-</dd><dd style="margin: 0;"><span style="font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #F3F4F6; color: #374151; font-weight: 500; white-space: nowrap;">None found</span></dd>
+            <dt style="color: #5F5A62;">Website</dt><dd style="margin: 0; color: #5F5A62;">-</dd><dd style="margin: 0;"><span style="font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #F3F4F6; color: #374151; font-weight: 500; white-space: nowrap;">Not listed</span></dd>
+          </dl>
+          <div style="display: flex; flex-direction: column; border-top: 1px solid #F2EDEF; padding-top: 6px;">
+            <a href="Main.dc.html" style="display: flex; justify-content: space-between; align-items: center; height: 40px; color: #17131A; text-decoration: none;"><span>Brand refresh for their new Osapa branch</span><span style="font-size: 13px; color: #92400E;">Medium</span></a>
+            <a href="Main.dc.html" style="display: flex; justify-content: space-between; align-items: center; height: 40px; color: #17131A; text-decoration: none;"><span>Short cake reveal videos for Instagram</span><span style="font-size: 13px; color: #92400E;">Medium</span></a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var M = [['#F9E0EA','#9B2456'],['#DCF2F0','#0F5E5A'],['#FBEFCF','#7A5300'],['#DDEBF6','#1D5F8A'],['#DCF1E4','#0F5E3A'],['#F1EADB','#5C4A1F']];
+    var data = [
+      ['Crumbs and Co. Bakery','Bakery, Lekki Phase 1. 4.6 (210). WhatsApp confirmed', 92, true],
+      ['Mama Tobi Pastries','Cake shop, Ikate. 4.8 (96). Phone confirmed', 88],
+      ['Adewole Cake Studio','Cake shop, Chevron. 4.9 (41). WhatsApp confirmed', 84],
+      ['Sweet Kitchen Confectionery','Bakery, Osapa. 4.3 (155). WhatsApp likely', 79],
+      ['The Rolling Pin','Bakery, Agungi. 4.5 (63). Email found on site', 71],
+      ['Golden Bread House','Bakery, Ikate. 4.4 (88). Email guessed', 64]
+    ];
+    var rows = data.map(function (d) {
+      var h = 0; for (var i = 0; i < d[0].length; i++) h = (h * 31 + d[0].charCodeAt(i)) % 997;
+      var m = d[3] ? M[0] : M[h % 6];
+      var w = d[0].replace(/[^A-Za-z ]/g, '').split(' ').filter(function (x) { return x && x !== 'and' && x !== 'Co'; });
+      var fit = d[2] >= 80 ? 'Strong fit' : 'Good fit';
+      return { name: d[0], meta: d[1], ini: (w[0][0] + (w[1] ? w[1][0] : '')).toUpperCase(), mbg: d[3] ? '#FFFFFF' : m[0], mfg: m[1],
+        fit: fit, fitFg: d[2] >= 80 ? '#6B1D3E' : '#5F5A62', fitW: d[2] + '%', bg: d[3] ? '#FDF2F7' : '#FFFFFF', cur: d[3] ? 'true' : 'false' };
+    });
+    var counts = [0,0,1,2,0,0,0,0,0,0,0,0, 0,1,3,9,6,2,1,0,0,0,0,0, 1,4,14,12,8,5,2,0,0,0,0,0, 0,2,11,9,4,1,0,0,0,0,0,0];
+    var tiles = counts.map(function (c, i) {
+      var col = i % 12;
+      if (col > 8) return 'transparent';
+      if (c >= 8) return '#B8336A';
+      if (c >= 3) return '#F8DBE8';
+      if (c >= 1) return '#FDF2F7';
+      return '#F2EDEF';
+    });
+    return { rows: rows, tiles: tiles };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<nav aria-label="Main" style="width: 240px; min-height: 900px; box-sizing: border-box; padding: 20px 12px; display: flex; flex-direction: column; gap: 22px; background: #FBF7F8; border-right: 1px solid #EAE4E6; font-family: 'DM Sans', system-ui, sans-serif; color: #17131A; font-size: 14px; line-height: 20px;">
+  <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 0 8px; color: #17131A; text-decoration: none;">
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="0" y="0" width="10" height="10" rx="2" fill="#E8DDE2"></rect><rect x="12" y="0" width="10" height="10" rx="2" fill="#B8336A"></rect><rect x="0" y="12" width="10" height="10" rx="2" fill="#E8DDE2"></rect><rect x="12" y="12" width="10" height="10" rx="2" fill="#E8DDE2"></rect></svg>
+    <span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em;">Opportunity Map</span>
+  </a>
+
+  <button type="button" aria-label="Switch workspace" style="display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; padding: 0 8px; border: 1px solid #EAE4E6; border-radius: 8px; background: #FFFFFF; cursor: pointer; font-family: inherit; text-align: left; color: #17131A;">
+    <span style="flex: none; width: 28px; height: 28px; border-radius: 6px; background: #DCF2F0; color: #0F5E5A; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">DS</span>
+    <span style="flex: 1; font-weight: 500; font-size: 14px;">Daniekeys Studios</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5A62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+  </button>
+
+  <div style="display: flex; flex-direction: column; gap: 2px;">
+    <sc-for list="{{top}}" as="n" hint-placeholder-count="3">
+      <a href="{{n.href}}" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 6px; background: {{n.bg}}; color: {{n.fg}}; text-decoration: none; font-weight: {{n.w}};">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{n.icon}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.path}}"></path></svg>
+        <span style="flex: 1;">{{n.label}}</span>
+        <span style="font-size: 13px; color: {{n.countFg}};">{{n.count}}</span>
+      </a>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="padding: 0 10px 6px; font-size: 13px; color: #5F5A62;">Campaigns</span>
+    <sc-for list="{{camps}}" as="c" hint-placeholder-count="3">
+      <a href="{{c.href}}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 34px; padding: 0 10px; border-radius: 6px; background: {{c.bg}}; color: {{c.fg}}; text-decoration: none; font-weight: {{c.w}};">
+        <span>{{c.label}}</span><span style="font-size: 13px; color: #5F5A62;">{{c.note}}</span>
+      </a>
+    </sc-for>
+    <a href="Segments.dc.html" style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; color: #5F5A62; text-decoration: none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5A62" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New campaign
+    </a>
+  </div>
+
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 14px; padding: 0 10px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #5F5A62;">Google searches today</span><span style="font-variant-numeric: tabular-nums;">18 of 30</span></span>
+      <span style="display: block; height: 6px; border-radius: 999px; background: #F8DBE8;"><span style="display: block; width: 60%; height: 6px; border-radius: 999px; background: #B8336A;"></span></span>
+      <span style="font-size: 13px; color: #5F5A62; font-variant-numeric: tabular-nums;">412 of 950 this month</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="flex: none; width: 28px; height: 28px; border-radius: 999px; background: #FBEFCF; color: #7A5300; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">DA</span>
+      <span style="font-size: 14px;">Daniel Ayeni</span>
+    </div>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["campaigns","messages","pipeline","brand","segments"],"default":"campaigns"},"$preview":{"width":240,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var a = this.props.active ?? 'campaigns';
+    function item(id, label, href, path, count, countFg) {
+      var on = id === a;
+      return { label: label, href: href, path: path, count: count || '', countFg: countFg || '#5F5A62',
+        bg: on ? '#FDF2F7' : 'transparent', fg: on ? '#6B1D3E' : '#17131A', icon: on ? '#B8336A' : '#5F5A62', w: on ? '600' : '400' };
+    }
+    var top = [
+      item('messages', 'Messages to send', 'Composer.dc.html', 'M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5z', '4', '#6B1D3E'),
+      item('pipeline', 'Replies and deals', 'Pipeline.dc.html', 'M5 4v16M12 4v10M19 4v6', '1 new', '#6B1D3E'),
+      item('brand', 'Brand DNA', 'BrandDNA.dc.html', 'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9 5.5-.8z', '5 to review', '#5F5A62')
+    ];
+    var onCamp = a === 'campaigns' || a === 'segments';
+    var camps = [
+      { label: 'Lekki bakeries', href: 'Main.dc.html', note: '12 to contact', bg: a === 'campaigns' ? '#FDF2F7' : 'transparent', fg: a === 'campaigns' ? '#6B1D3E' : '#17131A', w: a === 'campaigns' ? '600' : '400' },
+      { label: 'Ikeja private clinics', href: 'Main.dc.html', note: '4 to contact', bg: 'transparent', fg: '#17131A', w: '400' },
+      { label: 'Surulere event planners', href: 'Segments.dc.html', note: 'Draft', bg: a === 'segments' ? '#FDF2F7' : 'transparent', fg: a === 'segments' ? '#6B1D3E' : '#17131A', w: a === 'segments' ? '600' : '400' }
+    ];
+    return { top: top, camps: camps, onCamp: onCamp };
+  }
+}
+</script>
+</body>
+</html>

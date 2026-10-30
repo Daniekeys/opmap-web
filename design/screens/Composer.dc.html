@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Messages to send</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6B1D3E}a:hover{color:#B8336A}
+button,input{font-family:inherit}
+.row:hover{background:#FBF7F8}
+</style>
+</helmet>
+<!-- Grid: 1152 canvas = queue 360 + 24 + draft 768. -->
+<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #FBF7F8; color: #17131A; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+  <div style="flex: 0 0 240px;"><dc-import name="Sidebar" active="messages" hint-size="240px,900px"></dc-import></div>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 32px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em;">Messages to send</h1>
+      <p style="margin: 0; color: #5F5A62;">4 drafts are ready. Adewole Cake Studio replied this morning and is waiting on you.</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+      <section aria-label="Queue" style="flex: 1 1 320px; max-width: 100%; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; overflow: hidden;">
+        <sc-for list="{{queue}}" as="q" hint-placeholder-count="5">
+          <a class="row" href="Composer.dc.html" style="display: flex; gap: 12px; align-items: center; height: 72px; padding: 0 16px; border-bottom: 1px solid #F2EDEF; text-decoration: none; color: #17131A; background: {{q.bg}};">
+            <span style="flex: none; width: 40px; height: 40px; border-radius: 6px; background: {{q.mbg}}; color: {{q.mfg}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">{{q.ini}}</span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.name}}</span>
+              <span style="font-size: 13px; line-height: 18px; color: #5F5A62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.offer}}</span>
+            </span>
+            <span style="flex: none; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: {{q.sbg}}; color: {{q.sfg}}; font-weight: 500; white-space: nowrap;">{{q.status}}</span>
+          </a>
+        </sc-for>
+      </section>
+
+      <section aria-label="Draft for Crumbs and Co. Bakery" style="flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <span style="flex: none; width: 40px; height: 40px; border-radius: 6px; background: #F9E0EA; color: #9B2456; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">CC</span>
+            <div style="display: flex; flex-direction: column;">
+              <h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600;">Crumbs and Co. Bakery</h2>
+              <span style="font-size: 13px; color: #5F5A62;">Offer: a cake order page that sends each order to their WhatsApp</span>
+            </div>
+          </div>
+          <div role="tablist" aria-label="Channel" style="display: flex; gap: 2px; padding: 3px; background: #F5EFF1; border-radius: 8px;">
+            <button type="button" role="tab" aria-selected="true" style="height: 30px; padding: 0 12px; border: 0; border-radius: 6px; background: #FFFFFF; color: #17131A; font-size: 14px; font-weight: 600; cursor: pointer;">WhatsApp</button>
+            <button type="button" role="tab" aria-selected="false" style="height: 30px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #5F5A62; font-size: 14px; cursor: pointer;">Email</button>
+            <button type="button" role="tab" aria-selected="false" style="height: 30px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #5F5A62; font-size: 14px; cursor: pointer;">LinkedIn</button>
+            <button type="button" role="tab" aria-selected="false" style="height: 30px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #5F5A62; font-size: 14px; cursor: pointer;">Call opener</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+          <div style="flex: 3 1 400px; min-width: 0; position: relative; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #5F5A62;"><span>To 0803 ••• 4417, confirmed by 2 sources</span><span style="font-variant-numeric: tabular-nums;">412 characters</span></div>
+            <p style="margin: 0; font-size: 16px; line-height: 26px;">Good afternoon. I'm Daniel from Daniekeys Studios.</p>
+            <p style="margin: 0; font-size: 16px; line-height: 26px;">I saw on your Instagram that you take cake orders by <mark style="background: #FDF2F7; color: #6B1D3E; text-decoration: underline; text-decoration-color: #B8336A; text-decoration-thickness: 2px; text-underline-offset: 3px; padding: 0 2px; border-radius: 2px;">DM with 3 days notice</mark>, and <mark style="background: #FDF2F7; color: #6B1D3E; text-decoration: underline; text-decoration-color: #B8336A; text-decoration-thickness: 2px; text-underline-offset: 3px; padding: 0 2px; border-radius: 2px;">210 people have reviewed you on Google</mark>. That's a lot of orders to keep track of in a chat.</p>
+            <p style="margin: 0; font-size: 16px; line-height: 26px;">We could set up a simple order page where customers pick the cake and the date and pay a deposit, and every order lands straight in your WhatsApp. We built one like this for <mark style="background: #FFFBEB; color: #92400E; padding: 0 4px; border-radius: 2px; outline: 1px dashed #92400E;">[past client name]</mark>.</p>
+            <p style="margin: 0; font-size: 16px; line-height: 26px;">Would a 2 minute example be useful?</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px;">
+              <a href="Pipeline.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5z"></path></svg>Open in WhatsApp</a>
+              <button type="button" style="height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-weight: 500; font-size: 14px; cursor: pointer;">Copy text</button>
+              <button type="button" style="height: 40px; padding: 0 12px; border-radius: 6px; border: 0; background: transparent; color: #6B1D3E; font-weight: 500; font-size: 14px; cursor: pointer;">Make it shorter</button>
+            </div>
+            <div role="dialog" aria-label="Where this came from" style="position: absolute; left: 236px; top: 112px; width: 264px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; box-shadow: 0 12px 32px rgba(23,19,26,0.16), 0 2px 6px rgba(23,19,26,0.08); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 20px;">
+              <span style="font-weight: 600;">"DM to order. 3 days notice for custom cakes."</span>
+              <span style="font-size: 13px; color: #5F5A62;">Instagram bio of @crumbsandco, read 28 Oct</span>
+              <a href="Main.dc.html" style="font-size: 13px; font-weight: 500; text-decoration: none;">Open the source</a>
+            </div>
+          </div>
+
+          <aside aria-label="Before and after sending" style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 20px;">
+              <span style="font-weight: 600; font-size: 15px;">Checks</span>
+              <span style="display: flex; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#247B50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><path d="M20 6 9 17l-5-5"></path></svg>Not on your opt-out list</span>
+              <span style="display: flex; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#247B50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><path d="M20 6 9 17l-5-5"></path></svg>2 claims, both from this bakery's own pages</span>
+              <span style="display: flex; gap: 8px; color: #92400E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.01"></path></svg>1 blank to fill before sending</span>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-weight: 600;">After you send, tap what happened</span>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+                <button type="button" style="height: 36px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-weight: 500; font-size: 14px; cursor: pointer;">Sent</button>
+                <button type="button" style="height: 36px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-weight: 500; font-size: 14px; cursor: pointer;">Replied</button>
+                <button type="button" style="height: 36px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-weight: 500; font-size: 14px; cursor: pointer;">Meeting</button>
+                <button type="button" style="height: 36px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; color: #17131A; font-weight: 500; font-size: 14px; cursor: pointer;">Won</button>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px;">
+                <button type="button" style="padding: 0; height: 28px; border: 0; background: transparent; color: #831C1E; font-size: 14px; cursor: pointer;">Wrong number</button>
+                <button type="button" style="padding: 0; height: 28px; border: 0; background: transparent; color: #831C1E; font-size: 14px; cursor: pointer;">Not the owner</button>
+                <button type="button" style="padding: 0; height: 28px; border: 0; background: transparent; color: #831C1E; font-size: 14px; cursor: pointer;">Asked us to stop</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var rep = ['#DCFCE7','#14532D'], dr = ['#FDF2F7','#6B1D3E'];
+    var q = [
+      ['Adewole Cake Studio','AC','Replied: "How much would it cost?"', 'Reply now', rep, ['#DCF1E4','#0F5E3A']],
+      ['Crumbs and Co. Bakery','CC','Order page with WhatsApp checkout', 'Draft ready', dr, ['#FFFFFF','#9B2456'], true],
+      ['Mama Tobi Pastries','MT','Faster website on phones', 'Draft ready', dr, ['#DDEBF6','#1D5F8A']],
+      ['Sweet Kitchen Confectionery','SK','Online menu for two branches', 'Draft ready', dr, ['#FBEFCF','#7A5300']],
+      ['The Rolling Pin','TR','Cake reveal videos', 'Draft ready', dr, ['#DCF2F0','#0F5E5A']]
+    ];
+    return { queue: q.map(function (r) { return { name: r[0], ini: r[1], offer: r[2], status: r[3], sbg: r[4][0], sfg: r[4][1], mbg: r[5][0], mfg: r[5][1], bg: r[6] ? '#FDF2F7' : '#FFFFFF' }; }) };
+  }
+}
+</script>
+</body>
+</html>

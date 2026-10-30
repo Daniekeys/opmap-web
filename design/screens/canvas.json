@@ -1,0 +1,159 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-30T10:30:00Z"
+ },
+ "title": "Opportunity Map app and landing design",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: campaign workspace, business open",
+   "expand": "fill"
+  },
+  "Composer.dc.html": {
+   "x": 1520,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: message composer",
+   "expand": "fill"
+  },
+  "Pipeline.dc.html": {
+   "x": 3040,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: outcomes pipeline",
+   "expand": "fill"
+  },
+  "Segments.dc.html": {
+   "x": 0,
+   "y": 1320,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: pick a buyer segment",
+   "expand": "fill"
+  },
+  "BrandDNA.dc.html": {
+   "x": 1520,
+   "y": 1320,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: approve Brand DNA facts",
+   "expand": "fill"
+  },
+  "Progress.dc.html": {
+   "x": 3040,
+   "y": 1320,
+   "w": 1440,
+   "h": 900,
+   "title": "Desktop: campaign running, live progress",
+   "expand": "fill"
+  },
+  "MobileLeads.dc.html": {
+   "x": 0,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "Phone: leads list"
+  },
+  "MobileDetail.dc.html": {
+   "x": 470,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "Phone: business detail"
+  },
+  "MobileComposer.dc.html": {
+   "x": 940,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "Phone: WhatsApp draft"
+  },
+  "MobileMenu.dc.html": {
+   "x": 1410,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "Phone: home and campaigns"
+  },
+  "Landing.dc.html": {
+   "x": 0,
+   "y": 3900,
+   "w": 1440,
+   "h": 5600,
+   "title": "Landing page",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Sidebar.dc.html": {
+   "x": -320,
+   "y": 0,
+   "w": 240,
+   "h": 900,
+   "title": "Component: sidebar"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Composer.dc.html",
+  "Pipeline.dc.html",
+  "Segments.dc.html",
+  "BrandDNA.dc.html",
+  "Progress.dc.html",
+  "MobileLeads.dc.html",
+  "MobileDetail.dc.html",
+  "MobileComposer.dc.html",
+  "MobileMenu.dc.html",
+  "Landing.dc.html",
+  "Sidebar.dc.html"
+ ],
+ "notes": {
+  "t1": {
+   "x": 0,
+   "y": -420,
+   "text": "Daily work: find, research, message, track",
+   "kind": "title1",
+   "maxW": 4480
+  },
+  "t2": {
+   "x": 0,
+   "y": 900,
+   "text": "Setup and waiting: segments, Brand DNA, live progress",
+   "kind": "title1",
+   "maxW": 4480
+  },
+  "t3": {
+   "x": 0,
+   "y": 2220,
+   "text": "On the phone, 380px first",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "t4": {
+   "x": 0,
+   "y": 3480,
+   "text": "Landing page",
+   "kind": "title1",
+   "maxW": 1440
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Opportunity Map",
+   "namespace": "opportunitymap",
+   "artifact": "https://claude.ai/artifact/RnZxmaYS8ZuigRMSAQsZs7",
+   "version": "1793356384-f749",
+   "copiedAt": "2026-10-30T10:50:00Z"
+  }
+ ]
+}

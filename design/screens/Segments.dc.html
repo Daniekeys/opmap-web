@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New campaign: who to sell to</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6B1D3E}a:hover{color:#B8336A}
+button,input{font-family:inherit}
+.seg:hover{border-color:#D6CDD1}
+</style>
+</helmet>
+<!-- Grid: 1152 = 3 x 368 + 2 x 24. -->
+<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #FBF7F8; color: #17131A; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+  <div style="flex: 0 0 240px;"><dc-import name="Sidebar" active="segments" hint-size="240px,900px"></dc-import></div>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 32px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 4px; max-width: 760px;">
+        <span style="font-size: 14px; color: #5F5A62;">New campaign</span>
+        <h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em;">Who is most likely to pay for what you sell?</h1>
+        <p style="margin: 0; color: #5F5A62;">Ranked from your Brand DNA, version 3: how much the problem hurts, whether they can pay, and how easy they are to find on Google Maps.</p>
+      </div>
+      <a href="BrandDNA.dc.html" style="font-size: 14px; font-weight: 500; text-decoration: none; padding-top: 24px;">Check Brand DNA</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+      <sc-for list="{{segs}}" as="s" hint-placeholder-count="6">
+        <button class="seg" type="button" aria-pressed="{{s.pressed}}" style="text-align: left; cursor: pointer; padding: 20px; border-radius: 8px; border: {{s.border}}; background: {{s.bg}}; color: #17131A; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 20px;">
+          <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 13px; color: #5F5A62; font-variant-numeric: tabular-nums;">{{s.rank}}</span>
+            <span style="flex: none; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: {{s.rbg}}; color: {{s.rfg}}; font-weight: 500;">{{s.reach}}</span>
+          </span>
+          <span style="font-size: 18px; line-height: 24px; font-weight: 600;">{{s.name}}</span>
+          <span><span style="color: #5F5A62;">Pain. </span>{{s.pain}}</span>
+          <span><span style="color: #5F5A62;">Pitch first. </span>{{s.pitch}}</span>
+          <span style="font-size: 13px; line-height: 18px; color: #5F5A62;">Ranked up when: {{s.signals}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <form style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; padding: 20px 24px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px;">
+      <label style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 8px; font-weight: 500; font-size: 14px;">Or describe your own buyer
+        <input type="text" placeholder="Private schools that just opened a second campus" style="height: 40px; padding: 0 12px; border: 1px solid #D6CDD1; border-radius: 6px; font-size: 15px; font-weight: 400; color: #17131A; background: #FFFFFF;">
+      </label>
+      <a href="Progress.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none;">Next: choose where</a>
+    </form>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var ok = ['#DCFCE7','#14532D','Easy to find on Maps'], mid = ['#FFFBEB','#92400E','Partly on Maps'], no = ['#F3F4F6','#374151','Not on Maps yet'];
+    var raw = [
+      ['1. Best match','Event cake bakers','Custom orders get lost in DMs, and the cakes look better in person than online.','An order page with deposits, then cake reveal videos.','no website, Instagram on the listing, 100+ reviews',ok,true],
+      ['2.','Event planners and decorators','Clients choose by photos, and their portfolio is scattered across chats.','A portfolio site with a booking form.','photos on the listing, 4.5 stars or more',ok],
+      ['3.','Private clinics','Patients call to book and the line is always busy.','Online booking that confirms on WhatsApp.','phone only, open on weekends',ok],
+      ['4.','Private schools','Parents compare schools online before they visit.','A clear admissions page and a school tour video.','website not updated since 2024, several branches',ok],
+      ['5.','Fashion designers and boutiques','Good work, weak brand, so prices get questioned.','A brand identity and a lookbook page.','active Instagram, few reviews',mid],
+      ['6.','Restaurants doing delivery','Orders are split across apps that take a cut.','Their own order page and menu.','on delivery apps, menu only as photos',no]
+    ];
+    return { segs: raw.map(function (r) { return { rank: r[0], name: r[1], pain: r[2], pitch: r[3], signals: r[4], rbg: r[5][0], rfg: r[5][1], reach: r[5][2],
+      border: r[6] ? '1.5px solid #B8336A' : '1px solid #EAE4E6', bg: r[6] ? '#FDF2F7' : '#FFFFFF', pressed: r[6] ? 'true' : 'false' }; }) };
+  }
+}
+</script>
+</body>
+</html>
