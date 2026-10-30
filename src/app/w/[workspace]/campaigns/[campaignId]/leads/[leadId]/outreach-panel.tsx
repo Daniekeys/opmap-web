@@ -22,6 +22,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
+import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
 import type { Channel, ContactRow, Draft, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
 import type { Cite } from "@/lib/api-types/research";
@@ -468,6 +469,13 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
     try {
       const res = await post(`${base}/outcomes`, body);
       if (res.status === 401) return goToLogin();
+      // Refused for this lead (Sent after an opt-out): say why, then show where it stands.
+      if (res.status === 409) {
+        const { error }: ApiErrorResponse = await res.json();
+        setProblem(error.message);
+        await onChange();
+        return;
+      }
       if (!res.ok) throw new Error(String(res.status));
       const result: OutcomeResponse = await res.json();
       setLogged(outcomeText(result.outcome, (v) => showValue(result.outcome.contactKind ?? "", v)));
@@ -479,17 +487,20 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
     }
   }
 
+  // Nothing is sent to someone who opted out, so they get no Sent button.
+  const buttons = outreach.suppressed ? STAGE_BUTTONS.filter((b) => b.type !== "sent") : STAGE_BUTTONS;
+
   return (
     <section aria-labelledby="outcome-heading" className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 id="outcome-heading" className="text-section font-semibold">
-          After you send, tap what happened
+          {outreach.suppressed ? "Tap what happened" : "After you send, tap what happened"}
         </h3>
         <StageChip stage={outreach.stage} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-        {STAGE_BUTTONS.map((b) => (
+      <div className={cn("grid gap-2", outreach.suppressed ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3 sm:grid-cols-5")}>
+        {buttons.map((b) => (
           <Button
             key={b.type}
             type="button"
@@ -510,7 +521,9 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
             <Check className="size-4" aria-hidden /> Logged: {logged}
           </span>
         ) : (
-          <span className="text-muted">Tap what happened. Copying or opening a message marks it Sent.</span>
+          <span className="text-muted">
+            {outreach.suppressed ? "They asked not to be contacted. Log a reply or a result here." : "Tap what happened. Copying or opening a message marks it Sent."}
+          </span>
         )}
       </p>
       {problem && <p className="text-sm text-negative-ink">{problem}</p>}
