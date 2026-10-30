@@ -15,7 +15,9 @@ export function AppShell({ sidebar, menu, children }: { sidebar: ReactNode; menu
   const [open, setOpen] = useState(false);
   const openButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const wide = /\/campaigns\/(?!new(\/|$))[^/]+/.test(pathname);
+  // A campaign, and a Brand DNA version (its facts beside a side panel), cap
+  // their own columns; every other page is a form or reading, capped at 720.
+  const wide = /\/campaigns\/(?!new(\/|$))[^/]+|\/brand\/[^/]+/.test(pathname);
 
   // Any navigation closes the menu.
   const [seen, setSeen] = useState(pathname);

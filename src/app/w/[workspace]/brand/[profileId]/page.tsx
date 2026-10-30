@@ -2,7 +2,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
-import { getBrandProfile, getWorkspace } from "@/lib/api";
+import { getBrand, getBrandProfile, getWorkspace } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "../facts";
 import { FactReview } from "./fact-review";
@@ -35,10 +35,10 @@ async function Profile({ params }: { params: Props["params"] }) {
         <ChevronLeft className="size-4" aria-hidden />
         Brand DNA
       </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">
+      <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">
         Version {profile.version} <VersionBadge status={profile.status} />
       </h1>
-      <p className="text-sm text-muted wrap-break-word">
+      <p className="text-sm text-muted wrap-break-word sm:text-body">
         Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt)}
         {profile.source === "website" && `, ${detail.pages.length} ${detail.pages.length === 1 ? "page" : "pages"}`}.
       </p>
@@ -46,26 +46,26 @@ async function Profile({ params }: { params: Props["params"] }) {
   );
 
   if (profile.status === "draft") {
+    const brand = await getBrand(workspace.id);
     return (
-      <>
-        {header}
-        <FactReview
-          key={profile.id}
-          workspaceId={workspace.id}
-          brandHref={back}
-          profile={profile}
-          initialFacts={detail.facts}
-          missing={detail.missing}
-          isOwner={workspace.role === "owner"}
-        />
-      </>
+      <FactReview
+        key={profile.id}
+        workspaceId={workspace.id}
+        brandHref={back}
+        profile={profile}
+        pages={detail.pages}
+        approvedVersion={brand.approved?.version ?? null}
+        initialFacts={detail.facts}
+        missing={detail.missing}
+        isOwner={workspace.role === "owner"}
+      />
     );
   }
 
   return (
     <>
       {header}
-      <p className="rounded-lg bg-raised px-3 py-2 text-sm">
+      <p className="max-w-read rounded-control bg-raised px-3.5 py-3 text-sm">
         {profile.status === "approved"
           ? `Approved ${formatDateTime(profile.approvedAt!)}. This is the profile messages to leads use.`
           : profile.status === "retired"
@@ -78,11 +78,11 @@ async function Profile({ params }: { params: Props["params"] }) {
         const facts = detail.facts.filter((f) => f.kind === kind);
         if (facts.length === 0) return null;
         return (
-          <section key={kind} aria-label={label} className="flex flex-col gap-2">
-            <h2 className="font-medium">{label}</h2>
-            <ul className="divide-y rounded-xl border bg-card">
+          <section key={kind} aria-label={label} className="flex max-w-read flex-col gap-3">
+            <h2 className="text-section font-semibold">{label}</h2>
+            <ul className="divide-y divide-rule rounded-card border border-border bg-surface">
               {facts.map((fact) => (
-                <li key={fact.id} className="flex flex-col gap-2 px-4 py-3">
+                <li key={fact.id} className="flex flex-col gap-2 px-4 py-3 md:px-6">
                   <p className={fact.status === "rejected" ? "text-muted line-through" : "font-medium"}>
                     {fact.text}
                     {fact.status === "rejected" && <span className="sr-only"> (rejected)</span>}

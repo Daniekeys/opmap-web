@@ -15,3 +15,8 @@ const dateTime = new Intl.DateTimeFormat("en-GB", {
 });
 
 export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
+
+const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
+
+// "28 Oct".
+export const formatDay = (iso: string) => day.format(new Date(iso));

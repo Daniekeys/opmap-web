@@ -3,6 +3,7 @@
 import type { CampaignStatus, Lead } from "./api-types/leads";
 import type { Stage } from "./api-types/outcomes";
 import type { DatedCite } from "./api-types/research";
+import { formatDay } from "./format";
 import { categoryText, FIT_WORDS, labelText } from "./leads";
 
 // Buyer scores cluster around 0.4; a few rise above 0.7.
@@ -61,10 +62,8 @@ function whereClause(leads: Lead[]) {
   return k < leads.length ? ` ${k} of them are in ${top[0]![0]} and ${top[1]![0]}.` : "";
 }
 
-const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
-
 // When a source was read ("read 26 Oct").
-export const readOn = (iso: string | null) => (iso ? `read ${day.format(new Date(iso))}` : "date not recorded");
+export const readOn = (iso: string | null) => (iso ? `read ${formatDay(iso)}` : "date not recorded");
 
 // When a cite's page was read: its own read, or the research's finish time
 // when the page has been read again since. Approved facts carry no date.
