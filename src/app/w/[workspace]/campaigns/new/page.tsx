@@ -6,7 +6,8 @@ import { NewCampaign as Flow } from "./new-campaign";
 type Props = PageProps<"/w/[workspace]/campaigns/new">;
 
 // Step one of a campaign: pick a buyer segment suggested from the Brand DNA
-// (or type your own), edit it, and choose places. Saving makes a draft;
+// (or describe your own), edit it, and choose places. Each step has its own
+// title. Saving makes a draft;
 // nothing is searched until it is confirmed on the campaign page.
 export default function NewCampaignPage({ params }: Props) {
   return (
@@ -18,16 +19,5 @@ export default function NewCampaignPage({ params }: Props) {
 
 async function NewCampaign({ params }: { params: Props["params"] }) {
   const workspace = await getWorkspace((await params).workspace);
-  return (
-    <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">New campaign</h1>
-        <p className="text-sm text-muted">
-          Pick who to sell to, from buyers worked out from your Brand DNA, then where. You&apos;ll see what the search costs
-          before anything runs.
-        </p>
-      </div>
-      <Flow workspaceId={workspace.id} slug={workspace.slug} />
-    </>
-  );
+  return <Flow workspaceId={workspace.id} slug={workspace.slug} />;
 }

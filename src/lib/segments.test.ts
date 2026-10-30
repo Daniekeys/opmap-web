@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSearchTerms, ratingOptions, signalsInWords } from "./segments";
+import { parseSearchTerms, rankedUpWhen, rankLabel, ratingOptions, reachWords, segmentsIntro, signalsInWords } from "./segments";
 
 describe("ratingOptions", () => {
   it("adds a suggested rating that isn't in the list, so the select can show it", () => {
@@ -26,5 +26,31 @@ describe("parseSearchTerms", () => {
   it("splits on commas, cleans, dedupes and keeps three", () => {
     expect(parseSearchTerms(" Car  Wash, auto spa,car wash, x, hotel, school")).toEqual(["car wash", "auto spa", "hotel"]);
     expect(parseSearchTerms("")).toEqual([]);
+  });
+});
+
+describe("segment cards", () => {
+  const none = { minReviews: null, minRating: null, website: "any" as const, socials: "any" as const, categories: [] };
+
+  it("names the best match and numbers the rest", () => {
+    expect(rankLabel(1)).toBe("1. Best match");
+    expect(rankLabel(4)).toBe("4.");
+  });
+
+  it("has two reach pills, no partly", () => {
+    expect(reachWords("places")).toEqual({ text: "Easy to find on Maps", tone: "positive" });
+    expect(reachWords("not_yet")).toEqual({ text: "Not on Maps yet", tone: "neutral" });
+  });
+
+  it("says what ranks a business up, or that nothing in particular does", () => {
+    expect(rankedUpWhen({ ...none, minReviews: 100, website: "lacks" })).toBe("Ranked up when: 100+ reviews, no website yet");
+    expect(rankedUpWhen(none)).toBe("No particular signals");
+  });
+
+  it("says what the ranking weighs and from which version", () => {
+    expect(segmentsIntro(2)).toBe(
+      "Ranked from your Brand DNA, version 2: how much the problem hurts, whether they can pay, and how visible they already are online.",
+    );
+    expect(segmentsIntro(null)).toMatch(/^Ranked from your Brand DNA: /);
   });
 });

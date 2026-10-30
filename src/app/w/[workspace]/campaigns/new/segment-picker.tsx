@@ -1,14 +1,15 @@
 "use client";
 
-import { ChevronDown, Lock, MapPin, PenLine, RotateCw, Search, Sparkles } from "lucide-react";
+import { MapPin, RotateCw, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import { inputClass } from "@/components/input-class";
 import { PageLoading } from "@/components/page-loading";
 import { ProgressPanel } from "@/components/progress-panel";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { BuyerSegment, SegmentsResponse, StartSegmentsBody } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
-import { signalsInWords } from "@/lib/segments";
+import { rankedUpWhen, rankLabel, reachWords, segmentsIntro } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
 type Load = { state: "loading" } | { state: "error"; message: string } | { state: "loaded"; data: SegmentsResponse };
@@ -30,9 +31,11 @@ async function fetchSegments(workspaceId: string, method: "GET" | "POST", body?:
   return method === "GET" && data.state === "none" ? fetchSegments(workspaceId, "POST") : data;
 }
 
-// The campaign screen's first step: the buyer segments suggested from the
-// approved Brand DNA. Starts the (once per Brand DNA version) run when there
-// are none yet, and shows its progress. "Not reachable yet" cards can't be used.
+// The campaign screen's first step (design/screens/Segments.dc.html): the
+// buyer segments suggested from the approved Brand DNA, as cards to pick one
+// from, or a buyer of your own. Starts the (once per Brand DNA version) run
+// when there are none yet, and shows its progress. "Not on Maps yet" cards
+// can't be picked.
 export function SegmentPicker({
   workspaceId,
   slug,
@@ -42,11 +45,18 @@ export function SegmentPicker({
   workspaceId: string;
   slug: string;
   onPick: (segment: BuyerSegment, setId: string) => void;
-  onOwn: () => void;
+  onOwn: (name: string) => void;
 }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
+  // The picked card's rank; null for none (or a buyer of your own).
+  const [picked, setPicked] = useState<number | null>(null);
+  const [own, setOwn] = useState("");
 
-  const loaded = (data: SegmentsResponse | null) => data && setLoad({ state: "loaded", data });
+  const loaded = (data: SegmentsResponse | null) => {
+    if (!data) return;
+    setLoad({ state: "loaded", data });
+    setPicked(data.segments.find((s) => s.reachability === "places")?.rank ?? null);
+  };
   const failed = () => setLoad({ state: "error", message: "Couldn't load your buyer segments. Check your connection and try again." });
 
   // Retry buttons and a finished run fetch again.
@@ -55,7 +65,11 @@ export function SegmentPicker({
   useEffect(() => {
     let live = true;
     fetchSegments(workspaceId, "GET").then(
-      (data) => live && data && setLoad({ state: "loaded", data }),
+      (data) => {
+        if (!live || !data) return;
+        setLoad({ state: "loaded", data });
+        setPicked(data.segments.find((s) => s.reachability === "places")?.rank ?? null);
+      },
       () => live && setLoad({ state: "error", message: "Couldn't load your buyer segments. Check your connection and try again." }),
     );
     return () => {
@@ -63,194 +77,247 @@ export function SegmentPicker({
     };
   }, [workspaceId]);
 
-  const own = (
-    <Button type="button" variant="outline" className="h-11 text-base sm:self-start" onClick={onOwn}>
-      <PenLine className="size-4" aria-hidden /> Type your own
-    </Button>
+  const data = load.state === "loaded" ? load.data : null;
+  const segments = data?.state === "ready" ? data.segments : [];
+  const chosen = segments.find((s) => s.rank === picked) ?? null;
+
+  function next(event: FormEvent) {
+    event.preventDefault();
+    if (own.trim()) onOwn(own.trim());
+    else if (chosen && data?.setId) onPick(chosen, data.setId);
+  }
+
+  const ownForm = (
+    <form
+      onSubmit={next}
+      className="flex max-w-page flex-col gap-4 rounded-card border border-border bg-surface px-5 py-5 sm:flex-row sm:flex-wrap sm:items-end md:px-6"
+    >
+      <label className="flex flex-col gap-2 text-sm font-medium sm:flex-[1_1_360px]">
+        Or describe your own buyer
+        <input
+          type="text"
+          value={own}
+          onChange={(e) => {
+            setOwn(e.target.value);
+            if (e.target.value.trim()) setPicked(null);
+          }}
+          placeholder="Private schools that just opened a second campus"
+          autoComplete="off"
+          maxLength={100}
+          className={inputClass}
+        />
+      </label>
+      <Button type="submit" className="h-11 text-base md:h-10 md:text-sm" disabled={!own.trim() && !chosen}>
+        Next: choose where
+      </Button>
+    </form>
   );
 
-  if (load.state === "loading") return <PageLoading />;
-  if (load.state === "error") {
-    return (
-      <div className="flex flex-col gap-3">
-        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-negative/40 bg-negative-soft p-4 text-sm">
-          <p className="text-negative-ink">{load.message}</p>
-          <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("GET")}>
-            <RotateCw className="size-4" aria-hidden /> Try again
-          </Button>
-        </div>
-        {own}
+  let body: React.ReactNode;
+  if (load.state === "loading") body = <PageLoading />;
+  else if (load.state === "error") {
+    body = (
+      <Problem title={load.message}>
+        <Button type="button" variant="outline" className="h-11 self-start md:h-10" onClick={() => request("GET")}>
+          <RotateCw className="size-4" aria-hidden /> Try again
+        </Button>
+      </Problem>
+    );
+  } else if (data!.state === "not_approved") {
+    body = (
+      <div className="flex max-w-read flex-col gap-2 rounded-card border border-dashed border-control bg-surface px-5 py-5 text-sm md:px-6">
+        <p className="font-semibold">Brand DNA not approved yet</p>
+        <p className="text-muted">
+          Buyer segments are worked out from what you sell, so they need an approved Brand DNA first. Approve it, or describe
+          the buyer you want yourself below.
+        </p>
+        <Link href={`/w/${slug}/brand`} className={cn(buttonVariants(), "h-11 self-start text-base md:h-10 md:text-sm")}>
+          Go to Brand DNA
+        </Link>
       </div>
     );
-  }
-
-  const { data } = load;
-  if (data.state === "not_approved") {
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 rounded-xl border border-dashed bg-card p-4 text-sm">
-          <p className="font-medium">Brand DNA not approved yet</p>
-          <p className="text-muted">
-            Buyer segments are worked out from what you sell, so they need an approved Brand DNA first. Approve it, or type
-            the kind of business you want yourself.
-          </p>
-          <Link
-            href={`/w/${slug}/brand`}
-            className="inline-flex h-11 items-center justify-center self-start rounded-lg bg-primary px-5 text-base font-medium text-on-primary hover:bg-primary/85"
-          >
-            Go to Brand DNA
-          </Link>
-        </div>
-        {own}
-      </div>
-    );
-  }
-
-  if (data.state === "running" || data.state === "none") {
-    return (
-      <div className="flex flex-col gap-3">
+  } else if (data!.state === "running" || data!.state === "none") {
+    body = (
+      <div className="flex max-w-read flex-col gap-3">
         <p className="flex items-center gap-2 text-sm text-muted" role="status">
           <Sparkles className="size-4 shrink-0" aria-hidden /> Working out who is most likely to buy from you. This takes about
           a minute, once per Brand DNA version.
         </p>
-        {data.run && <ProgressPanel workspaceId={workspaceId} runId={data.run.id} onFinished={() => request("GET")} />}
-        {own}
+        {data!.run && <ProgressPanel workspaceId={workspaceId} runId={data!.run.id} onFinished={() => request("GET")} />}
       </div>
     );
-  }
-
-  if (data.state === "failed") {
-    return (
-      <div className="flex flex-col gap-3">
-        <div role="alert" className="flex flex-col gap-2 rounded-xl border border-negative/40 bg-negative-soft p-4 text-sm">
-          <p className="font-medium text-negative-ink">Couldn&apos;t suggest buyer segments</p>
-          {data.error && <p className="text-negative-ink wrap-break-word">{data.error}</p>}
-          <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("POST", { retry: true })}>
-            <RotateCw className="size-4" aria-hidden /> Try again
-          </Button>
-        </div>
-        {own}
-      </div>
+  } else if (data!.state === "failed") {
+    body = (
+      <Problem title="Couldn't suggest buyer segments" detail={data!.error}>
+        <Button type="button" variant="outline" className="h-11 self-start md:h-10" onClick={() => request("POST", { retry: true })}>
+          <RotateCw className="size-4" aria-hidden /> Try again
+        </Button>
+      </Problem>
+    );
+  } else {
+    body = (
+      <>
+        <ol className="grid max-w-page gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
+          {segments.map((segment) => (
+            <li key={segment.rank} className="flex flex-col gap-4">
+              <SegmentCard
+                segment={segment}
+                picked={segment.rank === picked}
+                onPick={() => {
+                  setPicked(segment.rank);
+                  setOwn("");
+                }}
+              />
+              {/* Phones: the picked card's details sit right under it. */}
+              {segment.rank === picked && <WhyThem segment={segment} className="flex md:hidden" />}
+            </li>
+          ))}
+        </ol>
+        {chosen && <WhyThem segment={chosen} className="hidden md:flex" />}
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted">
-        From Brand DNA version {data.brandProfileVersion}, most likely to pay first. Pick one to edit it and choose places.
-      </p>
-      <ol className="flex flex-col gap-3">
-        {data.segments.map((segment) => (
-          <li key={segment.rank}>
-            <SegmentCard segment={segment} onPick={() => onPick(segment, data.setId!)} />
-          </li>
-        ))}
-      </ol>
-      {own}
+    <>
+      <header className="flex max-w-page flex-wrap items-start justify-between gap-x-4 gap-y-1">
+        <div className="flex max-w-detail flex-col gap-1">
+          <span className="text-sm text-muted">New campaign</span>
+          <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">
+            Who is most likely to pay for what you sell?
+          </h1>
+          <p className="text-sm text-muted sm:text-body">
+            {data?.state === "ready"
+              ? segmentsIntro(data.brandProfileVersion)
+              : "Pick who to sell to, then where. You'll see what the search costs before anything runs."}
+          </p>
+        </div>
+        <Link
+          href={`/w/${slug}/brand`}
+          className="inline-flex min-h-11 items-center text-sm font-medium text-accent-ink hover:text-accent sm:pt-5"
+        >
+          Check Brand DNA
+        </Link>
+      </header>
+      {body}
+      {ownForm}
+    </>
+  );
+}
+
+function Problem({ title, detail, children }: { title: string; detail?: string | null; children: React.ReactNode }) {
+  return (
+    <div role="alert" className="flex max-w-read flex-col gap-2 rounded-card bg-negative-soft px-5 py-4 text-sm text-negative-ink">
+      <p className="font-semibold">{title}</p>
+      {detail && <p className="wrap-break-word">{detail}</p>}
+      {children}
     </div>
   );
 }
 
-function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () => void }) {
-  const [open, setOpen] = useState(false);
+// One suggested segment, picked by tapping it. One that Google Maps doesn't
+// list can't be picked.
+function SegmentCard({ segment, picked, onPick }: { segment: BuyerSegment; picked: boolean; onPick: () => void }) {
   const reachable = segment.reachability === "places";
-  const signals = signalsInWords(segment.buyerSignals);
+  const reach = reachWords(segment.reachability);
   return (
-    <article className={cn("flex flex-col gap-3 rounded-xl border bg-card p-4", !reachable && "bg-raised")}>
-      <div className="flex items-start gap-3">
+    <button
+      type="button"
+      aria-pressed={picked}
+      disabled={!reachable}
+      onClick={onPick}
+      className={cn(
+        "flex h-full w-full flex-col gap-2.5 rounded-card border p-5 text-left text-sm text-ink",
+        picked ? "border-[1.5px] border-accent bg-accent-soft" : "border-border bg-surface",
+        reachable ? "hover:border-control" : "cursor-not-allowed bg-raised",
+      )}
+    >
+      <span className="flex w-full items-center justify-between gap-2">
+        <span className="text-xs text-muted tabular-nums">{rankLabel(segment.rank)}</span>
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-semibold tabular-nums"
-          aria-label={`Rank ${segment.rank}`}
-        >
-          {segment.rank}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-medium wrap-break-word">{segment.name}</h3>
-          <p className="text-sm text-muted wrap-break-word">{segment.whoTheyAre}</p>
-        </div>
-      </div>
-
-      <dl className="grid gap-2 text-sm">
-        <div>
-          <dt className="text-xs font-medium tracking-wide text-muted uppercase">Pain</dt>
-          <dd className="wrap-break-word">{segment.pain}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium tracking-wide text-muted uppercase">Pitch first</dt>
-          <dd className="font-medium wrap-break-word">{segment.pitchFirst}</dd>
-        </div>
-      </dl>
-
-      <div className="flex flex-wrap gap-1.5 text-xs">
-        {segment.searchTerms.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-raised px-2 py-1">
-            <Search className="size-3" aria-hidden /> {t}
-          </span>
-        ))}
-        {segment.suggestedPlaces.map((p) => (
-          <span key={p.name} className="inline-flex items-center gap-1 rounded-full border px-2 py-1">
-            <MapPin className="size-3" aria-hidden /> {p.name}
-          </span>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="-mx-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted hover:text-foreground"
-      >
-        <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
-        {open ? "Less" : "Why them, and buyer signals"}
-      </button>
-      {open && (
-        <dl className="grid gap-2 text-sm">
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Why they buy</dt>
-            <dd className="wrap-break-word">{segment.whyTheyBuy}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Why this rank</dt>
-            <dd className="wrap-break-word">{segment.rankReason}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Buyer signals</dt>
-            <dd className="wrap-break-word">{signals.length ? signals.join(" · ") : "None in particular"}</dd>
-          </div>
-          {segment.signalNotes.length > 0 && (
-            <div>
-              <dt className="text-xs font-medium tracking-wide text-muted uppercase">Also look for (Maps can&apos;t check)</dt>
-              <dd className="wrap-break-word">{segment.signalNotes.join(" · ")}</dd>
-            </div>
+          className={cn(
+            "shrink-0 rounded-full px-2 text-sm leading-[22px] font-medium",
+            reach.tone === "positive" ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
           )}
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Backed by your Brand DNA</dt>
-            <dd>
-              <ul className="list-disc pl-5">
-                {segment.pitchFacts.map((f) => (
-                  <li key={f.id} className="wrap-break-word">
-                    {f.text}
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </div>
-        </dl>
+        >
+          {reach.text}
+        </span>
+      </span>
+      <span className="text-section font-semibold wrap-break-word">{segment.name}</span>
+      <span className="wrap-break-word">
+        <span className="text-muted">Pain. </span>
+        {segment.pain}
+      </span>
+      <span className="wrap-break-word">
+        <span className="text-muted">Pitch first. </span>
+        {segment.pitchFirst}
+      </span>
+      <span className="text-xs text-muted wrap-break-word">{rankedUpWhen(segment.buyerSignals)}</span>
+      {!reachable && (
+        <span className="text-xs text-muted wrap-break-word">
+          {segment.reachabilityReason} It can&apos;t start a campaign until the tool can search beyond Google Maps.
+        </span>
       )}
+    </button>
+  );
+}
 
-      {reachable ? (
-        <Button type="button" className="h-11 text-base sm:self-start sm:px-5" onClick={onPick}>
-          Use this segment
-        </Button>
-      ) : (
-        <p className="flex items-start gap-2 rounded-lg bg-raised px-3 py-2 text-sm text-muted">
-          <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            <span className="font-medium text-foreground">Not reachable yet.</span> {segment.reachabilityReason} It can&apos;t
-            start a campaign until the tool can search beyond Google Maps.
+// What the picked card doesn't fit: why them, the searches and places it
+// starts from, what Maps can't check, and the Brand DNA facts behind it.
+function WhyThem({ segment, className }: { segment: BuyerSegment; className?: string }) {
+  const rows: [string, React.ReactNode][] = [
+    ["Why they buy", segment.whyTheyBuy],
+    ["Why this rank", segment.rankReason],
+    [
+      "Google Maps searches",
+      <span key="terms" className="flex flex-wrap gap-1.5">
+        {segment.searchTerms.map((t) => (
+          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-raised px-2.5 py-0.5">
+            <Search className="size-3.5" aria-hidden /> {t}
           </span>
-        </p>
-      )}
-    </article>
+        ))}
+      </span>,
+    ],
+  ];
+  if (segment.suggestedPlaces.length > 0) {
+    rows.push([
+      "Suggested places",
+      <span key="places" className="flex flex-wrap gap-1.5">
+        {segment.suggestedPlaces.map((p) => (
+          <span key={p.name} className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5">
+            <MapPin className="size-3.5" aria-hidden /> {p.name}
+          </span>
+        ))}
+      </span>,
+    ]);
+  }
+  if (segment.signalNotes.length > 0) rows.push(["Also look for (Maps can't check)", segment.signalNotes.join(", ")]);
+  if (segment.pitchFacts.length > 0) {
+    rows.push([
+      "Backed by your Brand DNA",
+      <ul key="facts" className="list-disc pl-5">
+        {segment.pitchFacts.map((f) => (
+          <li key={f.id} className="wrap-break-word">
+            {f.text}
+          </li>
+        ))}
+      </ul>,
+    ]);
+  }
+  return (
+    <section
+      aria-label={`Why ${segment.name}`}
+      className={cn("max-w-page flex-col gap-3 rounded-card border border-border bg-surface px-5 py-5 md:px-6", className)}
+    >
+      <h2 className="text-section font-semibold">Why them</h2>
+      <dl className="grid gap-x-6 gap-y-3 text-sm md:grid-cols-[200px_1fr]">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="text-muted">{k}</dt>
+            <dd className="wrap-break-word">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

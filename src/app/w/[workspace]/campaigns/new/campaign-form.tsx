@@ -58,16 +58,19 @@ export function CampaignForm({
   workspaceId,
   slug,
   start,
+  ownName = "",
   onBack,
 }: {
   workspaceId: string;
   slug: string;
   start: FormStart;
+  // The buyer typed on the picker, when there is no suggestion.
+  ownName?: string;
   onBack: () => void;
 }) {
   const router = useRouter();
   const picked = start?.segment ?? null;
-  const [segment, setSegment] = useState(picked?.name ?? "");
+  const [segment, setSegment] = useState(picked?.name ?? ownName);
   const [terms, setTerms] = useState(picked?.searchTerms.join(", ") ?? "");
   const [pitch, setPitch] = useState(picked?.pitchFirst ?? "");
   const [signals, setSignals] = useState<BuyerSignals>(picked?.buyerSignals ?? NO_SIGNALS);
@@ -163,181 +166,190 @@ export function CampaignForm({
   const notSearchable = (start?.segment.suggestedPlaces ?? []).filter((p) => !p.areaId);
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-5 rounded-xl border bg-card p-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="-mx-1 -mt-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" aria-hidden /> All segments
-      </button>
-      {start && (
-        <p className="flex items-start gap-2 rounded-lg bg-raised px-3 py-2 text-sm">
-          <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            Suggestion {start.segment.rank}. {start.segment.pain} Change anything that&apos;s off.
-          </span>
+    <>
+      <header className="flex max-w-read flex-col gap-1">
+        <button
+          type="button"
+          onClick={onBack}
+          className="-ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm font-medium text-muted hover:text-ink md:h-8"
+        >
+          <ChevronLeft className="size-4" aria-hidden /> All segments
+        </button>
+        <span className="text-sm text-muted">New campaign</span>
+        <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">Choose where</h1>
+        <p className="text-sm text-muted sm:text-body">
+          Check who to look for, then pick the places. You&apos;ll see what the search costs before anything runs.
         </p>
-      )}
+      </header>
+      <form onSubmit={save} className="flex max-w-read flex-col gap-5 rounded-card border border-border bg-surface p-4 md:px-6 md:py-5">
+        {start && (
+          <p className="flex items-start gap-2 rounded-control bg-raised px-3.5 py-3 text-sm">
+            <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>
+              Suggestion {start.segment.rank}. {start.segment.pain} Change anything that&apos;s off.
+            </span>
+          </p>
+        )}
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        Who to look for
-        <input
-          name="segment"
-          value={segment}
-          onChange={(e) => setSegment(e.target.value)}
-          onBlur={suggest}
-          placeholder="Hotels and guest houses"
-          autoComplete="off"
-          required
-          minLength={2}
-          maxLength={100}
-          className={inputClass}
-        />
-      </label>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          Who to look for
+          <input
+            name="segment"
+            value={segment}
+            onChange={(e) => setSegment(e.target.value)}
+            onBlur={suggest}
+            placeholder="Hotels and guest houses"
+            autoComplete="off"
+            required
+            minLength={2}
+            maxLength={100}
+            className={inputClass}
+          />
+        </label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        Google Maps searches
-        <input
-          name="terms"
-          value={terms}
-          onChange={(e) => setTerms(e.target.value)}
-          placeholder="hotel, guest house"
-          autoComplete="off"
-          className={inputClass}
-        />
-        <span className="font-normal text-muted">
-          Up to 3, separated by commas, the way a person would search.
-          {!start && " Left empty, the name above is searched."}
-        </span>
-      </label>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          Google Maps searches
+          <input
+            name="terms"
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
+            placeholder="hotel, guest house"
+            autoComplete="off"
+            className={inputClass}
+          />
+          <span className="font-normal text-muted">
+            Up to 3, separated by commas, the way a person would search.
+            {!start && " Left empty, the name above is searched."}
+          </span>
+        </label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        <span>
-          What to pitch first <span className="font-normal text-muted">(optional)</span>
-        </span>
-        <input
-          name="pitch"
-          value={pitch}
-          onChange={(e) => setPitch(e.target.value)}
-          maxLength={300}
-          autoComplete="off"
-          placeholder="Website development"
-          className={inputClass}
-        />
-      </label>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <span>
+            What to pitch first <span className="font-normal text-muted">(optional)</span>
+          </span>
+          <input
+            name="pitch"
+            value={pitch}
+            onChange={(e) => setPitch(e.target.value)}
+            maxLength={300}
+            autoComplete="off"
+            placeholder="Website development"
+            className={inputClass}
+          />
+        </label>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-medium">Buyer signals</legend>
-        <p className="-mt-1 text-sm text-muted">Leads that match these rank higher. Nothing is filtered out.</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-sm">
-            Reviews, at least
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={100000}
-              value={signals.minReviews ?? ""}
-              onChange={(e) =>
-                setSignals({ ...signals, minReviews: e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value))) })
-              }
-              placeholder="Any"
-              className={inputClass}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            Rated at least
-            <select
-              value={signals.minRating ?? ""}
-              onChange={(e) => setSignals({ ...signals, minRating: e.target.value === "" ? null : Number(e.target.value) })}
-              className={inputClass}
-            >
-              <option value="">Any</option>
-              {ratingOptions(signals.minRating).map((r) => (
-                <option key={r} value={r}>
-                  {r.toFixed(1)}
-                </option>
-              ))}
-            </select>
-          </label>
-          {(
-            [
-              ["website", "Website"],
-              ["socials", "Social media"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="flex flex-col gap-1.5 text-sm">
-              {label}
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-1 text-sm font-medium">Buyer signals</legend>
+          <p className="-mt-1 text-sm text-muted">Leads that match these rank higher. Nothing is filtered out.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1.5 text-sm">
+              Reviews, at least
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100000}
+                value={signals.minReviews ?? ""}
+                onChange={(e) =>
+                  setSignals({ ...signals, minReviews: e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value))) })
+                }
+                placeholder="Any"
+                className={inputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              Rated at least
               <select
-                value={signals[key]}
-                onChange={(e) => setSignals({ ...signals, [key]: e.target.value as Presence })}
+                value={signals.minRating ?? ""}
+                onChange={(e) => setSignals({ ...signals, minRating: e.target.value === "" ? null : Number(e.target.value) })}
                 className={inputClass}
               >
-                {PRESENCE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
+                <option value="">Any</option>
+                {ratingOptions(signals.minRating).map((r) => (
+                  <option key={r} value={r}>
+                    {r.toFixed(1)}
                   </option>
                 ))}
               </select>
             </label>
-          ))}
-        </div>
-      </fieldset>
-
-      {!start && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1.5 text-sm font-medium">Who are you looking for?</legend>
-          <SuggestionNote suggestion={suggestion} />
-          {TARGET_KINDS.map((t) => (
-            <label
-              key={t.kind}
-              className={cn(
-                "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
-                kind === t.kind ? "border-ink bg-raised" : "border-border",
-              )}
-            >
-              <input
-                type="radio"
-                name="kind"
-                value={t.kind}
-                checked={kind === t.kind}
-                onChange={() => setKind(t.kind)}
-                className="mt-1 size-4 shrink-0"
-              />
-              <span className="flex flex-col">
-                <span className="font-medium">
-                  {t.label}
-                  {suggestion.state === "done" && suggestion.answer.kind === t.kind && (
-                    <span className="ml-2 text-xs font-normal text-muted">suggested</span>
-                  )}
-                </span>
-                <span className="text-sm text-muted">{t.help}</span>
-              </span>
-            </label>
-          ))}
+            {(
+              [
+                ["website", "Website"],
+                ["socials", "Social media"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key} className="flex flex-col gap-1.5 text-sm">
+                {label}
+                <select
+                  value={signals[key]}
+                  onChange={(e) => setSignals({ ...signals, [key]: e.target.value as Presence })}
+                  className={inputClass}
+                >
+                  {PRESENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
         </fieldset>
-      )}
 
-      <PlacePicker workspaceId={workspaceId} chosen={chosen} onChange={setChosen} />
-      {notSearchable.length > 0 && (
-        <p className="text-sm text-muted">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
-      )}
+        {!start && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1.5 text-sm font-medium">Who are you looking for?</legend>
+            <SuggestionNote suggestion={suggestion} />
+            {TARGET_KINDS.map((t) => (
+              <label
+                key={t.kind}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
+                  kind === t.kind ? "border-ink bg-raised" : "border-control",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="kind"
+                  value={t.kind}
+                  checked={kind === t.kind}
+                  onChange={() => setKind(t.kind)}
+                  className="mt-1 size-4 shrink-0"
+                />
+                <span className="flex flex-col">
+                  <span className="font-medium">
+                    {t.label}
+                    {suggestion.state === "done" && suggestion.answer.kind === t.kind && (
+                      <span className="ml-2 text-xs font-normal text-muted">suggested</span>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted">{t.help}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
 
-      {unsupported && (
-        <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
-          Only local businesses can be searched for now. You can save this draft, but it can&apos;t be started yet.
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
-          {error}
-        </p>
-      )}
-      <Button type="submit" className="h-11 text-base sm:self-start sm:px-5" disabled={saving}>
-        {saving ? "Saving" : "Save and see the cost"}
-      </Button>
-    </form>
+        <PlacePicker workspaceId={workspaceId} chosen={chosen} onChange={setChosen} />
+        {notSearchable.length > 0 && (
+          <p className="text-sm text-muted">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
+        )}
+
+        {unsupported && (
+          <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
+            Only local businesses can be searched for now. You can save this draft, but it can&apos;t be started yet.
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
+            {error}
+          </p>
+        )}
+        <Button type="submit" className="h-11 text-base sm:self-start sm:px-5" disabled={saving}>
+          {saving ? "Saving" : "Save and see the cost"}
+        </Button>
+      </form>
+    </>
   );
 }
 
