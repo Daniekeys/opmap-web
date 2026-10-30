@@ -5,7 +5,7 @@ import { cache } from "react";
 import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
 import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
 import type { ApiErrorResponse } from "./api-types/errors";
-import type { CampaignDetailResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
+import type { CampaignDetailResponse, CampaignProgressResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
 import type { PipelineResponse } from "./api-types/outcomes";
 import type { LeadOutreachResponse } from "./api-types/outreach";
@@ -64,6 +64,9 @@ export const getCampaignLeads = cache((workspaceId: string, campaignId: string) 
 
 export const getCampaignEstimate = (workspaceId: string, campaignId: string) =>
   apiGet<EstimateResponse>(`${campaignPath(workspaceId, campaignId)}/estimate`);
+
+export const getCampaignProgress = (workspaceId: string, campaignId: string) =>
+  apiGet<CampaignProgressResponse>(`${campaignPath(workspaceId, campaignId)}/progress`);
 
 // Owners only; the API answers 403 to a member.
 export const listPendingInvites = (workspaceId: string) =>

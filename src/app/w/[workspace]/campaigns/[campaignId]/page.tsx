@@ -3,15 +3,14 @@ import { Fragment, Suspense } from "react";
 import { Container } from "@/components/container";
 import { TileMark } from "@/components/logo";
 import { PageLoading } from "@/components/page-loading";
-import { getCampaign, getCampaignEstimate, getCampaignLeads, getWorkspace } from "@/lib/api";
+import { getCampaign, getCampaignEstimate, getCampaignLeads, getCampaignProgress, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
-import { pausedUntil, resumeDue, TARGET_KINDS } from "@/lib/leads";
-import { AutoRefresh, RefreshAt } from "./auto-refresh";
+import { TARGET_KINDS } from "@/lib/leads";
+import { AutoRefresh } from "./auto-refresh";
+import { CampaignProgress } from "./campaign-progress";
 import { ConfirmPanel } from "./confirm-panel";
 import { EditCampaign } from "./edit-campaign";
 import { Possibles } from "./possibles";
-import { ResumeButton } from "./resume-button";
-import { StopButton } from "./stop-button";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
@@ -37,14 +36,23 @@ async function CampaignView({ params }: { params: Props["params"] }) {
   const startable = campaign.status === "draft" || campaign.status === "failed" || campaign.status === "stopped";
   const editable = startable || campaign.status === "paused";
   const isOwner = workspace.role === "owner";
-  const estimate = startable ? await getCampaignEstimate(workspace.id, campaignId) : null;
+  const [estimate, progress] = await Promise.all([
+    startable ? getCampaignEstimate(workspace.id, campaignId) : null,
+    campaign.status !== "draft" ? getCampaignProgress(workspace.id, campaignId) : null,
+  ]);
   const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
+  // While it searches or waits, its progress comes first; after, the pick hint.
+  const searching = campaign.status === "running" || campaign.status === "paused";
+  const progressView = progress && (
+    <CampaignProgress progress={progress} campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} />
+  );
 
   return (
     <>
-      <StatusNote campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} />
+      <StatusNote campaign={campaign} leadCount={leads.length} isOwner={isOwner} />
+      {searching && progressView}
       {leads.length > 0 && <PickHint count={leads.length} />}
-      {campaign.status === "running" && <AutoRefresh seconds={15} />}
+      {campaign.status === "running" && <AutoRefresh seconds={10} />}
 
       <Container size="read" className="flex flex-col gap-5 empty:hidden">
         {estimate && (
@@ -69,6 +77,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         )}
       </Container>
 
+      {!searching && progressView}
       <SearchSummary campaign={campaign} />
       <NameWordsPanel campaign={campaign} />
       {campaign.status !== "draft" && <Possibles workspaceId={workspace.id} campaignId={campaign.id} count={possibleCount} />}
@@ -165,27 +174,9 @@ function WordList({ label, hint, words }: { label: string; hint: string; words: 
   );
 }
 
-// What the campaign's state means for the user, in a sentence.
-function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: Campaign; leadCount: number; workspaceId: string; isOwner: boolean }) {
-  if (campaign.status === "paused") {
-    // The limit has lifted: an owner can restart it (the only way in
-    // development, where nothing restarts it by itself).
-    const due = resumeDue(campaign.resumeAt);
-    return (
-      <div role="status" className="rounded-card bg-warning-soft px-5 py-4 text-sm text-warning-ink">
-        <p className="font-medium">
-          {due ? "Paused: the limit has lifted" : `Paused until ${campaign.resumeAt ? pausedUntil(campaign.resumeAt) : "the limit resets"} (Lagos time)`}
-        </p>
-        <p className="mt-1">
-          {campaign.pauseReason ?? "Today's Google searches are used up."} The {leadCount} {leadCount === 1 ? "lead" : "leads"} found so far{" "}
-          {leadCount === 1 ? "is" : "are"} in the list.
-        </p>
-        {due && isOwner && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
-        {!due && campaign.resumeAt && <RefreshAt at={campaign.resumeAt} />}
-        {isOwner && <StopButton workspaceId={workspaceId} campaignId={campaign.id} />}
-      </div>
-    );
-  }
+// What a stopped or failed campaign's state means, in a sentence. A running,
+// paused or finished search says so in its progress.
+function StatusNote({ campaign, leadCount, isOwner }: { campaign: Campaign; leadCount: number; isOwner: boolean }) {
   if (campaign.status === "stopped") {
     return (
       <div role="status" className="rounded-card border border-border bg-surface px-5 py-4 text-sm">
@@ -195,25 +186,6 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
           {leadCount} {leadCount === 1 ? "lead" : "leads"} it found {leadCount === 1 ? "is" : "are"} in the list.{" "}
           {isOwner ? "Edit it, or change its settings below and continue the search." : "An owner can edit it and continue the search."}
         </p>
-      </div>
-    );
-  }
-  if (campaign.status === "done") {
-    return (
-      <p role="status" className="rounded-card bg-positive-soft px-5 py-4 text-sm text-positive-ink">
-        Complete. The search covered every place in this campaign and found {leadCount} {leadCount === 1 ? "lead" : "leads"} that fit.
-      </p>
-    );
-  }
-  if (campaign.status === "running") {
-    const budget = campaign.settings.maxCalls;
-    return (
-      <div role="status" className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted">
-        <p>
-          Searching. Leads appear in the list as they are found and checked; this page updates by itself. {campaign.callsUsed}
-          {budget !== null ? ` of ${budget}` : ""} Google searches used so far.
-        </p>
-        {isOwner && <StopButton workspaceId={workspaceId} campaignId={campaign.id} />}
       </div>
     );
   }

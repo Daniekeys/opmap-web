@@ -78,6 +78,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
       header={header}
       stats={stats}
       rail={<LeadRail base={base} leads={leads} stages={stages} searched={campaign.status !== "draft" && campaign.status !== "failed"} />}
+      paneFirst={campaign.status === "running" || campaign.status === "paused"}
     >
       {children}
     </CampaignFrame>

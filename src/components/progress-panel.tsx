@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
+import { type StepItem, StepList } from "@/components/step-list";
 import { Button } from "@/components/ui/button";
 import type { PipelineRunDetailResponse, StepRun } from "@/lib/api-types/pipeline";
 import { formatDuration } from "@/lib/format";
@@ -142,10 +143,10 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
   if (!data) {
     return (
       connection || (
-        <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" role="status" aria-label="Loading run">
-          <div className="h-5 w-32 animate-pulse rounded bg-raised" />
-          <div className="h-11 animate-pulse rounded-lg bg-raised" />
-          <div className="h-11 animate-pulse rounded-lg bg-raised" />
+        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4" role="status" aria-label="Loading run">
+          <div className="h-5 w-32 animate-pulse rounded-control bg-raised" />
+          <div className="h-11 animate-pulse rounded-control bg-raised" />
+          <div className="h-11 animate-pulse rounded-control bg-raised" />
         </div>
       )
     );
@@ -154,14 +155,16 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
   const { run, steps } = data;
   const finishedSteps = steps.filter((step) => step.status === "done").length;
   const runMs = run.durationMs ?? (run.status === "done" ? null : at - Date.parse(run.createdAt));
+  // Still watched: the worker may run a failed step again.
+  const next = polling ? "The worker may try it again." : "It won't be tried again.";
 
   return (
     <div className="flex flex-col gap-2">
       {connection}
-      <div className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex items-center gap-3 border-b px-4 py-3">
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
+        <div className="flex items-center gap-3 border-b border-rule px-5 py-3.5">
           <div className="min-w-0 flex-1">
-            <p className={title ? "truncate font-medium" : "truncate font-medium capitalize"}>{title ?? `${run.type} run`}</p>
+            <p className={title ? "truncate font-semibold" : "truncate font-semibold capitalize"}>{title ?? `${run.type} run`}</p>
             <p className="text-sm text-muted">
               {finishedSteps} {finishedSteps === 1 ? "step" : "steps"} done
               {runMs !== null && `, ${formatDuration(runMs)}`}
@@ -171,14 +174,14 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
         </div>
 
         {run.status === "failed" && (
-          <p className="border-b bg-negative-soft px-4 py-3 text-sm wrap-break-word text-negative-ink">
-            {run.error ?? "The run failed."}
+          <p className="border-b border-rule bg-negative-soft px-5 py-3 text-sm wrap-break-word text-negative-ink">
+            {plainError(run.error) ?? "The run failed."}
             {polling && " The worker may retry it, so this is still being watched."}
           </p>
         )}
 
         {steps.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-muted">
+          <p className="px-5 py-6 text-center text-sm text-muted">
             {run.status === "queued"
               ? "Waiting for the worker to pick this run up."
               : run.status === "running"
@@ -186,38 +189,43 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
                 : "This run finished without logging any steps."}
           </p>
         ) : (
-          <ol className="divide-y" aria-live="polite">
-            {steps.map((step, index) => (
-              <StepRow key={step.id} step={step} number={index + 1} now={at} />
-            ))}
-          </ol>
+          <div className="px-5 py-5">
+            <StepList live steps={steps.map((step) => stepItem(step, at, next))} />
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function StepRow({ step, number, now }: { step: StepRun; number: number; now: number }) {
-  // A finished step has its saved duration. A running one counts up from when
-  // it started, which is only known for its first attempt.
-  const ms =
-    step.durationMs ?? (step.status === "running" && step.attempts === 1 ? now - Date.parse(step.createdAt) : null);
+const STATE_WORDS: Record<StepRun["status"], string> = { queued: "Waiting", running: "Running", done: "Done", failed: "Failed" };
 
-  return (
-    <li className="flex min-h-11 items-start gap-3 px-4 py-3">
-      <span className="w-5 shrink-0 pt-0.5 text-sm text-muted tabular-nums">{number}</span>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium wrap-break-word">{stepLabel(step.name)}</p>
-        {step.attempts > 1 && <p className="text-sm text-muted">Attempt {step.attempts}</p>}
-        {step.error && <p className="mt-1 text-sm wrap-break-word whitespace-pre-wrap text-negative-ink">{step.error}</p>}
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <StatusBadge status={step.status} />
-        {ms !== null && <span className="text-sm text-muted tabular-nums">{formatDuration(ms)}</span>}
-      </div>
-    </li>
-  );
+// One step with the board's marks. A finished step has its saved duration; a
+// running one counts up from when it started, known only for its first try.
+function stepItem(step: StepRun, now: number, next: string): StepItem {
+  const ms = step.durationMs ?? (step.status === "running" && step.attempts === 1 ? now - Date.parse(step.createdAt) : null);
+  const error = plainError(step.error);
+  return {
+    id: step.id,
+    title: stepLabel(step.name),
+    state: step.status === "queued" ? "waiting" : step.status,
+    stateText: `${STATE_WORDS[step.status]}${ms !== null ? `, ${formatDuration(ms)}` : ""}`,
+    detail:
+      step.attempts > 1 || error ? (
+        <>
+          {step.attempts > 1 && <p>Attempt {step.attempts}</p>}
+          {error && step.status === "failed" && (
+            <p className="wrap-break-word text-negative-ink">
+              {error} {next}
+            </p>
+          )}
+        </>
+      ) : undefined,
+  };
 }
+
+// An error's first line only: what went wrong, never a trace.
+const plainError = (error: string | null) => error?.split("\n")[0]?.trim() || null;
 
 function Notice({ tone = "muted", children }: { tone?: "muted" | "error"; children: React.ReactNode }) {
   return (
@@ -225,8 +233,8 @@ function Notice({ tone = "muted", children }: { tone?: "muted" | "error"; childr
       role={tone === "error" ? "alert" : undefined}
       className={
         tone === "error"
-          ? "rounded-xl border border-negative/40 bg-negative-soft px-4 py-4 text-sm text-negative-ink"
-          : "rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted"
+          ? "rounded-card border border-negative/40 bg-negative-soft px-5 py-4 text-sm text-negative-ink"
+          : "rounded-card border border-dashed border-border bg-surface px-5 py-6 text-center text-sm text-muted"
       }
     >
       {children}

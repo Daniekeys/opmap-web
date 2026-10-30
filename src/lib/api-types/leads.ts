@@ -166,6 +166,39 @@ export type EstimateResponse = {
   notes: string[];
 };
 
+// GET .../campaigns/:campaignId/progress: the search's steps (from
+// step_runs), what it has cost, and which limit paused it. A failed step's
+// message is set only when it was written for the user; `next` says whether
+// it is being retried, was skipped while the search carried on, or stopped it.
+export type ProgressStepKey = "map" | "search" | "dedupe" | "fit" | "contacts";
+export type ProgressStepState = "done" | "running" | "waiting" | "failed" | "skipped";
+export type ProgressStep = {
+  key: ProgressStepKey;
+  state: ProgressStepState;
+  problem: { message: string | null; next: "retrying" | "skipped" | "stopped"; attempt: number; attempts: number } | null;
+};
+export type PauseLimit = "daily_cap" | "monthly_cap" | "campaign_daily" | "offline" | "lifted" | "other";
+export type CampaignProgressResponse = {
+  status: CampaignStatus;
+  steps: ProgressStep[];
+  // Businesses the searches kept so far, before duplicates are removed.
+  listings: number;
+  // Places mapped and tiles planned for the current search.
+  areas: number;
+  tiles: number;
+  // The search term of the newest search step.
+  query: string | null;
+  cost: {
+    // Claude credit spent by every run of this campaign (search, research, drafts).
+    claudeUsd: number;
+    // This campaign's Google searches and budget, and the shared caps (from
+    // the API's config) with what all workspaces used today and this month.
+    searches: { campaign: number; budget: number | null; today: number; dailyCap: number; month: number; monthlyCap: number };
+  };
+  // Set while paused; autoResume is false in development (an owner resumes).
+  pause: { limit: PauseLimit; resumeAt: string | null; reason: string | null; autoResume: boolean } | null;
+};
+
 // POST .../campaigns/:campaignId/start (owner), 202.
 export type StartCampaignResponse = { campaign: Campaign; runId: string };
 

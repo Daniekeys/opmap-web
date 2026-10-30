@@ -68,7 +68,9 @@ button{font-family:inherit}
         </div>
         <div style="background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto; row-gap: 8px; font-size: 14px; line-height: 20px;">
           <span style="grid-column: 1 / -1; font-weight: 600; font-size: 15px;">Cost so far</span>
-          <span style="color: #5F5A62;">Google searches today</span><span style="text-align: right; font-variant-numeric: tabular-nums;">18 of 30 free</span>
+          <!-- The caps come from the API's config (production 20 a day and 650 a month, development 10 and 300), never written into the page. -->
+          <span style="color: #5F5A62;">Google searches today</span><span style="text-align: right; font-variant-numeric: tabular-nums;">18 of 20</span>
+          <span style="color: #5F5A62;">This month</span><span style="text-align: right; font-variant-numeric: tabular-nums;">46 of 650</span>
           <span style="color: #5F5A62;">Claude credit</span><span style="text-align: right; font-variant-numeric: tabular-nums;">$0.41</span>
         </div>
       </aside>
