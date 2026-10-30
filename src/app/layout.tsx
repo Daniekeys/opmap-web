@@ -13,9 +13,11 @@ export const metadata: Metadata = {
   description: "Find and research leads for Daniekeys Studios and Afriment.",
 };
 
+// suppressHydrationWarning covers only <html>'s own attributes, which browser
+// extensions (Scribe, QuillBot) add before React hydrates.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${dmSans.variable} h-full antialiased`}>
+    <html lang="en" className={`${dmSans.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col bg-ground">{children}</body>
     </html>
   );
