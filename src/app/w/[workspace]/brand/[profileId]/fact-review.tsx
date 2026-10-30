@@ -22,7 +22,7 @@ import { goToLogin } from "@/lib/go-to-login";
 import { cn } from "@/lib/utils";
 import { FactSource, foundOn, KINDS, kindLabel, PreviouslyApproved, SourceLine, sourceLabel, StaleFlag, StalePill } from "../facts";
 import { emptyFactsMessage, factTabs } from "../kinds";
-import { approveNote, pagesRead, reviewFinding } from "../review";
+import { approveNote, pagesRead, reviewFinding, siteMismatch } from "../review";
 
 type Result<T> = { ok: true; data: T } | { ok: false; message: string };
 
@@ -73,6 +73,7 @@ export function FactReview({
   profile,
   pages,
   approvedVersion,
+  approvedSite,
   initialFacts,
   missing,
   isOwner,
@@ -82,6 +83,8 @@ export function FactReview({
   profile: ProfileSummary;
   pages: CrawledPage[];
   approvedVersion: number | null;
+  // Where the approved version was read from, to warn about a switch of website.
+  approvedSite: Pick<ProfileSummary, "source" | "website"> | null;
   initialFacts: Fact[];
   missing: MissingFact[];
   isOwner: boolean;
@@ -192,7 +195,7 @@ export function FactReview({
           All versions
         </Link>
         <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">Brand DNA</h1>
-        <p className="text-sm text-muted sm:text-body">{reviewFinding(facts, profile.source)}</p>
+        <p className="text-sm text-muted sm:text-body">{reviewFinding(facts, profile.source, siteMismatch(profile, approvedSite))}</p>
       </header>
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">

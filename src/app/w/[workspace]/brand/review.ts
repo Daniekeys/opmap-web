@@ -17,9 +17,37 @@ const count = (n: number, [one, many]: [string, string]) => (n === 1 ? `One ${on
 
 const APPROVED_ONLY = "Only facts you approve go into messages.";
 
-// The most important thing about the draft right now: facts that may be out
-// of date first, then how many are left, then that it can be approved.
-export function reviewFinding(facts: Pick<Fact, "kind" | "status" | "possiblyStale">[], source: ProfileSummary["source"]) {
+// "daniekeysstudios.com" from a website address; null when it isn't one.
+function domainOf(url: string | null) {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+type Read = Pick<ProfileSummary, "source" | "website">;
+
+// A warning when the draft was read from another website than the approved
+// version: approving it would switch the business messages speak for.
+export function siteMismatch(draft: Read, approved: Read | null) {
+  if (!approved || draft.source !== "website" || approved.source !== "website") return null;
+  const from = domainOf(draft.website);
+  const was = domainOf(approved.website);
+  if (!from || !was || from === was) return null;
+  return `This version was read from ${from}, but your approved one came from ${was}. Check you meant to switch.`;
+}
+
+// The most important thing about the draft right now: a switch of website
+// first, then facts that may be out of date, then how many are left, then
+// that it can be approved.
+export function reviewFinding(facts: Pick<Fact, "kind" | "status" | "possiblyStale">[], source: ProfileSummary["source"], mismatch: string | null = null) {
+  const finding = factsFinding(facts, source);
+  return mismatch ? `${mismatch} ${finding}` : finding;
+}
+
+function factsFinding(facts: Pick<Fact, "kind" | "status" | "possiblyStale">[], source: ProfileSummary["source"]) {
   if (facts.length === 0) return "Nothing was found to review. Add the facts you want by hand.";
   const pending = facts.filter((f) => f.status === "pending");
   const stale = pending.filter((f) => f.possiblyStale);

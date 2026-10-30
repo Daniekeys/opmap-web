@@ -55,6 +55,7 @@ async function Profile({ params }: { params: Props["params"] }) {
         profile={profile}
         pages={detail.pages}
         approvedVersion={brand.approved?.version ?? null}
+        approvedSite={brand.approved}
         initialFacts={detail.facts}
         missing={detail.missing}
         isOwner={workspace.role === "owner"}

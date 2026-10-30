@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Fact } from "@/lib/api-types/brand";
-import { approveNote, pageName, pagesRead, reviewFinding } from "./review";
+import { approveNote, pageName, pagesRead, reviewFinding, siteMismatch } from "./review";
 
 const fact = (kind: Fact["kind"], status: Fact["status"] = "pending", possiblyStale = false) => ({ kind, status, possiblyStale });
 
@@ -28,6 +28,28 @@ describe("review finding", () => {
 
   it("says what to do when nothing was found", () => {
     expect(reviewFinding([], "website")).toMatch(/Add the facts you want by hand/);
+  });
+});
+
+describe("website mismatch", () => {
+  const site = (website: string | null, source: "website" | "description" = "website") => ({ source, website });
+
+  it("leads the finding when the draft was read from another site than the approved version", () => {
+    const mismatch = siteMismatch(site("https://www.enattafoundation.org/"), site("https://daniekeysstudios.com"));
+    expect(mismatch).toBe(
+      "This version was read from enattafoundation.org, but your approved one came from daniekeysstudios.com. Check you meant to switch.",
+    );
+    expect(reviewFinding([fact("service", "pending", true)], "website", mismatch)).toBe(
+      "This version was read from enattafoundation.org, but your approved one came from daniekeysstudios.com. Check you meant to switch. One service on your site may be out of date. Only facts you approve go into messages.",
+    );
+  });
+
+  it("says nothing for the same site, www or not, a description, or no approved version", () => {
+    expect(siteMismatch(site("https://www.daniekeysstudios.com/about"), site("https://daniekeysstudios.com"))).toBeNull();
+    expect(siteMismatch(site(null, "description"), site("https://daniekeysstudios.com"))).toBeNull();
+    expect(siteMismatch(site("https://enattafoundation.org"), site(null, "description"))).toBeNull();
+    expect(siteMismatch(site("https://enattafoundation.org"), null)).toBeNull();
+    expect(reviewFinding([fact("tone")], "website", null)).toBe("One fact left to review. Only facts you approve go into messages.");
   });
 });
 
