@@ -3,7 +3,7 @@
 import type { PipelineRun } from "./pipeline";
 
 export type TargetKind = "local_business" | "b2b" | "institution";
-export type CampaignStatus = "draft" | "running" | "paused" | "done" | "failed";
+export type CampaignStatus = "draft" | "running" | "paused" | "stopped" | "done" | "failed";
 export type AreaLevel = "country" | "state" | "city" | "neighbourhood";
 
 // A place from geo_areas, with the place above it ("Ilorin", "Kwara").
@@ -108,12 +108,27 @@ export type Campaign = {
   brandProfileVersion: number | null;
   locations: GeoArea[];
   status: CampaignStatus;
-  // Set while paused: when the search starts again, and why it stopped.
+  // Set while paused: when the search starts again, and why it stopped. A
+  // stopped campaign keeps why it stopped here too.
   resumeAt: string | null;
   pauseReason: string | null;
+  settings: SearchSettings;
+  // Google searches the campaign has made so far.
+  callsUsed: number;
   leadCount: number;
   createdAt: string;
 };
+
+// A campaign's search settings: the most Google searches it may use (null: no
+// budget), pages per map tile (1 to 3), neighbourhood searches per city (0 to
+// 3), and its own searches a day (null: the shared cap alone, which always holds).
+export type SearchSettings = { maxCalls: number | null; pagesPerTile: number; extrasPerCity: number; dailyCalls: number | null };
+
+// PATCH .../campaigns/:campaignId (owner): search terms, places and search
+// settings, while it is a draft, paused, stopped or failed. A field left out
+// is kept; null lifts a limit. Answers CampaignResponse. POST .../stop (owner)
+// does too.
+export type EditCampaignBody = Partial<SearchSettings> & { queries?: string[]; locations?: string[] };
 
 export type CampaignResponse = { campaign: Campaign };
 
@@ -125,16 +140,25 @@ export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number
 
 type Range = { min: number; max: number };
 
-// GET .../campaigns/:campaignId/estimate
+// GET .../campaigns/:campaignId/estimate, optionally with settings to preview
+// (?maxCalls=100&pagesPerTile=2; maxCalls=none or dailyCalls=none for no limit).
 export type EstimateResponse = {
   areas: { name: string; tiles: number; queries: number; freshPairs: number; extras: number }[];
   tileSearches: number;
   pagesPerTile: Range;
+  // What the whole search needs; calls is this, cut at the budget left.
+  needed: Range;
+  budgetCut: boolean;
   calls: Range;
   costUsd: Range;
+  // Days at perDay searches a day: the campaign's own pace, at most the cap.
   daysAtDailyCap: Range;
-  // Google searches a day the caps allow (30 in production).
+  perDay: number;
+  // Google searches a day the shared caps allow (20 in production).
   dailyCap: number;
+  // The settings this estimate is for (saved, or previewed).
+  settings: SearchSettings;
+  callsUsed: number;
   // Google searches left under the shared caps (all workspaces).
   callsLeft: { today: number; month: number };
   unmapped: string[];

@@ -14,6 +14,7 @@ Build:
 - For fit leads with a website: crawl it for emails, phones, `wa.me` links, socials, owner names and schema.org data. Everything lands in `contact_points` with source, confidence and label.
 - For fit leads without a website: no search at lead-finding time (spec, Lead sourcing > Local business flow 6). When a user first opens the lead, the deep-dive runs one web search on the lead's phone number and name, and saves a social only if its cited text contains that phone, or names the business and its city. Built in Phase 2 as the `lead_socials` pipeline behind `research.openLead`; the Phase 3 lead page calls it.
 - Cost estimate on the campaign confirm button (tiles x queries x pages).
+- Added 2026-10-30: per-campaign search settings on the confirm panel (search budget, searches a day up to the shared cap, pages per tile 1 to 3, neighbourhood searches 0 to 3) with a live estimate; Edit campaign (search terms, places, settings) while draft, paused, stopped or failed; Stop search on a running or paused campaign, and Continue search on a stopped one. Owner only (spec, Location > Search settings, edit and stop).
 - Leads table: name, category, city, rating and reviews, best phone, email and WhatsApp with their labels, fit, and a "Researched / Not yet" status so people know what opening a lead will do. On phones the table becomes stacked cards.
 
 Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap, and a manual check of 20 rows finds the contact labels honest.

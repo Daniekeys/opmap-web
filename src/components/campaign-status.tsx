@@ -1,4 +1,4 @@
-import { Check, CirclePause, FilePen, LoaderCircle, X } from "lucide-react";
+import { Check, CirclePause, CircleStop, FilePen, LoaderCircle, X } from "lucide-react";
 import type { Campaign, CampaignStatus } from "@/lib/api-types/leads";
 import { statusText } from "@/lib/leads";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ const STYLE: Record<CampaignStatus, { icon: typeof Check; className: string }> =
   draft: { icon: FilePen, className: "bg-muted text-muted-foreground" },
   running: { icon: LoaderCircle, className: "bg-sky-100 text-sky-800" },
   paused: { icon: CirclePause, className: "bg-amber-100 text-amber-900" },
+  stopped: { icon: CircleStop, className: "bg-muted text-foreground" },
   done: { icon: Check, className: "bg-emerald-100 text-emerald-800" },
   failed: { icon: X, className: "bg-destructive/10 text-destructive" },
 };

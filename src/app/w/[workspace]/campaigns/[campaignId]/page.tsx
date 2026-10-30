@@ -8,13 +8,16 @@ import type { Campaign } from "@/lib/api-types/leads";
 import { pausedUntil, resumeDue, TARGET_KINDS } from "@/lib/leads";
 import { AutoRefresh, RefreshAt } from "./auto-refresh";
 import { ConfirmPanel } from "./confirm-panel";
+import { EditCampaign } from "./edit-campaign";
 import { LeadsList } from "./leads-list";
 import { ResumeButton } from "./resume-button";
+import { StopButton } from "./stop-button";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
-// One campaign: where its search stands, the confirm button with its cost
-// while it is a draft, and its leads.
+// One campaign: where its search stands (with Stop search while it runs or
+// waits), the confirm button with its cost and settings while it is a draft
+// or stopped, the edit panel whenever it is not searching, and its leads.
 export default function CampaignPage({ params }: Props) {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -30,7 +33,9 @@ async function CampaignView({ params }: { params: Props["params"] }) {
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
   ]);
-  const startable = campaign.status === "draft" || campaign.status === "failed";
+  const startable = campaign.status === "draft" || campaign.status === "failed" || campaign.status === "stopped";
+  const editable = startable || campaign.status === "paused";
+  const isOwner = workspace.role === "owner";
   const estimate = startable ? await getCampaignEstimate(workspace.id, campaignId) : null;
   const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
 
@@ -57,16 +62,27 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         <NameWordsPanel campaign={campaign} />
       </div>
 
-      <StatusNote campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={workspace.role === "owner"} />
+      <StatusNote campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} />
       {campaign.status === "running" && <AutoRefresh seconds={15} />}
+
+      {editable && isOwner && (
+        <EditCampaign
+          key={`edit:${editKey(campaign)}`}
+          workspaceId={workspace.id}
+          campaign={campaign}
+          withSettings={campaign.status === "paused"}
+        />
+      )}
 
       {estimate && (
         <ConfirmPanel
+          key={`confirm:${editKey(campaign)}`}
           workspaceId={workspace.id}
           campaignId={campaign.id}
-          isOwner={workspace.role === "owner"}
+          isOwner={isOwner}
           estimate={estimate}
           supported={kind?.supported ?? true}
+          continuing={campaign.status === "stopped"}
         />
       )}
 
@@ -76,11 +92,14 @@ async function CampaignView({ params }: { params: Props["params"] }) {
         campaignId={campaign.id}
         leads={leads}
         possibleCount={possibleCount}
-        searched={!startable}
+        searched={campaign.status !== "draft" && campaign.status !== "failed"}
       />
     </>
   );
 }
+
+// Remounts the forms after a save, so they start from what was saved.
+const editKey = (c: Campaign) => [c.queries.join(","), c.locations.map((l) => l.id).join(","), JSON.stringify(c.settings)].join("|");
 
 // The words the fit check classifies business names with, read-only, so the
 // user can see why a name passed or failed. A name with a word for this kind
@@ -148,6 +167,19 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
         </p>
         {due && isOwner && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
         {!due && campaign.resumeAt && <RefreshAt at={campaign.resumeAt} />}
+        {isOwner && <StopButton workspaceId={workspaceId} campaignId={campaign.id} />}
+      </div>
+    );
+  }
+  if (campaign.status === "stopped") {
+    return (
+      <div role="status" className="rounded-xl border px-4 py-3 text-sm">
+        <p className="font-medium">Stopped</p>
+        <p className="mt-1 text-muted-foreground">
+          {campaign.pauseReason ?? "Stopped by an owner."} It used {campaign.callsUsed} Google {campaign.callsUsed === 1 ? "search" : "searches"}, and the{" "}
+          {leadCount} {leadCount === 1 ? "lead" : "leads"} it found {leadCount === 1 ? "is" : "are"} below.{" "}
+          {isOwner ? "Edit it, or change its settings below and continue the search." : "An owner can edit it and continue the search."}
+        </p>
       </div>
     );
   }
@@ -159,10 +191,15 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
     );
   }
   if (campaign.status === "running") {
+    const budget = campaign.settings.maxCalls;
     return (
-      <p role="status" className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
-        Searching. Leads appear here as they are found and checked; this page updates by itself.
-      </p>
+      <div role="status" className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+        <p>
+          Searching. Leads appear here as they are found and checked; this page updates by itself. {campaign.callsUsed}
+          {budget !== null ? ` of ${budget}` : ""} Google searches used so far.
+        </p>
+        {isOwner && <StopButton workspaceId={workspaceId} campaignId={campaign.id} />}
+      </div>
     );
   }
   if (campaign.status === "failed") {

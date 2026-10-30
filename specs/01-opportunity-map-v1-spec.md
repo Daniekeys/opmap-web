@@ -243,6 +243,8 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 **Cost before every run.** The campaign's confirm button shows tiles × queries × pages as a call count and cost, for example "Kwara bakeries: about 40 searches, inside the free tier". checkLimit and the Google Cloud quota cap still apply.
 
+**Search settings, edit and stop.** An owner sets, per campaign: a search budget (the most Google searches it may ever use; empty for none), its own searches a day (at most the shared daily cap), pages per map tile (1 to 3) and neighbourhood searches per city (0 to 3). The estimate follows the settings as they are typed, before anything is saved, and confirming saves them. The settings can only lower what a campaign spends: the shared caps always hold. A spent budget ends the search as `stopped`; the campaign's own daily pace pauses it until Pacific midnight, like the shared cap. While a campaign is a draft, paused, stopped or failed, an owner can edit its search terms, places and settings (new places rename it; new search terms remake its name words before the next fit check). An owner can stop a running or paused search: it ends after the tile it is on, a paused one never resumes, and what it found is kept and fit-checked. An owner continues a stopped campaign from the confirm button; tiles already searched are reused for free.
+
 ## Build phases
 
 Six phases plus Phase 2.5, fed to Claude Code one at a time. Don't start a phase until the previous one passes its done-when test. Each phase is roughly 3 to 5 days of focused work, so v1 lands in about four to six weeks alongside your other work.

@@ -1,6 +1,6 @@
 // Plain words for the lead finder's data: contact labels (spec, Data
 // accuracy), phone numbers, categories and campaign states.
-import type { Campaign, Lead, TargetKind } from "./api-types/leads";
+import type { Campaign, Lead, SearchSettings, TargetKind } from "./api-types/leads";
 
 export type ContactKindGroup = "phone" | "whatsapp" | "email" | "website" | "person" | "social";
 
@@ -113,12 +113,55 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt">, now 
     case "paused":
       if (resumeDue(campaign.resumeAt, now)) return "Paused, limit lifted";
       return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, now)}` : "Paused";
+    case "stopped":
+      return "Stopped";
     case "done":
       return "Complete";
     case "failed":
       return "Failed";
   }
 }
+
+// A campaign's search settings as the form holds them: the two limits as
+// typed (empty: no limit), the two choices as select values.
+export type SettingsDraft = { maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string };
+
+export const settingsDraft = (s: SearchSettings): SettingsDraft => ({
+  maxCalls: s.maxCalls === null ? "" : String(s.maxCalls),
+  dailyCalls: s.dailyCalls === null ? "" : String(s.dailyCalls),
+  pagesPerTile: String(s.pagesPerTile),
+  extrasPerCity: String(s.extrasPerCity),
+});
+
+// The draft as settings, or what is wrong with it. The API checks again.
+// `dailyCap` is the shared Google limit, when the screen knows it.
+export function readSettings(d: SettingsDraft, dailyCap?: number): { settings: SearchSettings } | { error: string } {
+  const limit = (text: string, max?: number) => {
+    const t = text.trim();
+    if (t === "") return null;
+    const n = Number(t);
+    return Number.isInteger(n) && n >= 1 && (max === undefined || n <= max) ? n : undefined;
+  };
+  const maxCalls = limit(d.maxCalls, 100_000);
+  if (maxCalls === undefined) return { error: "The search budget must be a whole number from 1 to 100,000, or empty for no limit." };
+  const dailyCalls = limit(d.dailyCalls, dailyCap);
+  if (dailyCalls === undefined) {
+    return { error: `Searches a day must be a whole number${dailyCap ? ` from 1 to ${dailyCap}, the shared Google limit` : " from 1"}, or empty.` };
+  }
+  return { settings: { maxCalls, dailyCalls, pagesPerTile: Number(d.pagesPerTile), extrasPerCity: Number(d.extrasPerCity) } };
+}
+
+export const sameSettings = (a: SearchSettings, b: SearchSettings) =>
+  a.maxCalls === b.maxCalls && a.dailyCalls === b.dailyCalls && a.pagesPerTile === b.pagesPerTile && a.extrasPerCity === b.extrasPerCity;
+
+// The estimate route's preview query for these settings.
+export const previewQuery = (s: SearchSettings) =>
+  new URLSearchParams({
+    maxCalls: s.maxCalls === null ? "none" : String(s.maxCalls),
+    dailyCalls: s.dailyCalls === null ? "none" : String(s.dailyCalls),
+    pagesPerTile: String(s.pagesPerTile),
+    extrasPerCity: String(s.extrasPerCity),
+  }).toString();
 
 export function formatUsd(n: number) {
   return n < 0.01 && n > 0 ? "under 1 cent" : `$${n.toFixed(2)}`;

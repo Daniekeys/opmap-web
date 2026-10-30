@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { formatPhone, hasAnyContact, hasPhoneOrWhatsapp, labelText, pausedUntil, resumeDue, statusText, whatsappHref } from "./leads";
+import {
+  formatPhone,
+  hasAnyContact,
+  hasPhoneOrWhatsapp,
+  labelText,
+  pausedUntil,
+  previewQuery,
+  readSettings,
+  resumeDue,
+  sameSettings,
+  settingsDraft,
+  statusText,
+  whatsappHref,
+} from "./leads";
 
 const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   leadId: "l",
@@ -67,5 +80,35 @@ describe("campaign status", () => {
     expect(resumeDue("2026-10-26T07:00:00Z", now)).toBe(false);
     expect(resumeDue(null, now)).toBe(false);
     expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, now)).toBe("Paused, limit lifted");
+  });
+});
+
+describe("search settings form", () => {
+  const saved = { maxCalls: null, dailyCalls: 5, pagesPerTile: 3, extrasPerCity: 3 };
+
+  it("round-trips settings, with an empty box for no limit", () => {
+    const draft = settingsDraft(saved);
+    expect(draft).toEqual({ maxCalls: "", dailyCalls: "5", pagesPerTile: "3", extrasPerCity: "3" });
+    expect(readSettings(draft, 20)).toEqual({ settings: saved });
+    expect(readSettings({ ...draft, maxCalls: " 150 " }, 20)).toEqual({ settings: { ...saved, maxCalls: 150 } });
+  });
+
+  it("refuses limits that aren't whole numbers in range, and a pace above the shared cap", () => {
+    const draft = settingsDraft(saved);
+    expect(readSettings({ ...draft, maxCalls: "0" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, maxCalls: "2.5" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, dailyCalls: "21" }, 20)).toEqual({ error: expect.stringContaining("from 1 to 20, the shared Google limit") });
+    // Without the cap known, the API checks it.
+    expect(readSettings({ ...draft, dailyCalls: "21" })).toEqual({ settings: { ...saved, dailyCalls: 21 } });
+  });
+
+  it("compares settings and builds the estimate preview query", () => {
+    expect(sameSettings(saved, { ...saved })).toBe(true);
+    expect(sameSettings(saved, { ...saved, pagesPerTile: 1 })).toBe(false);
+    expect(previewQuery(saved)).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3");
+  });
+
+  it("names a stopped campaign", () => {
+    expect(statusText({ status: "stopped", resumeAt: null })).toBe("Stopped");
   });
 });

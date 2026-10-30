@@ -362,8 +362,9 @@ function SuggestionNote({ suggestion }: { suggestion: Suggestion }) {
   );
 }
 
-// Search geo_areas at any level and keep a list of chosen places.
-function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: string; chosen: GeoArea[]; onChange: (areas: GeoArea[]) => void }) {
+// Search geo_areas at any level and keep a list of chosen places. Also used
+// by the campaign page's edit panel.
+export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: string; chosen: GeoArea[]; onChange: (areas: GeoArea[]) => void }) {
   const [text, setText] = useState("");
   const [results, setResults] = useState<GeoArea[] | null>(null);
   const [loading, setLoading] = useState(false);
