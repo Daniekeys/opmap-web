@@ -1,89 +1,94 @@
-import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Logo } from "@/components/logo";
-import { SignOutButton } from "@/components/sign-out-button";
-import { SidebarCampaigns, WorkspaceNav } from "@/components/workspace-nav";
+import { MenuNav, type NavData, SidebarNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { getMe, getWorkspace, listCampaigns } from "@/lib/api";
+import { getBrand, getMe, getWorkspace, listCampaigns } from "@/lib/api";
 
 type Params = LayoutProps<"/w/[workspace]">["params"];
 
 // The app shell. The frame is static; the parts that depend on the session or
-// on the workspace in the URL stream in behind <Suspense>, per request.
+// on the workspace in the URL stream in behind <Suspense>, per request. The
+// sidebar and the phone menu show the same data, laid out for each size.
 export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[workspace]">) {
-  // The shell reads the URL (to size the page and close the drawer), so it
+  // The shell reads the URL (to size the page and close the menu), so it
   // streams in too, behind a frame of the same shape.
   return (
     <Suspense fallback={<ShellLoading />}>
       <AppShell
         sidebar={
-          <div className="flex h-full flex-col gap-5 overflow-y-auto px-3 py-4">
-            <div className="px-2 pt-1">
-              <Logo />
-            </div>
-            <Suspense fallback={<div className="h-11 animate-pulse rounded-lg bg-accent-soft" />}>
-              <Switcher params={params} />
+          <>
+            <HomeLink params={params} />
+            <Suspense fallback={<div className="h-11 animate-pulse rounded-card bg-raised" />}>
+              <Switcher params={params} size="sidebar" />
             </Suspense>
-            <Suspense fallback={<div className="h-52 animate-pulse rounded-lg bg-accent-soft" />}>
-              <Nav params={params} />
+            <Suspense fallback={<NavLoading />}>
+              <Nav params={params} size="sidebar" />
             </Suspense>
-            <Suspense fallback={null}>
-              <Campaigns params={params} />
-            </Suspense>
-            <div className="mt-auto border-t border-border pt-3">
-              <SignOutButton variant="ghost" className="w-full justify-start gap-3 text-muted hover:bg-accent-soft hover:text-ink" />
-            </div>
-          </div>
+          </>
         }
-    >
-      {children}
-    </AppShell>
+        menu={
+          <>
+            <Suspense fallback={<div className="h-14 animate-pulse rounded-card bg-raised" />}>
+              <Switcher params={params} size="menu" />
+            </Suspense>
+            <Suspense fallback={<NavLoading />}>
+              <Nav params={params} size="menu" />
+            </Suspense>
+          </>
+        }
+      >
+        {children}
+      </AppShell>
     </Suspense>
   );
 }
 
 function ShellLoading() {
   return (
-    <div className="flex min-h-dvh w-full">
-      <div className="hidden w-64 shrink-0 bg-ground lg:block" />
+    <div className="flex min-h-dvh w-full bg-ground">
+      <div className="hidden w-sidebar shrink-0 border-r border-border lg:block" />
       <div className="flex-1" />
     </div>
   );
 }
 
-async function Switcher({ params }: { params: Params }) {
+function NavLoading() {
+  return (
+    <div className="flex flex-col gap-2" role="status" aria-label="Loading">
+      <div className="h-8.5 animate-pulse rounded-control bg-raised" />
+      <div className="h-8.5 animate-pulse rounded-control bg-raised" />
+      <div className="h-8.5 animate-pulse rounded-control bg-raised" />
+    </div>
+  );
+}
+
+async function HomeLink({ params }: { params: Params }) {
+  const { workspace } = await params;
+  return (
+    <Link href={`/w/${workspace}`} className="self-start rounded-control px-2">
+      <Logo />
+    </Link>
+  );
+}
+
+async function Switcher({ params, size }: { params: Params; size: "sidebar" | "menu" }) {
   const { workspace } = await params;
   const { workspaces } = await getMe();
-  return <WorkspaceSwitcher workspaces={workspaces} current={workspace} />;
+  return <WorkspaceSwitcher workspaces={workspaces} current={workspace} size={size} />;
 }
 
-async function Nav({ params }: { params: Params }) {
-  const { workspace } = await params;
-  // Also the membership check for the shell: an unknown slug is a 404.
-  const { role } = await getWorkspace(workspace);
-  return <WorkspaceNav slug={workspace} isOwner={role === "owner"} />;
-}
-
-async function Campaigns({ params }: { params: Params }) {
+async function Nav({ params, size }: { params: Params; size: "sidebar" | "menu" }) {
+  // getWorkspace is also the membership check for the shell: an unknown slug is a 404.
   const workspace = await getWorkspace((await params).workspace);
-  const { campaigns } = await listCampaigns(workspace.id);
-  return (
-    <section aria-labelledby="sidebar-campaigns" className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between px-3">
-        <h2 id="sidebar-campaigns" className="text-xs font-semibold tracking-wider text-muted uppercase">
-          Campaigns
-        </h2>
-        <Link
-          href={`/w/${workspace.slug}/campaigns/new`}
-          aria-label="New campaign"
-          className="inline-flex size-7 items-center justify-center rounded-md text-muted hover:bg-accent-soft hover:text-ink"
-        >
-          <Plus className="size-4" aria-hidden />
-        </Link>
-      </div>
-      <SidebarCampaigns slug={workspace.slug} campaigns={campaigns.slice(0, 12)} />
-    </section>
-  );
+  const [{ user }, { campaigns }, brand] = await Promise.all([getMe(), listCampaigns(workspace.id), getBrand(workspace.id)]);
+  const data: NavData = {
+    slug: workspace.slug,
+    isOwner: workspace.role === "owner",
+    user,
+    campaigns: campaigns.slice(0, 12).map(({ id, name, status, leadCount }) => ({ id, name, status, leadCount })),
+    brandPending: brand.draft?.facts.pending ?? 0,
+  };
+  return size === "sidebar" ? <SidebarNav {...data} /> : <MenuNav {...data} />;
 }

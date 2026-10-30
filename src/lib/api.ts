@@ -44,12 +44,13 @@ export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/ap
 export const listPipelineRuns = (workspaceId: string) =>
   apiGet<PipelineRunsResponse>(`/api/w/${workspaceId}/pipeline-runs`);
 
-export const getBrand = (workspaceId: string) => apiGet<BrandOverviewResponse>(`/api/w/${workspaceId}/brand`);
+// The shell (sidebar and phone menu) and the Brand DNA page all read these.
+export const getBrand = cache((workspaceId: string) => apiGet<BrandOverviewResponse>(`/api/w/${workspaceId}/brand`));
 
 export const getBrandProfile = (workspaceId: string, profileId: string) =>
   apiGet<ProfileDetailResponse>(`/api/w/${workspaceId}/brand/profiles/${encodeURIComponent(profileId)}`);
 
-export const listCampaigns = (workspaceId: string) => apiGet<CampaignsResponse>(`/api/w/${workspaceId}/campaigns`);
+export const listCampaigns = cache((workspaceId: string) => apiGet<CampaignsResponse>(`/api/w/${workspaceId}/campaigns`));
 
 const campaignPath = (workspaceId: string, campaignId: string) => `/api/w/${workspaceId}/campaigns/${encodeURIComponent(campaignId)}`;
 

@@ -2,19 +2,22 @@
 
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 
-// The frame: a dark sidebar beside the page from 1024px, and a top bar with a
-// drawer below that. A campaign's workspace (list and detail side by side)
-// takes the full width; every other page keeps a readable column.
-export function AppShell({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) {
+// The frame fills the window. From 1024px a 240px sidebar sits on the ground at
+// the left edge; below that, a 56px top bar opens the menu as a full-screen
+// sheet. Panes cap their own content; only screens not yet redone for the v2
+// design are held to the reading width here.
+export function AppShell({ sidebar, menu, children }: { sidebar: ReactNode; menu: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const openButton = useRef<HTMLButtonElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
   const wide = /\/campaigns\/(?!new(\/|$))[^/]+/.test(pathname);
 
-  // Any navigation closes the drawer.
+  // Any navigation closes the menu.
   const [seen, setSeen] = useState(pathname);
   if (seen !== pathname) {
     setSeen(pathname);
@@ -23,56 +26,56 @@ export function AppShell({ sidebar, children }: { sidebar: ReactNode; children: 
 
   useEffect(() => {
     if (!open) return;
+    const opener = openButton.current;
+    closeButton.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      opener?.focus();
     };
   }, [open]);
 
   return (
-    <div className="flex min-h-dvh w-full">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col bg-ground text-ink lg:flex">{sidebar}</aside>
+    <div className="flex min-h-dvh w-full bg-ground">
+      <aside className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col gap-5.5 overflow-y-auto border-r border-border px-3 py-5 lg:flex">{sidebar}</aside>
 
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-ink/50 animate-in fade-in" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] flex-col bg-ground text-ink animate-in slide-in-from-left duration-200">
+        <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-ground animate-in fade-in duration-150 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="flex h-14 shrink-0 items-center gap-2.5 pr-1 pl-4">
+            <Logo className="flex-1" />
             <button
+              ref={closeButton}
               type="button"
               aria-label="Close menu"
               onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 z-10 inline-flex size-11 items-center justify-center rounded-lg text-muted hover:bg-accent-soft"
+              className="inline-flex size-11 items-center justify-center rounded-control text-ink hover:bg-raised"
             >
-              <X className="size-5" aria-hidden />
+              <X className="size-5" strokeWidth={1.75} aria-hidden />
             </button>
-            {sidebar}
-          </aside>
+          </div>
+          <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-5">{menu}</div>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-ground px-2 lg:hidden">
+        <header className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-ground pr-2 pl-1 lg:hidden">
           <button
+            ref={openButton}
             type="button"
             aria-label="Open menu"
             aria-expanded={open}
             onClick={() => setOpen(true)}
-            className="inline-flex size-11 items-center justify-center rounded-lg hover:bg-raised"
+            className="inline-flex size-11 items-center justify-center rounded-control text-ink hover:bg-raised"
           >
-            <Menu className="size-5" aria-hidden />
+            <Menu className="size-5" strokeWidth={1.75} aria-hidden />
           </button>
           <Logo />
         </header>
-        <main
-          className={cn(
-            "mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6",
-            wide ? "max-w-[96rem] lg:px-6" : "max-w-3xl lg:py-10",
-          )}
-        >
-          {children}
+        <main className="flex w-full flex-1 flex-col gap-6 px-4 pt-2 pb-6 lg:px-6 lg:pt-8">
+          <div className={cn("flex w-full flex-col gap-6", !wide && "max-w-read")}>{children}</div>
         </main>
       </div>
     </div>
