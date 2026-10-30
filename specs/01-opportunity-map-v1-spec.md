@@ -80,7 +80,7 @@ Claude handles every AI step, paid from the $1,000 in Claude API credits. Railwa
 
 ## Data model
 
-Twenty-eight tables, plus Better Auth's own (user, session, account, verification) cover v1 and the next two years of features. Tables marked "later" get created in phase 0 but stay empty until their feature ships, which is what removes the migration pain.
+Thirty tables, plus Better Auth's own (user, session, account, verification) cover v1 and the next two years of features. Tables marked "later" get created in phase 0 but stay empty until their feature ships, which is what removes the migration pain.
 
 | Table | Module | Key columns | Why it exists |
 | --- | --- | --- | --- |
@@ -99,14 +99,16 @@ Twenty-eight tables, plus Better Auth's own (user, session, account, verificatio
 | `businesses` | leads | place_id, domain, name, city, country, phone, website, rating, review_count, refreshed_at | One row per real business, shared across workspaces. Places fields get refreshed, not hoarded |
 | `leads` | leads | workspace_id, campaign_id, business_id, fit_score, status | A business inside one workspace's campaign. Contact details live in `contact_points` on the business, never on the lead |
 | `contact_points` | research | business_id, kind, value, source_id, confidence, status, checked_at | Every contact detail as a sourced, labelled claim. Shared across workspaces |
+| `contact_feedback` | research | business_id, kind, value, reason | A team's report that a contact point is wrong. Shared across workspaces; each report lowers that value's confidence. Who reported it is in the workspace's own outcome row |
 | `geo_areas` | leads | level, name, parent_id, country, bbox, population | The location ladder |
 | `search_coverage` | leads | query, tile_bbox, geo_area_id, searched_at, result_count | Which tiles were searched and when. Shared across workspaces |
 | `sources` | research | business_id, url, type, fetched_at, excerpt | Every page and listing the AI read, so every claim can point to one |
 | `signals` | research | business_id, kind, value, source_id | Facts found: no website, a mobile layout tag, no order flow, an Instagram account, what they sell, who they serve. Each cites the source that shows it. Written as one set per read of the business and reused for 90 days |
 | `deep_dives` | research | workspace_id, lead_id, run_id, status (running, done, failed), brand_profile_version, outcome (json), cost_usd, duration_ms, started_at, finished_at | One deep-dive of one lead. At most one running row per lead (a partial unique index), so two people opening a lead start one run. The newest done row is the lead's research; a refresh adds a row |
 | `opportunities` | research | lead_id, deep_dive_id, rank, service, need, angle, confidence, evidence (json: every claim with what it cites), prompt_version | The opportunity cards |
-| `outreach_drafts` | outreach | lead_id, opportunity_id, channel, subject, body, highlights (json), prompt_version | Email, WhatsApp, LinkedIn and call drafts |
-| `outcomes` | outcomes | lead_id, type, channel, note, created_by | Sent, replied, meeting, won, lost |
+| `draft_sets` | outreach | workspace_id, lead_id, opportunity_id, run_id, status (running, done, failed), outcome (json), cost_usd, duration_ms | One run of the four drafts for one card. At most one running row per card (a partial unique index), so two taps start one run; the newest done row holds the card's drafts |
+| `outreach_drafts` | outreach | lead_id, opportunity_id, draft_set_id, channel, subject, body, highlights (json: every line with what it cites), status (ready, not_ready), removed (json), prompt_version | Email, WhatsApp, LinkedIn and call drafts |
+| `outcomes` | outcomes | lead_id, type, channel, note, draft_id, contact_kind, contact_value, created_by | Every tap: sent, replied, meeting, won, lost; data feedback (wrong number, bounced, not the owner) on a contact point; asked not to be contacted |
 | `suppression_list` | outcomes | workspace_id, email, domain, phone | People who opted out. Checked before any draft is shown |
 | `mailboxes` | outreach (later) | workspace_id, provider, address, credentials (encrypted), daily_cap, warmup_stage | Connected email accounts |
 | `pipeline_runs` and `step_runs` | core | type, status, input, output, error, cost_usd, duration_ms | Progress for the UI, debugging and cost tracking |
@@ -150,10 +152,13 @@ Trigger: the first time a user opens a lead (`research.openLead`). It goes throu
 
 **4. Outreach and outcomes**
 
-1. For the chosen opportunity, write four drafts: email, WhatsApp, LinkedIn DM and a call opener. Each sentence maps to a source or an approved fact, shown as highlights
-2. The user copies a draft, or opens it in Gmail or Outlook through a compose link
-3. Copying logs an event and moves the lead to "Sent"
-4. The user taps replied, meeting, won or lost as things happen. Every tap becomes an outcome and an event
+Trigger: a member taps "Write messages" on an opportunity card. Never automatic. It goes through `checkLimit`, the card is claimed first (`draft_sets`), so two taps start one run, and the drafts are saved, so opening them again costs nothing. A lead with "Not enough information", one on the suppression list, or one with no contact point to send to (below) gets no drafts. Four drafts should cost under $0.05 and take under a minute.
+
+1. Claude Sonnet writes four drafts in one call, WhatsApp first, then email (with a subject), LinkedIn DM and a call opener, as sentences. Each sentence is a claim that cites what shows it, an approved fact (in a cached prefix) or a source or signal the card cites, or an ask that states no fact. A card with no why or angle (they failed the claim check) is written from its offer and gap alone; the missing part is never made up. Code adds the greeting (a person's first name only when a "sourced" person is on file, otherwise the business name), the sign-off with the seller's real business identity (the business name and website of the approved Brand DNA, or the workspace name), and on email the opt-out line from the business's country rule (Location)
+2. Code removes a sentence naming a company, person, place, handle or web address that is in none of the lead's evidence, the business name or the seller's identity (the Explee wrong-company bug), a claim with no cite that checks out, and a claim stating a number nothing it cites shows. Then the claim checker's model (`CLAIM_CHECK_MODEL`, Sonnet) judges each sentence on what it cites, reason first, by the claim check's rules; malformed or missing verdicts are asked again once, then the sentence is removed. A draft stands only with a fact about the business, an offer and an ask left; otherwise the screen shows "Draft not ready", never the remains. Each kept claim is highlighted and opens to the facts or quotes behind it; removed sentences are listed with why
+3. Drafts are only sent to contact points labelled found, verified or confirmed: WhatsApp confirmed, email found on their own site or verified, LinkedIn verified. The phone on the business's own Google Maps listing may be used for the call opener, labelled single source. A guessed email is never a send target. A value whose confidence feedback has lowered below 0.5 is never offered
+4. The user copies a draft, or opens it in WhatsApp (wa.me with the text filled in), Gmail or Outlook (compose links), or LinkedIn, or dials the call opener's number. Each is an event; the first per channel is a "sent" outcome, and a new lead moves to "Sent"
+5. The user taps sent, replied, meeting, won or lost as things happen, "wrong number", "bounced" or "not the owner" on a contact point, or "They asked not to be contacted" (which suppresses the business's email, domain and numbers and moves the lead to Lost). Every tap becomes an outcome and an event. The pipeline view shows the campaign's leads by stage
 
 ## Lead sourcing
 
@@ -201,7 +206,7 @@ contact_points is owned by the research module because it references sources. Th
 - A guessed email is never shown as verified, and drafts only use emails labelled found or verified.
 - A person is only attached if their source names the company. This is the check Explee's draft to sportsvot.com about Mix 'n' Bake failed.
 - Places fields are refreshed per campaign; contact points older than 90 days are rechecked before use, and closed businesses drop out.
-- Team feedback fixes the data: "wrong number", "bounced" and "not the owner" buttons lower that contact point's confidence on the shared business record, so every workspace benefits.
+- Team feedback fixes the data: "wrong number", "bounced" and "not the owner" buttons lower that contact point's confidence on the shared business record, so every workspace benefits. Each report is kept (`contact_feedback`, written by the worker) and halves that value's confidence on every row of it, again after any re-enrichment relabels it; a wrong number lowers the phone and the WhatsApp on that number. One report takes any label below the 0.5 a send target needs.
 - The 20-lead eval set gains a contact check: target at least 90% of shown phones and emails correct on a monthly 30-lead spot check.
 
 ## Location
@@ -228,7 +233,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 | Country | Nigeria | Cities ranked for the segment, run in waves; the next wave runs only if the last one produced fit leads |
 | Region or global | Africa, UK, US | AI picks best-fit countries from Brand DNA, then the country flow runs per country |
 
-**Beyond Nigeria.** Each country carries settings that change the run: search terms in the local language (French in Abidjan or Dakar), phone parsing, the currency and time zone used in drafts, and its privacy rules (NDPA in Nigeria, GDPR in the UK and EU, POPIA in South Africa), which set the opt-out wording and whether the market is allowed at all.
+**Beyond Nigeria.** Each country carries settings that change the run: search terms in the local language (French in Abidjan or Dakar), phone parsing, the currency and time zone used in drafts, and its privacy rules (NDPA in Nigeria, GDPR in the UK and EU, POPIA in South Africa), which set the opt-out wording and whether the market is allowed at all. Outreach has a rule for every country (`outreach/countries.ts`): the law, the email opt-out line, and a note under email drafts where the law asks for more (one approach under POPIA, consent for sole traders under PECR and for any business email in Germany, a postal address under CAN-SPAM and CASL). A country with no row gets the default rule; no market is blocked. The notes are summaries for the sender, not legal advice. Drafts are written in English for now.
 
 **Data model changes**
 
@@ -252,7 +257,7 @@ Six phases plus Phase 2.5, fed to Claude Code one at a time. Don't start a phase
    - Done when: Daniekeys and Afriment each get up to 6 segments from their approved Brand DNA that you'd use, a written description gives a usable segment list, and the Ilorin leads are ranked by buyer signals with a plain-words top reason and no non-bakery in the top 10.
 5. **Phase 3: Deep-dive.** Lead page, signal extraction, opportunity cards with evidence, claim checking, the "not enough information" state.
    - Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes.
-6. **Phase 4: Outreach and outcomes.** Four drafts per opportunity with highlights, copy buttons, Gmail and Outlook compose links, outcome buttons, pipeline view, suppression list check.
+6. **Phase 4: Outreach and outcomes.** Four drafts per opportunity on request (WhatsApp first) with highlights and a Sonnet draft check, send targets limited to checked contact points, copy buttons, `wa.me`, Gmail and Outlook links, outcome and data-feedback buttons, pipeline view, suppression list check, country rules. See `phases/phase-4-outreach-and-outcomes.md`.
    - Done when: you contact 10 real leads using only the tool, and every outcome is logged.
 7. **Phase 5: Hardening.** `checkLimit` on every paid action, usage and cost per workspace on an admin page, an eval set of 20 saved leads that reruns after any prompt change, error states, retries, and alerts.
    - Done when: a prompt change runs against the eval set and shows a side-by-side before and after, and the admin page shows each workspace's monthly cost.

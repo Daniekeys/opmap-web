@@ -7,6 +7,8 @@ import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/b
 import type { ApiErrorResponse } from "./api-types/errors";
 import type { CampaignDetailResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
+import type { PipelineResponse } from "./api-types/outcomes";
+import type { LeadOutreachResponse } from "./api-types/outreach";
 import type { LeadResearchResponse } from "./api-types/research";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
@@ -84,3 +86,10 @@ export async function getInvite(
 // The lead page: the lead, its deep-dive and its opportunity cards.
 export const getLeadResearch = (workspaceId: string, campaignId: string, leadId: string) =>
   apiGet<LeadResearchResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}`);
+
+// The lead page's drafts, contact points and outcomes.
+export const getLeadOutreach = (workspaceId: string, campaignId: string, leadId: string) =>
+  apiGet<LeadOutreachResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}/outreach`);
+
+// The campaign's leads by stage.
+export const getPipeline = (workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`);

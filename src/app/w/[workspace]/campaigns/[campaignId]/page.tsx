@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft, SquareKanban } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CampaignStatusBadge } from "@/components/campaign-status";
@@ -49,6 +49,11 @@ async function CampaignView({ params }: { params: Props["params"] }) {
           {kind && <span>{kind.label}</span>}
           <span>Searching for: {campaign.queries.join(", ")}</span>
         </div>
+        {leads.length > 0 && (
+          <Link href={`/w/${slug}/campaigns/${campaign.id}/pipeline`} className="inline-flex h-11 items-center gap-2 self-start rounded-lg border bg-card px-4 text-sm font-medium hover:bg-muted">
+            <SquareKanban className="size-4" aria-hidden /> Pipeline
+          </Link>
+        )}
         <NameWordsPanel campaign={campaign} />
       </div>
 

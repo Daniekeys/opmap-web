@@ -5,13 +5,15 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
+import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
 import type { Cite, Claim, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { categoryText, formatPhone, telHref, whatsappHref } from "@/lib/leads";
 import { cn } from "@/lib/utils";
+import { CardDrafts, OutcomePanel, StageChip } from "./outreach-panel";
 
-type Props = { workspaceId: string; slug: string; campaignId: string; initial: LeadResearchResponse };
+type Props = { workspaceId: string; slug: string; campaignId: string; initial: LeadResearchResponse; initialOutreach: LeadOutreachResponse };
 
 // What happened when we asked for a run, when it isn't a run to follow.
 type Ask = { state: "idle" } | { state: "asking" } | { state: "limit"; reason: string } | { state: "error" };
@@ -26,8 +28,9 @@ const linkClass ="text-primary underline-offset-4 hover:underline wrap-anywhere"
 // The lead page's live part: opens the deep-dive on first view (once; the API
 // makes sure two people opening it start one run), follows its progress, and
 // shows the cards, "Not enough information", or what went wrong.
-export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
+export function LeadView({ workspaceId, slug, campaignId, initial, initialOutreach }: Props) {
   const [data, setData] = useState(initial);
+  const [outreach, setOutreach] = useState(initialOutreach);
   const [ask, setAsk] = useState<Ask>({ state: "idle" });
   // A run this page started or joined, before the GET shows it.
   const [runId, setRunId] = useState<string | null>(null);
@@ -40,6 +43,15 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
     const next: LeadResearchResponse = await res.json();
     setData(next);
     setRunId(null);
+    await reloadOutreach();
+  }
+
+  // Drafts, contact points and outcomes: after a draft run, a send or a tap.
+  async function reloadOutreach() {
+    const res = await fetch(`${base}/outreach`, { cache: "no-store" });
+    if (res.status === 401) return goToLogin();
+    if (!res.ok) throw new Error(String(res.status));
+    setOutreach(await res.json());
   }
 
   async function open(refresh: boolean) {
@@ -96,7 +108,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <LeadHeader lead={data.lead} />
+      <LeadHeader lead={data.lead} stage={outreach.stage} />
 
       {ask.state === "limit" && (
         <Notice tone="warn" title="Spending limit reached">
@@ -136,7 +148,17 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
         </Notice>
       )}
 
-      {data.result && <Result result={data.result} onRefresh={() => open(true)} refreshing={ask.state === "asking" || following !== null} failedRefresh={failed} />}
+      {data.result && (
+        <Result
+          result={data.result}
+          onRefresh={() => open(true)}
+          refreshing={ask.state === "asking" || following !== null}
+          failedRefresh={failed}
+          drafts={(cardId) => <CardDrafts base={base} workspaceId={workspaceId} slug={slug} opportunityId={cardId} outreach={outreach} onChange={reloadOutreach} />}
+        />
+      )}
+
+      <OutcomePanel base={base} outreach={outreach} onChange={reloadOutreach} />
 
       {data.signals.length > 0 && <Signals signals={data.signals} />}
     </div>
@@ -157,12 +179,15 @@ function failureText(code: string | null, error: string | null, slug: string) {
   return error ?? "Something went wrong while researching this business.";
 }
 
-function LeadHeader({ lead }: { lead: LeadResearchResponse["lead"] }) {
+function LeadHeader({ lead, stage }: { lead: LeadResearchResponse["lead"]; stage: LeadOutreachResponse["stage"] }) {
   const details = [categoryText(lead.category), lead.city].filter(Boolean).join(" · ");
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">{lead.name}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">{lead.name}</h1>
+          <StageChip stage={stage} />
+        </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           {details && <span>{details}</span>}
           {lead.rating !== null && (
@@ -204,11 +229,14 @@ function Result({
   onRefresh,
   refreshing,
   failedRefresh,
+  drafts,
 }: {
   result: NonNullable<LeadResearchResponse["result"]>;
   onRefresh: () => void;
   refreshing: boolean;
   failedRefresh: boolean;
+  // The messages written from a card, under it.
+  drafts: (cardId: string) => React.ReactNode;
 }) {
   return (
     <section aria-labelledby="cards-heading" className="flex flex-col gap-3">
@@ -234,7 +262,7 @@ function Result({
         <ol className="flex flex-col gap-3">
           {result.cards.map((card) => (
             <li key={card.id}>
-              <OpportunityCardView card={card} />
+              <OpportunityCardView card={card}>{drafts(card.id)}</OpportunityCardView>
             </li>
           ))}
         </ol>
@@ -268,7 +296,7 @@ const CONFIDENCE: Record<string, { word: string; tone: string }> = {
   low: { word: "Low confidence", tone: "bg-amber-100 text-amber-950" },
 };
 
-function OpportunityCardView({ card }: { card: OpportunityCard }) {
+function OpportunityCardView({ card, children }: { card: OpportunityCard; children?: React.ReactNode }) {
   const confidence = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-muted" };
   return (
     <article className="flex flex-col gap-4 rounded-xl border bg-card p-4">
@@ -310,6 +338,7 @@ function OpportunityCardView({ card }: { card: OpportunityCard }) {
         </div>
       )}
       {card.confidenceReason && <p className="text-xs text-muted-foreground">{card.confidenceReason}</p>}
+      {children}
     </article>
   );
 }
@@ -329,7 +358,8 @@ const SOURCE_NAMES: Record<string, string> = { places: "Google Maps listing", we
 const pageName = (url: string) => {
   try {
     const u = new URL(url);
-    if (u.hostname.includes("google.")) return "Google Maps";
+    // Google Maps, not other Google pages (a Google Sites website is the business's own).
+    if (u.hostname.startsWith("maps.") || (u.hostname.includes("google.") && u.pathname.startsWith("/maps"))) return "Google Maps";
     return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
   } catch {
     return url;
