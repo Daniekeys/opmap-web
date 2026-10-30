@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import { citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -90,5 +90,12 @@ describe("readOn", () => {
   it("is the day a source was read, in Lagos", () => {
     expect(readOn("2026-10-26T20:06:00Z")).toBe("read 26 Oct");
     expect(readOn(null)).toBe("date not recorded");
+  });
+
+  it("dates a quote by its own page's read, else the research's finish time", () => {
+    const quote = { kind: "source" as const, ref: "S1", sourceId: "s", url: "https://instagram.com/x", sourceType: "search", quote: "DM to order" };
+    expect(citeReadAt({ ...quote, fetchedAt: "2026-10-28T09:00:00Z" }, "2026-10-30T09:00:00Z")).toBe("2026-10-28T09:00:00Z");
+    expect(citeReadAt({ ...quote, fetchedAt: null }, "2026-10-30T09:00:00Z")).toBe("2026-10-30T09:00:00Z");
+    expect(citeReadAt({ kind: "fact", ref: "F1", factId: "f", text: "Builds websites", url: null }, "2026-10-30T09:00:00Z")).toBeNull();
   });
 });

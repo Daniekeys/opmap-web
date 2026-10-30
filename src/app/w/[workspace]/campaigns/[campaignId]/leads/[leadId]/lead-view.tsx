@@ -9,8 +9,8 @@ import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/api-types/leads";
 import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
-import type { Cite, Claim, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
-import { readOn } from "@/lib/campaign-view";
+import type { Cite, Claim, DatedCite, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import { citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/lib/leads";
@@ -525,14 +525,20 @@ function ClaimBlock({ claim, readAt, lead, muted }: { claim: Claim; readAt: stri
   );
 }
 
-// Where a claim came from, always visible ("Instagram bio, read 26 Oct"),
-// opening to the quotes themselves.
+// Where a claim came from, always visible ("Instagram bio, read 28 Oct"),
+// opening to the quotes themselves. Sources read on the same day share one
+// date; approved facts have none.
 function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null }) {
   const [open, setOpen] = useState(false);
   if (claim.cites.length === 0) return null;
-  const names = [...new Set(claim.cites.map(citeName))];
-  const quoted = claim.cites.filter((c) => c.kind !== "fact");
-  const label = `${names.join(", ")}${quoted.length > 0 ? `, ${readOn(readAt)}` : ""}`;
+  const byDay = new Map<string, string[]>();
+  for (const c of claim.cites) {
+    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt));
+    const names = byDay.get(day) ?? [];
+    if (!names.includes(citeName(c))) names.push(citeName(c));
+    byDay.set(day, names);
+  }
+  const label = [...byDay].map(([day, names]) => (day ? `${names.join(", ")}, ${day}` : names.join(", "))).join(" · ");
   return (
     <div className="flex flex-col gap-1.5">
       <button
@@ -582,7 +588,7 @@ function citeName(cite: Cite) {
   return "Their website";
 }
 
-function CiteView({ cite, readAt }: { cite: Cite; readAt: string | null }) {
+function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) {
   if (cite.kind === "fact") {
     return (
       <>
@@ -596,7 +602,7 @@ function CiteView({ cite, readAt }: { cite: Cite; readAt: string | null }) {
     <>
       <span>{text}</span>
       <span className="text-xs text-muted">
-        {citeName(cite)}, {readOn(readAt)} ·{" "}
+        {citeName(cite)}, {readOn(citeReadAt(cite, readAt))} ·{" "}
         <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 font-normal")}>
           {(cite.kind === "source" && cite.sourceType === "places") || /google\./.test(cite.url) ? "Open the listing" : hostOf(cite.url)} <ExternalLink className="size-3" aria-hidden />
         </a>

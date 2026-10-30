@@ -8,9 +8,13 @@ export type Cite =
   | { kind: "signal"; ref: string; signalKind: string; text: string; sourceId: string; url: string }
   | { kind: "fact"; ref: string; factId: string; text: string; url: string | null };
 
+// On the lead's cards, a quote or signal also says when its page was read:
+// null when the page has been read again since this result.
+export type DatedCite = Exclude<Cite, { kind: "fact" }> & { fetchedAt: string | null } | Extract<Cite, { kind: "fact" }>;
+
 export type ClaimField = "offer" | "gap" | "why" | "angle";
 
-export type Claim = { id: string; field: ClaimField; text: string; cites: Cite[] };
+export type Claim = { id: string; field: ClaimField; text: string; cites: DatedCite[] };
 
 export type OpportunityCard = {
   id: string;

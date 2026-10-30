@@ -2,6 +2,7 @@
 // summary, and the sentence under the campaign's title.
 import type { CampaignStatus, Lead } from "./api-types/leads";
 import type { Stage } from "./api-types/outcomes";
+import type { DatedCite } from "./api-types/research";
 import { categoryText, FIT_WORDS, labelText } from "./leads";
 
 // Buyer scores cluster around 0.4; a few rise above 0.7.
@@ -62,5 +63,9 @@ function whereClause(leads: Lead[]) {
 
 const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
 
-// When a source was read: the deep-dive's finish time ("read 26 Oct").
+// When a source was read ("read 26 Oct").
 export const readOn = (iso: string | null) => (iso ? `read ${day.format(new Date(iso))}` : "date not recorded");
+
+// When a cite's page was read: its own read, or the research's finish time
+// when the page has been read again since. Approved facts carry no date.
+export const citeReadAt = (cite: DatedCite, finishedAt: string | null) => (cite.kind === "fact" ? null : (cite.fetchedAt ?? finishedAt));

@@ -12,7 +12,7 @@ Build:
 - The 20 leads of the first eval run are the eval set (`eval/deep-dive.json`, `npm run eval:deepdive`), rerun after every prompt or model change with a before/after report in `eval/reports/`. A second set, `eval/deep-dive-realestate.json`, holds 5 fresh real-estate leads. `npm run eval:deepdive -- check` replays each lead's saved cards through today's checks, so two checkers or prompt versions are judged on the same claims, and `compare` puts two such reports side by side.
 - A run counts as died after 15 minutes, and a run's duration is measured in Postgres (`now()` against the `started_at` it set), never the app's clock.
 - Explee's draft pitched "brand identities and websites for food businesses" with no specific gap. Our cards must name the gap: a gap that cites nothing about this business is dropped in code, and Haiku drops one that isn't specific.
-- Evidence links open the source page, and each quote is shown under its claim on the lead page, so a claim can be checked without leaving it. Removed claims are listed too.
+- Evidence links open the source page, and each quote is shown under its claim on the lead page with the day its page was read ("Instagram bio, read 28 Oct": the source's `fetched_at`, or the result's finish time when the page has been read again since), so a claim can be checked without leaving it. Removed claims are listed too.
 - Each step (crawl, search, signals, cards, check, save) is timed in `step_runs`.
 
 Done when: 20 deep-dives run with no unsupported claims on a manual check, each under 2 minutes and under $0.10.
