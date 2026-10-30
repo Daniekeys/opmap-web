@@ -73,8 +73,8 @@ export function SegmentPicker({
   if (load.state === "error") {
     return (
       <div className="flex flex-col gap-3">
-        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          <p className="text-destructive">{load.message}</p>
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-negative/40 bg-negative-soft p-4 text-sm">
+          <p className="text-negative-ink">{load.message}</p>
           <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("GET")}>
             <RotateCw className="size-4" aria-hidden /> Try again
           </Button>
@@ -90,13 +90,13 @@ export function SegmentPicker({
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 rounded-xl border border-dashed bg-card p-4 text-sm">
           <p className="font-medium">Brand DNA not approved yet</p>
-          <p className="text-muted-foreground">
+          <p className="text-muted">
             Buyer segments are worked out from what you sell, so they need an approved Brand DNA first. Approve it, or type
             the kind of business you want yourself.
           </p>
           <Link
             href={`/w/${slug}/brand`}
-            className="inline-flex h-11 items-center justify-center self-start rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground hover:bg-primary/80"
+            className="inline-flex h-11 items-center justify-center self-start rounded-lg bg-primary px-5 text-base font-medium text-on-primary hover:bg-primary/85"
           >
             Go to Brand DNA
           </Link>
@@ -109,7 +109,7 @@ export function SegmentPicker({
   if (data.state === "running" || data.state === "none") {
     return (
       <div className="flex flex-col gap-3">
-        <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+        <p className="flex items-center gap-2 text-sm text-muted" role="status">
           <Sparkles className="size-4 shrink-0" aria-hidden /> Working out who is most likely to buy from you. This takes about
           a minute, once per Brand DNA version.
         </p>
@@ -122,9 +122,9 @@ export function SegmentPicker({
   if (data.state === "failed") {
     return (
       <div className="flex flex-col gap-3">
-        <div role="alert" className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          <p className="font-medium text-destructive">Couldn&apos;t suggest buyer segments</p>
-          {data.error && <p className="text-destructive wrap-break-word">{data.error}</p>}
+        <div role="alert" className="flex flex-col gap-2 rounded-xl border border-negative/40 bg-negative-soft p-4 text-sm">
+          <p className="font-medium text-negative-ink">Couldn&apos;t suggest buyer segments</p>
+          {data.error && <p className="text-negative-ink wrap-break-word">{data.error}</p>}
           <Button type="button" variant="outline" className="h-11 self-start" onClick={() => request("POST", { retry: true })}>
             <RotateCw className="size-4" aria-hidden /> Try again
           </Button>
@@ -136,7 +136,7 @@ export function SegmentPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         From Brand DNA version {data.brandProfileVersion}, most likely to pay first. Pick one to edit it and choose places.
       </p>
       <ol className="flex flex-col gap-3">
@@ -156,34 +156,34 @@ function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () =>
   const reachable = segment.reachability === "places";
   const signals = signalsInWords(segment.buyerSignals);
   return (
-    <article className={cn("flex flex-col gap-3 rounded-xl border bg-card p-4", !reachable && "bg-muted/40")}>
+    <article className={cn("flex flex-col gap-3 rounded-xl border bg-card p-4", !reachable && "bg-raised")}>
       <div className="flex items-start gap-3">
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold tabular-nums"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-semibold tabular-nums"
           aria-label={`Rank ${segment.rank}`}
         >
           {segment.rank}
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="font-medium wrap-break-word">{segment.name}</h3>
-          <p className="text-sm text-muted-foreground wrap-break-word">{segment.whoTheyAre}</p>
+          <p className="text-sm text-muted wrap-break-word">{segment.whoTheyAre}</p>
         </div>
       </div>
 
       <dl className="grid gap-2 text-sm">
         <div>
-          <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Pain</dt>
+          <dt className="text-xs font-medium tracking-wide text-muted uppercase">Pain</dt>
           <dd className="wrap-break-word">{segment.pain}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Pitch first</dt>
+          <dt className="text-xs font-medium tracking-wide text-muted uppercase">Pitch first</dt>
           <dd className="font-medium wrap-break-word">{segment.pitchFirst}</dd>
         </div>
       </dl>
 
       <div className="flex flex-wrap gap-1.5 text-xs">
         {segment.searchTerms.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-raised px-2 py-1">
             <Search className="size-3" aria-hidden /> {t}
           </span>
         ))}
@@ -198,7 +198,7 @@ function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () =>
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="-mx-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="-mx-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted hover:text-foreground"
       >
         <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
         {open ? "Less" : "Why them, and buyer signals"}
@@ -206,25 +206,25 @@ function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () =>
       {open && (
         <dl className="grid gap-2 text-sm">
           <div>
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why they buy</dt>
+            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Why they buy</dt>
             <dd className="wrap-break-word">{segment.whyTheyBuy}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why this rank</dt>
+            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Why this rank</dt>
             <dd className="wrap-break-word">{segment.rankReason}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Buyer signals</dt>
+            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Buyer signals</dt>
             <dd className="wrap-break-word">{signals.length ? signals.join(" · ") : "None in particular"}</dd>
           </div>
           {segment.signalNotes.length > 0 && (
             <div>
-              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Also look for (Maps can&apos;t check)</dt>
+              <dt className="text-xs font-medium tracking-wide text-muted uppercase">Also look for (Maps can&apos;t check)</dt>
               <dd className="wrap-break-word">{segment.signalNotes.join(" · ")}</dd>
             </div>
           )}
           <div>
-            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Backed by your Brand DNA</dt>
+            <dt className="text-xs font-medium tracking-wide text-muted uppercase">Backed by your Brand DNA</dt>
             <dd>
               <ul className="list-disc pl-5">
                 {segment.pitchFacts.map((f) => (
@@ -243,7 +243,7 @@ function SegmentCard({ segment, onPick }: { segment: BuyerSegment; onPick: () =>
           Use this segment
         </Button>
       ) : (
-        <p className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+        <p className="flex items-start gap-2 rounded-lg bg-raised px-3 py-2 text-sm text-muted">
           <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             <span className="font-medium text-foreground">Not reachable yet.</span> {segment.reachabilityReason} It can&apos;t

@@ -24,12 +24,12 @@ export const CHANNEL_NAMES: Record<Channel, string> = { whatsapp: "WhatsApp", em
 export const STAGE_NAMES: Record<Stage, string> = { new: "New", sent: "Sent", replied: "Replied", meeting: "Meeting", won: "Won", lost: "Lost" };
 
 export const STAGE_TONES: Record<Stage, string> = {
-  new: "bg-muted text-foreground",
-  sent: "bg-sky-100 text-sky-900",
-  replied: "bg-violet-100 text-violet-900",
-  meeting: "bg-amber-100 text-amber-950",
-  won: "bg-emerald-100 text-emerald-900",
-  lost: "bg-zinc-200 text-zinc-800",
+  new: "bg-neutral-soft text-neutral-ink",
+  sent: "bg-neutral-soft text-neutral-ink",
+  replied: "bg-positive-soft text-positive-ink",
+  meeting: "bg-positive-soft text-positive-ink",
+  won: "bg-positive-soft text-positive-ink",
+  lost: "bg-negative-soft text-negative-ink",
 };
 
 const OUTCOME_NAMES: Record<string, string> = {

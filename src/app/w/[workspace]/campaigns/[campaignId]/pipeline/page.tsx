@@ -42,13 +42,13 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
     <>
       <Link
         href={`/w/${slug}/campaigns/${campaignId}`}
-        className="-mt-2 -ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm text-muted-foreground hover:text-foreground"
+        className="-mt-2 -ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm text-muted hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden /> Campaign
       </Link>
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">Pipeline</h1>
-        <p className="text-sm text-muted-foreground wrap-break-word">
+        <p className="text-sm text-muted wrap-break-word">
           {campaign.name}: {worked === 0 ? "no lead contacted yet. Open a lead, write its messages and send one." : `${worked} ${worked === 1 ? "lead" : "leads"} contacted.`}
         </p>
       </div>
@@ -62,10 +62,10 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
             aria-current={s.stage === chosen ? "page" : undefined}
             className={cn(
               "inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium",
-              s.stage === chosen ? "border-foreground bg-foreground text-background" : "bg-card hover:bg-muted",
+              s.stage === chosen ? "border-ink bg-primary text-on-primary" : "bg-card hover:bg-raised",
             )}
           >
-            {STAGE_NAMES[s.stage]} <span className={cn("tabular-nums", s.stage === chosen ? "text-background/80" : "text-muted-foreground")}>{s.count}</span>
+            {STAGE_NAMES[s.stage]} <span className={cn("tabular-nums", s.stage === chosen ? "text-on-primary" : "text-muted")}>{s.count}</span>
           </Link>
         ))}
       </nav>
@@ -76,7 +76,7 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
 
 function StageList({ stage, leadHref }: { stage: PipelineResponse["stages"][number]; leadHref: (id: string) => string }) {
   if (stage.count === 0) {
-    return <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">No leads {stage.stage === "new" ? "waiting" : `at ${STAGE_NAMES[stage.stage]}`}.</p>;
+    return <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted">No leads {stage.stage === "new" ? "waiting" : `at ${STAGE_NAMES[stage.stage]}`}.</p>;
   }
   return (
     <ul className="flex flex-col gap-2">
@@ -85,7 +85,7 @@ function StageList({ stage, leadHref }: { stage: PipelineResponse["stages"][numb
           <LeadCard lead={l} href={leadHref(l.leadId)} />
         </li>
       ))}
-      {stage.count > SHOWN && <li className="px-1 text-xs text-muted-foreground">and {stage.count - SHOWN} more</li>}
+      {stage.count > SHOWN && <li className="px-1 text-xs text-muted">and {stage.count - SHOWN} more</li>}
     </ul>
   );
 }
@@ -93,17 +93,17 @@ function StageList({ stage, leadHref }: { stage: PipelineResponse["stages"][numb
 function LeadCard({ lead, href }: { lead: PipelineLead; href: string }) {
   const details = [categoryText(lead.category), lead.city].filter(Boolean).join(" · ");
   return (
-    <Link href={href} className="flex min-h-14 items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5 hover:bg-muted">
+    <Link href={href} className="flex min-h-14 items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5 hover:bg-raised">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm font-medium wrap-break-word">{lead.name}</span>
-        {details && <span className="text-xs text-muted-foreground">{details}</span>}
+        {details && <span className="text-xs text-muted">{details}</span>}
         {lead.lastOutcome && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted">
             {outcomeText(lead.lastOutcome)} · {formatDateTime(lead.lastOutcome.createdAt)}
           </span>
         )}
       </div>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
     </Link>
   );
 }

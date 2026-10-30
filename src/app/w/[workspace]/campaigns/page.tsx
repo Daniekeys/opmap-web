@@ -28,11 +28,11 @@ async function Campaigns({ params }: { params: Props["params"] }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Campaigns</h1>
-          <p className="text-sm text-muted-foreground">Find local businesses by type and place, with their contacts checked and labelled.</p>
+          <p className="text-sm text-muted">Find local businesses by type and place, with their contacts checked and labelled.</p>
         </div>
         <Link
           href={`${base}/new`}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 shadow-md shadow-primary/25 text-base font-medium text-primary-foreground hover:bg-primary/80"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-base font-medium text-on-primary hover:bg-primary/85"
         >
           <Plus className="size-4" aria-hidden />
           New campaign
@@ -40,18 +40,18 @@ async function Campaigns({ params }: { params: Props["params"] }) {
       </div>
 
       {campaigns.length === 0 ? (
-        <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted">
           No campaigns yet. Start one to find businesses to contact.
         </p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {campaigns.map((c) => (
             <li key={c.id}>
-              <Link href={`${base}/${c.id}`} className="flex h-full min-h-11 items-center gap-3 rounded-2xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-md">
+              <Link href={`${base}/${c.id}`} className="flex h-full min-h-11 items-center gap-3 rounded-2xl border bg-card p-4">
                 <Avatar name={c.name} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <p className="font-semibold wrap-break-word">{c.name}</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
                     <CampaignStatusBadge campaign={c} />
                     <span>
                       {c.leadCount} {c.leadCount === 1 ? "lead" : "leads"}
@@ -59,7 +59,7 @@ async function Campaigns({ params }: { params: Props["params"] }) {
                     <span>Created {formatDateTime(c.createdAt)}</span>
                   </div>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
               </Link>
             </li>
           ))}

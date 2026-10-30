@@ -5,9 +5,9 @@ import { type ContactKindGroup, labelText } from "@/lib/leads";
 import { cn } from "@/lib/utils";
 
 const TONES = {
-  good: "bg-emerald-100 text-emerald-900",
-  fair: "bg-muted text-foreground",
-  weak: "bg-amber-100 text-amber-950",
+  good: "bg-positive-soft text-positive-ink",
+  fair: "bg-raised text-foreground",
+  weak: "bg-warning-soft text-warning-ink",
 };
 
 // A contact's label in plain words. Hover shows why; on a phone, a tap
@@ -29,7 +29,7 @@ export function LabelChip({ group, label }: { group: ContactKindGroup; label: st
         {word}
       </button>
       {open && tip && (
-        <span id={id} role="note" className="mt-1 text-xs text-muted-foreground">
+        <span id={id} role="note" className="mt-1 text-xs text-muted">
           {word}: {tip}
         </span>
       )}

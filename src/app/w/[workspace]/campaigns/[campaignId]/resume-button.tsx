@@ -40,7 +40,7 @@ export function ResumeButton({ workspaceId, campaignId }: { workspaceId: string;
         {resuming ? "Resuming" : "Resume search"}
       </Button>
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-negative-ink">
           {error}
         </p>
       )}

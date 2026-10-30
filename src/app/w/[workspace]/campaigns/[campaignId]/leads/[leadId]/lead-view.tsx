@@ -52,7 +52,7 @@ const MAX_WAITS = 20;
 // The API's text for a removed entry that is a whole card, not one claim.
 const WHOLE_CARD = "(whole card)";
 
-const linkClass = "text-primary underline-offset-4 hover:underline wrap-anywhere";
+const linkClass = "text-accent-ink underline-offset-4 hover:underline wrap-anywhere";
 
 // The lead page's live part: opens the deep-dive on first view (once; the API
 // makes sure two people opening it start one run), follows its progress, and
@@ -172,9 +172,9 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
       )}
 
       {(following || ask.state === "asking" || (data.run?.status === "running" && !data.run.runId)) && (
-        <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-xs" aria-label="Research in progress">
+        <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4" aria-label="Research in progress">
           <p className="flex items-center gap-2 text-sm font-medium" role="status">
-            <Sparkles className="size-4 animate-pulse text-fuchsia-500" aria-hidden />
+            <Sparkles className="size-4 animate-pulse text-accent" aria-hidden />
             Researching this business: reading what it publishes, then writing and checking opportunity cards. About a minute.
           </p>
           {following ? (
@@ -196,7 +196,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
         </Notice>
       )}
 
-      <div role="tablist" aria-label="Lead" className="sticky top-14 z-30 -mx-4 flex gap-1 overflow-x-auto border-b bg-background/90 px-4 backdrop-blur lg:top-0 lg:mx-0 lg:px-0">
+      <div role="tablist" aria-label="Lead" className="sticky top-14 z-30 -mx-4 flex gap-1 overflow-x-auto border-b bg-ground px-4 lg:top-0 lg:mx-0 lg:px-0">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -206,17 +206,17 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
             onClick={() => setTab(t.key)}
             className={cn(
               "relative flex h-12 shrink-0 items-center gap-2 px-3 text-sm font-medium transition-colors",
-              tab === t.key ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              tab === t.key ? "text-foreground" : "text-muted hover:text-foreground",
             )}
           >
-            <span className={cn(tab === t.key && "text-primary")}>{t.icon}</span>
+            <span className={cn(tab === t.key && "text-accent-ink")}>{t.icon}</span>
             {t.label}
             {t.key === "outcome" && outreach.stage !== "new" ? (
               <StageChip stage={outreach.stage} small />
             ) : (
-              t.badge !== undefined && <span className="rounded-md bg-muted px-1.5 text-[11px] tabular-nums text-muted-foreground">{t.badge}</span>
+              t.badge !== undefined && <span className="rounded-md bg-raised px-1.5 text-xs tabular-nums text-muted">{t.badge}</span>
             )}
-            {tab === t.key && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" aria-hidden />}
+            {tab === t.key && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" aria-hidden />}
           </button>
         ))}
       </div>
@@ -233,7 +233,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
           <section aria-label="Messages" className="flex flex-col gap-4">
             {cards.length > 1 && (
               <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium text-muted-foreground">Written from</p>
+                <p className="text-xs font-medium text-muted">Written from</p>
                 <div className="flex flex-wrap gap-2">
                   {cards.map((c, i) => (
                     <button
@@ -243,7 +243,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                       onClick={() => setCardId(c.id)}
                       className={cn(
                         "inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 text-left text-sm",
-                        c.id === chosenCard.id ? "border-primary/40 bg-primary/10 text-primary" : "bg-card hover:bg-muted",
+                        c.id === chosenCard.id ? "border-accent/40 bg-accent-soft text-accent-ink" : "bg-card hover:bg-raised",
                       )}
                     >
                       <span className="text-xs font-semibold">#{i + 1}</span>
@@ -253,11 +253,11 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                 </div>
               </div>
             )}
-            <div className="flex items-start gap-3 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-fuchsia-50 p-4">
-              <Target className="mt-0.5 size-4 shrink-0 text-indigo-600" aria-hidden />
+            <div className="flex items-start gap-3 rounded-2xl border border-accent/30 p-4">
+              <Target className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
               <div className="flex min-w-0 flex-col gap-0.5 text-sm">
-                <span className="font-semibold text-indigo-950">{chosenCard.offer?.text ?? "Opportunity"}</span>
-                {chosenCard.gap && <span className="text-indigo-950/70">{chosenCard.gap.text}</span>}
+                <span className="font-semibold text-accent-ink">{chosenCard.offer?.text ?? "Opportunity"}</span>
+                {chosenCard.gap && <span className="text-accent-ink">{chosenCard.gap.text}</span>}
               </div>
             </div>
             <CardDrafts key={chosenCard.id} base={base} workspaceId={workspaceId} slug={slug} opportunityId={chosenCard.id} outreach={outreach} onChange={reloadOutreach} />
@@ -272,11 +272,11 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
 
       {tab === "details" && (
         <div className="grid gap-5 xl:grid-cols-2">
-          <section aria-labelledby="contacts-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-xs">
+          <section aria-labelledby="contacts-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
             <h2 id="contacts-heading" className="text-sm font-semibold">
               Contact points
             </h2>
-            {listLead ? <LeadContacts lead={listLead} /> : <p className="text-sm text-muted-foreground">Not found in this campaign&apos;s list.</p>}
+            {listLead ? <LeadContacts lead={listLead} /> : <p className="text-sm text-muted">Not found in this campaign&apos;s list.</p>}
           </section>
           {data.signals.length > 0 ? (
             <Signals signals={data.signals} />
@@ -308,8 +308,8 @@ function failureText(code: string | null, error: string | null, slug: string) {
 function LeadHeader({ lead, stage, researched }: { lead: LeadResearchResponse["lead"]; stage: LeadOutreachResponse["stage"]; researched: boolean }) {
   const details = [categoryText(lead.category), lead.city].filter(Boolean).join(" · ");
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-card p-4 shadow-xs sm:p-5">
-      <div className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-gradient-to-br from-indigo-300/30 via-fuchsia-300/20 to-transparent blur-3xl" aria-hidden />
+    <div className="relative overflow-hidden rounded-2xl border bg-card p-4 sm:p-5">
+      <div className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full to-transparent" aria-hidden />
       <div className="relative flex flex-col gap-4">
         <div className="flex items-start gap-4">
           <Avatar name={lead.name} size="lg" />
@@ -318,18 +318,18 @@ function LeadHeader({ lead, stage, researched }: { lead: LeadResearchResponse["l
               <h1 className="text-xl font-semibold tracking-tight wrap-break-word sm:text-2xl">{lead.name}</h1>
               <StageChip stage={stage} />
               {researched && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-medium text-fuchsia-800">
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-ink">
                   <Sparkles className="size-3" aria-hidden /> Researched
                 </span>
               )}
             </div>
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
               {details && <span>{details}</span>}
               {lead.rating !== null && (
                 <span className="inline-flex items-center gap-1 text-foreground">
-                  <Star className="size-3.5 fill-amber-400 text-amber-500" aria-hidden />
+                  <Star className="size-3.5 fill-warning-ink text-warning-ink" aria-hidden />
                   <span className="font-medium">{lead.rating.toFixed(1)}</span>
-                  <span className="text-muted-foreground">({lead.reviewCount ?? 0} reviews)</span>
+                  <span className="text-muted">({lead.reviewCount ?? 0} reviews)</span>
                 </span>
               )}
             </p>
@@ -338,18 +338,18 @@ function LeadHeader({ lead, stage, researched }: { lead: LeadResearchResponse["l
         {(lead.phone || lead.whatsapp || lead.website) && (
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {lead.whatsapp && (
-              <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={cn(tapClass, "border-transparent bg-emerald-600 text-white hover:bg-emerald-700")}>
+              <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={cn(tapClass, "border-transparent bg-positive text-on-primary hover:bg-positive")}>
                 <MessageCircle className="size-4" aria-hidden /> WhatsApp
               </a>
             )}
             {lead.phone && (
               <a href={telHref(lead.phone.value)} className={tapClass}>
-                <Phone className="size-4 text-violet-600" aria-hidden /> {formatPhone(lead.phone.value)}
+                <Phone className="size-4 text-accent-ink" aria-hidden /> {formatPhone(lead.phone.value)}
               </a>
             )}
             {lead.website && lead.website.label !== "dead" && (
               <a href={lead.website.value} target="_blank" rel="noreferrer noopener" className={tapClass}>
-                <ExternalLink className="size-4 text-indigo-600" aria-hidden /> Website
+                <ExternalLink className="size-4 text-accent-ink" aria-hidden /> Website
               </a>
             )}
           </div>
@@ -359,7 +359,7 @@ function LeadHeader({ lead, stage, researched }: { lead: LeadResearchResponse["l
   );
 }
 
-const tapClass = "inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-card px-4 text-sm font-medium whitespace-nowrap shadow-xs hover:bg-muted";
+const tapClass = "inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-card px-4 text-sm font-medium whitespace-nowrap hover:bg-raised";
 
 function Result({
   result,
@@ -379,15 +379,15 @@ function Result({
   return (
     <section aria-label="Opportunities" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {result.finishedAt && <p className="text-xs text-muted-foreground">Researched {formatDateTime(result.finishedAt)}</p>}
+        {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt)}</p>}
         {result.stale && (
           <Button type="button" variant="outline" className="h-11" onClick={onRefresh} disabled={refreshing}>
             <RotateCw className="size-4" aria-hidden /> Refresh research
           </Button>
         )}
       </div>
-      {result.stale && <p className="text-sm text-muted-foreground">This research is over 90 days old. Refresh it before reaching out.</p>}
-      {failedRefresh && <p className="text-sm text-destructive">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
+      {result.stale && <p className="text-sm text-muted">This research is over 90 days old. Refresh it before reaching out.</p>}
+      {failedRefresh && <p className="text-sm text-negative-ink">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
 
       {result.cards.length === 0 ? (
         <NotEnough reason={result.notEnough} read={result.read} />
@@ -413,34 +413,34 @@ function NotEnough({ reason, read }: { reason: string | null; read: NonNullable<
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-dashed bg-card p-5">
       <p className="flex items-center gap-2 font-semibold">
-        <FileSearch className="size-4 shrink-0 text-muted-foreground" aria-hidden /> Not enough information
+        <FileSearch className="size-4 shrink-0 text-muted" aria-hidden /> Not enough information
       </p>
       <p className="text-sm">{reason ?? "We couldn't tie any of your offers to something specific at this business."}</p>
       {read && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           Read: {read.pages} website {read.pages === 1 ? "page" : "pages"}, {read.socials} social {read.socials === 1 ? "account" : "accounts"}, the Google Maps listing.
         </p>
       )}
-      <p className="text-sm text-muted-foreground">We don&apos;t guess. Call them, or look them up yourself, before pitching.</p>
+      <p className="text-sm text-muted">We don&apos;t guess. Call them, or look them up yourself, before pitching.</p>
     </div>
   );
 }
 
 const CONFIDENCE: Record<string, { word: string; tone: string; bar: string }> = {
-  high: { word: "High confidence", tone: "bg-emerald-100 text-emerald-900", bar: "from-emerald-400 to-teal-500" },
-  medium: { word: "Medium confidence", tone: "bg-sky-100 text-sky-900", bar: "from-sky-400 to-indigo-500" },
-  low: { word: "Low confidence", tone: "bg-amber-100 text-amber-950", bar: "from-amber-400 to-orange-500" },
+  high: { word: "High confidence", tone: "bg-positive-soft text-positive-ink", bar: "" },
+  medium: { word: "Medium confidence", tone: "bg-neutral-soft text-neutral-ink", bar: "" },
+  low: { word: "Low confidence", tone: "bg-warning-soft text-warning-ink", bar: "" },
 };
 
 function OpportunityCardView({ card, index, written, onWrite }: { card: OpportunityCard; index: number; written: boolean; onWrite: () => void }) {
-  const confidence = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-muted", bar: "from-zinc-300 to-zinc-400" };
+  const confidence = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-raised", bar: "" };
   return (
-    <article className="overflow-hidden rounded-2xl border bg-card shadow-xs">
-      <div className={cn("h-1.5 bg-gradient-to-r", confidence.bar)} aria-hidden />
+    <article className="overflow-hidden rounded-2xl border bg-card">
+      <div className={cn("h-1.5", confidence.bar)} aria-hidden />
       <div className="flex flex-col gap-5 p-4 sm:p-5">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-muted-foreground">Opportunity {index}</span>
+            <span className="font-semibold text-muted">Opportunity {index}</span>
             <span className={cn("rounded-full px-2 py-0.5 font-medium", confidence.tone)} title={card.confidenceReason ?? undefined}>
               {confidence.word}
             </span>
@@ -454,14 +454,14 @@ function OpportunityCardView({ card, index, written, onWrite }: { card: Opportun
         </div>
 
         {card.gap && (
-          <Section icon={<TriangleAlert className="size-4" />} tone="bg-rose-100 text-rose-700" label="The gap">
+          <Section icon={<TriangleAlert className="size-4" />} tone="bg-negative-soft text-negative-ink" label="The gap">
             <p className="text-sm">{card.gap.text}</p>
             <Evidence claim={card.gap} />
           </Section>
         )}
 
         {card.why.length > 0 && (
-          <Section icon={<Compass className="size-4" />} tone="bg-amber-100 text-amber-700" label="Why it matters to them">
+          <Section icon={<Compass className="size-4" />} tone="bg-warning-soft text-warning-ink" label="Why it matters to them">
             {card.why.map((w) => (
               <div key={w.id} className="flex flex-col gap-1">
                 <p className="text-sm">{w.text}</p>
@@ -471,22 +471,22 @@ function OpportunityCardView({ card, index, written, onWrite }: { card: Opportun
           </Section>
         )}
 
-        <Section icon={<Quote className="size-4" />} tone="bg-indigo-100 text-indigo-700" label="Angle">
+        <Section icon={<Quote className="size-4" />} tone="bg-accent-soft text-accent-ink" label="Angle">
           {card.angle ? (
             <>
-              <p className="rounded-xl border-l-4 border-indigo-400 bg-indigo-50/70 px-4 py-3 text-sm font-medium text-indigo-950">{card.angle.text}</p>
+              <p className="rounded-xl border-l-4 border-accent/30 bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink">{card.angle.text}</p>
               <Evidence claim={card.angle} />
             </>
           ) : (
             // A card stands on its offer and gap; its angle may have failed the check.
-            <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">No opening line passed the check. Open with the gap above, in your own words.</p>
+            <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted">No opening line passed the check. Open with the gap above, in your own words.</p>
           )}
         </Section>
 
-        {card.confidenceReason && <p className="text-xs text-muted-foreground">{card.confidenceReason}</p>}
+        {card.confidenceReason && <p className="text-xs text-muted">{card.confidenceReason}</p>}
 
         <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">{written ? "Messages are written for this opportunity." : "Turn this into WhatsApp, email and call messages."}</p>
+          <p className="text-xs text-muted">{written ? "Messages are written for this opportunity." : "Turn this into WhatsApp, email and call messages."}</p>
           <Button type="button" className="h-11 gap-2 px-5" onClick={onWrite}>
             <MessagesSquare className="size-4" aria-hidden /> {written ? "Open messages" : "Write messages"}
           </Button>
@@ -503,7 +503,7 @@ function Section({ icon, tone, label, children }: { icon: React.ReactNode; tone:
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="pt-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
+        <p className="pt-1.5 text-xs font-semibold tracking-wide text-muted uppercase">{label}</p>
         {children}
       </div>
     </div>
@@ -535,7 +535,7 @@ function Evidence({ claim }: { claim: Claim }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border bg-background px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border bg-background px-3 text-xs font-medium text-muted hover:text-foreground"
       >
         <FileSearch className="size-3.5" aria-hidden />
         {open ? "Hide" : "Show"} {n} {n === 1 ? "source" : "sources"}
@@ -544,7 +544,7 @@ function Evidence({ claim }: { claim: Claim }) {
       {open && (
         <ul className="flex flex-col gap-1.5">
           {claim.cites.map((c) => (
-            <li key={`${claim.id}-${c.ref}`} className="rounded-xl bg-muted/70 px-3 py-2 text-sm">
+            <li key={`${claim.id}-${c.ref}`} className="rounded-xl bg-raised px-3 py-2 text-sm">
               <CiteView cite={c} />
             </li>
           ))}
@@ -558,7 +558,7 @@ function CiteView({ cite }: { cite: Cite }) {
   if (cite.kind === "fact") {
     return (
       <p>
-        <span className="text-muted-foreground">Your approved fact: </span>
+        <span className="text-muted">Your approved fact: </span>
         {cite.text}
       </p>
     );
@@ -568,7 +568,7 @@ function CiteView({ cite }: { cite: Cite }) {
   return (
     <div className="flex flex-col gap-1">
       <p className={cn(cite.kind === "source" && "italic")}>{text}</p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted">
         {from} ·{" "}
         <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1")}>
           {pageName(cite.url)} <ExternalLink className="size-3" aria-hidden />
@@ -590,7 +590,7 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
         {removed.map((r, i) => (
           <li key={i} className="flex flex-col gap-0.5">
             <span className="line-through decoration-muted-foreground/60">{r.text}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted">
               Card {r.card}, {r.field}: {r.reason}
             </span>
           </li>
@@ -602,16 +602,16 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
 
 function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
   return (
-    <section aria-labelledby="signals-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-xs">
+    <section aria-labelledby="signals-heading" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
       <h2 id="signals-heading" className="text-sm font-semibold">
         What we found
       </h2>
       <ul className="flex flex-col divide-y">
         {signals.map((s, i) => (
           <li key={i} className="flex flex-col gap-0.5 py-2.5 text-sm">
-            <span className="text-xs font-medium text-primary">{s.label}</span>
+            <span className="text-xs font-medium text-accent-ink">{s.label}</span>
             <span className="wrap-break-word">{s.text}</span>
-            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs text-muted-foreground")}>
+            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs text-muted")}>
               {pageName(s.sourceUrl)} <ExternalLink className="size-3" aria-hidden />
             </a>
           </li>
@@ -624,8 +624,8 @@ function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
 function CardsLoading() {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="Loading">
-      <div className="h-32 animate-pulse rounded-xl bg-muted" />
-      <div className="h-32 animate-pulse rounded-xl bg-muted" />
+      <div className="h-32 animate-pulse rounded-xl bg-raised" />
+      <div className="h-32 animate-pulse rounded-xl bg-raised" />
     </div>
   );
 }
@@ -641,11 +641,11 @@ function Waiting() {
 function EmptyTab({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-card px-6 py-10 text-center">
-      <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground" aria-hidden>
+      <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-raised text-muted" aria-hidden>
         {icon}
       </span>
       <p className="font-semibold">{title}</p>
-      <p className="max-w-sm text-sm text-muted-foreground">{children}</p>
+      <p className="max-w-sm text-sm text-muted">{children}</p>
     </div>
   );
 }
@@ -654,7 +654,7 @@ function Notice({ tone, title, children }: { tone: "warn" | "error"; title: stri
   return (
     <div
       role="alert"
-      className={cn("flex flex-col gap-1 rounded-2xl border p-4 text-sm", tone === "error" ? "border-destructive/30 bg-destructive/5" : "border-amber-300 bg-amber-50 text-amber-950")}
+      className={cn("flex flex-col gap-1 rounded-2xl border p-4 text-sm", tone === "error" ? "border-negative/40 bg-negative-soft" : "border-warning-ink/30 bg-warning-soft text-warning-ink")}
     >
       <p className="flex items-center gap-2 font-medium">
         <AlertTriangle className="size-4 shrink-0" aria-hidden /> {title}

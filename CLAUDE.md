@@ -30,6 +30,7 @@ Rules for any AI coding agent working in this repo. The product spec lives in `s
 7. **Limits are checked in one place.** `checkLimit(workspace, action)` reads the plan and the usage ledger before any paid action.
 8. **Everything important becomes an event** in the append-only `events` table.
 9. **Mobile-first UI.** Build every screen for a 380px width first, then widen. Tables become stacked cards on phones. Copy buttons and outcome buttons must be easy to tap. Check each screen at phone width before calling it done.
+10. **The design folder is the visual spec.** design/ holds the screens, tokens and brand book exported from the design canvas. Colours, radii, shadows and fonts come only from design/tokens.json. Marketing pages sit in a Container (page 1280, wide 1440) with full-width backgrounds. The app fills the window, and its panes cap their own content (list 360 to 440, detail content 880, forms and reading 720). If code and design disagree, the design wins unless the spec says otherwise.
 
 ## Conventions in this repo
 - Workspace routes live under `/api/w/:workspaceId`, behind `requireSession` and `requireWorkspace`. Handlers read the id with `currentWorkspaceId(res)`, never from the body.
@@ -61,6 +62,7 @@ AI is the Claude API through the official Anthropic TypeScript SDK, inside the a
 - Every Google Places call goes through checkLimit. Hard stop on Text Search calls, set per environment in config: production 20 a day and 650 a month, development 10 a day and 300 a month. Together they stay inside Google Cloud's 30 a day, because local and production may share one Google key and can't see each other's ledger. When the cap is hit, the campaign pauses with a clear message. Google is never called past the cap.
 - Places field mask is fixed to the fields listed in the spec's Lead sourcing section. Adding a field can move every call to a pricier tier, so field mask changes need a note in the PR.
 - Every paid call (Claude tokens, Places, web search) writes its real cost to `usage_ledger`.
+- Real Google calls (Places, Geocoding) from a local environment need `ALLOW_REAL_GOOGLE=true` on the command. Without it the app uses the fakes and the real adapters refuse to start, because a local ledger can't see production's calls against Google's shared 30 a day. Production needs no flag. Never put the flag in `.env`.
 - API keys stay server-side, never in the browser or the repo. Use environment variables.
 
 ## Quality and compliance

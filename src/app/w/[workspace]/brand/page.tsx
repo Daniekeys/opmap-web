@@ -31,7 +31,7 @@ async function Brand({ params }: { params: Props["params"] }) {
     <>
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Brand DNA</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           What {workspace.name} offers and can prove, read from your website or your own description, and approved by
           you. Messages to leads may only claim what is approved here.
         </p>
@@ -52,19 +52,19 @@ async function Brand({ params }: { params: Props["params"] }) {
       {brand.draft && <DraftCard draft={brand.draft} href={`${base}/${brand.draft.id}`} />}
 
       <section aria-labelledby="approved-heading" className="flex flex-col gap-2">
-        <h2 id="approved-heading" className="text-sm font-medium text-muted-foreground">
+        <h2 id="approved-heading" className="text-sm font-medium text-muted">
           Approved profile
           {brand.approved && `, version ${brand.approved.version}`}
         </h2>
         {!approved ? (
-          <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted">
             {brand.draft
               ? "Nothing approved yet. Review the draft above and approve it."
               : "No Brand DNA yet. Read your website, or describe your business, to get a draft to review."}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted">
               Approved {formatDateTime(approved.profile.approvedAt!)} from {sourceLabel(approved.profile)}.{" "}
               {approved.profile.facts.approved} facts.
             </p>
@@ -75,7 +75,7 @@ async function Brand({ params }: { params: Props["params"] }) {
               return (
                 <div key={kind} className="flex flex-col gap-2">
                   <h3 className="font-medium">
-                    {label} <span className="text-muted-foreground">({facts.length})</span>
+                    {label} <span className="text-muted">({facts.length})</span>
                   </h3>
                   <ul className="divide-y rounded-xl border bg-card">
                     {facts.map((fact) => (
@@ -95,23 +95,23 @@ async function Brand({ params }: { params: Props["params"] }) {
 
       {brand.versions.length > 0 && (
         <section aria-labelledby="versions-heading" className="flex flex-col gap-2">
-          <h2 id="versions-heading" className="text-sm font-medium text-muted-foreground">
+          <h2 id="versions-heading" className="text-sm font-medium text-muted">
             Version history
           </h2>
           <ul className="divide-y rounded-xl border bg-card">
             {brand.versions.map((version) => (
               <li key={version.id}>
-                <Link href={`${base}/${version.id}`} className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-muted/50">
+                <Link href={`${base}/${version.id}`} className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-raised">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       Version {version.version} <VersionBadge status={version.status} />
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted">
                       {formatDateTime(version.createdAt)}, {version.facts.approved} of {version.facts.total} facts approved,{" "}
                       {version.changes.total} {version.changes.total === 1 ? "change" : "changes"}
                     </p>
                   </div>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
                 </Link>
               </li>
             ))}
@@ -130,18 +130,18 @@ function DraftCard({ draft, href }: { draft: ProfileSummary; href: string }) {
         <h2 id="draft-heading" className="font-medium">
           Version {draft.version} is ready to review
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           {draft.facts.pending === 0
             ? `All ${draft.facts.total} facts decided. An owner can approve it now.`
             : `${decided} of ${draft.facts.total} facts decided. Approve, fix or reject each one.`}
         </p>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className="h-full bg-foreground" style={{ width: `${draft.facts.total ? (decided / draft.facts.total) * 100 : 0}%` }} />
+      <div className="h-2 overflow-hidden rounded-full bg-raised" aria-hidden>
+        <div className="h-full bg-accent" style={{ width: `${draft.facts.total ? (decided / draft.facts.total) * 100 : 0}%` }} />
       </div>
       <Link
         href={href}
-        className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground hover:bg-primary/80 sm:self-start"
+        className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-base font-medium text-on-primary hover:bg-primary/85 sm:self-start"
       >
         {decided === 0 ? "Start reviewing" : "Continue reviewing"}
       </Link>

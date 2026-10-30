@@ -63,7 +63,7 @@ export function EditCampaign({ workspaceId, campaign, withSettings }: { workspac
   return (
     <details className="group rounded-xl border bg-card text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-medium">
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+        <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         Edit campaign
       </summary>
       <form onSubmit={save} className="flex flex-col gap-4 border-t px-4 py-4">
@@ -76,17 +76,17 @@ export function EditCampaign({ workspaceId, campaign, withSettings }: { workspac
             autoComplete="off"
             className={inputClass}
           />
-          <span className="font-normal text-muted-foreground">Up to 3, separated by commas. Each one multiplies the searches per map tile.</span>
+          <span className="font-normal text-muted">Up to 3, separated by commas. Each one multiplies the searches per map tile.</span>
         </label>
         <PlacePicker workspaceId={workspaceId} chosen={places} onChange={setPlaces} />
         {withSettings && <SearchSettingsFields value={settings} onChange={setSettings} />}
         {error && (
-          <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
             {error}
           </p>
         )}
         {saved && !error && (
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-muted">
             Saved.{withSettings ? " The search uses these when it resumes." : " The estimate above shows what the search will cost now."}
           </p>
         )}

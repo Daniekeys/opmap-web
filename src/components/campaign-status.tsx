@@ -4,12 +4,12 @@ import { statusText } from "@/lib/leads";
 import { cn } from "@/lib/utils";
 
 const STYLE: Record<CampaignStatus, { icon: typeof Check; className: string }> = {
-  draft: { icon: FilePen, className: "bg-muted text-muted-foreground" },
-  running: { icon: LoaderCircle, className: "bg-sky-100 text-sky-800" },
-  paused: { icon: CirclePause, className: "bg-amber-100 text-amber-900" },
-  stopped: { icon: CircleStop, className: "bg-muted text-foreground" },
-  done: { icon: Check, className: "bg-emerald-100 text-emerald-800" },
-  failed: { icon: X, className: "bg-destructive/10 text-destructive" },
+  draft: { icon: FilePen, className: "bg-raised text-muted" },
+  running: { icon: LoaderCircle, className: "bg-neutral-soft text-neutral-ink" },
+  paused: { icon: CirclePause, className: "bg-warning-soft text-warning-ink" },
+  stopped: { icon: CircleStop, className: "bg-raised text-foreground" },
+  done: { icon: Check, className: "bg-positive-soft text-positive-ink" },
+  failed: { icon: X, className: "bg-negative-soft text-negative-ink" },
 };
 
 // A campaign's state as an icon and words, never colour alone: "Complete",

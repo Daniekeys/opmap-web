@@ -30,7 +30,7 @@ export function WorkspaceSwitcher({ workspaces, current }: { workspaces: Workspa
         aria-label="Workspace"
         value={selected}
         onChange={(event) => switchTo(event.target.value)}
-        className="h-11 w-full appearance-none truncate rounded-lg border border-sidebar-border bg-sidebar-accent/60 pr-9 pl-3 text-sm font-medium text-white outline-none hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 [&>option]:text-foreground"
+        className="h-11 w-full appearance-none truncate rounded-lg border border-border bg-accent-soft pr-9 pl-3 text-sm font-medium text-accent-ink outline-none hover:bg-accent-soft focus-visible:ring-3 focus-visible:ring-ring/50 [&>option]:text-foreground"
       >
         {workspaces.map((workspace) => (
           <option key={workspace.id} value={workspace.slug}>
@@ -39,7 +39,7 @@ export function WorkspaceSwitcher({ workspaces, current }: { workspaces: Workspa
         ))}
       </select>
       <ChevronsUpDown
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-sidebar-foreground/60"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
         aria-hidden
       />
     </div>

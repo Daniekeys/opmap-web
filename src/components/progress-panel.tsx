@@ -42,7 +42,7 @@ export function ProgressPanel({
 }) {
   return (
     <section aria-labelledby="progress-heading" className="flex flex-col gap-2">
-      <h2 id="progress-heading" className="text-sm font-medium text-muted-foreground">
+      <h2 id="progress-heading" className="text-sm font-medium text-muted">
         Progress
       </h2>
       {runId ? (
@@ -143,9 +143,9 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
     return (
       connection || (
         <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" role="status" aria-label="Loading run">
-          <div className="h-5 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-11 animate-pulse rounded-lg bg-muted" />
-          <div className="h-11 animate-pulse rounded-lg bg-muted" />
+          <div className="h-5 w-32 animate-pulse rounded bg-raised" />
+          <div className="h-11 animate-pulse rounded-lg bg-raised" />
+          <div className="h-11 animate-pulse rounded-lg bg-raised" />
         </div>
       )
     );
@@ -162,7 +162,7 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className={title ? "truncate font-medium" : "truncate font-medium capitalize"}>{title ?? `${run.type} run`}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted">
               {finishedSteps} {finishedSteps === 1 ? "step" : "steps"} done
               {runMs !== null && `, ${formatDuration(runMs)}`}
             </p>
@@ -171,14 +171,14 @@ function RunProgress({ workspaceId, runId, onFinished, title }: { workspaceId: s
         </div>
 
         {run.status === "failed" && (
-          <p className="border-b bg-destructive/5 px-4 py-3 text-sm wrap-break-word text-destructive">
+          <p className="border-b bg-negative-soft px-4 py-3 text-sm wrap-break-word text-negative-ink">
             {run.error ?? "The run failed."}
             {polling && " The worker may retry it, so this is still being watched."}
           </p>
         )}
 
         {steps.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+          <p className="px-4 py-6 text-center text-sm text-muted">
             {run.status === "queued"
               ? "Waiting for the worker to pick this run up."
               : run.status === "running"
@@ -205,15 +205,15 @@ function StepRow({ step, number, now }: { step: StepRun; number: number; now: nu
 
   return (
     <li className="flex min-h-11 items-start gap-3 px-4 py-3">
-      <span className="w-5 shrink-0 pt-0.5 text-sm text-muted-foreground tabular-nums">{number}</span>
+      <span className="w-5 shrink-0 pt-0.5 text-sm text-muted tabular-nums">{number}</span>
       <div className="min-w-0 flex-1">
         <p className="font-medium wrap-break-word">{stepLabel(step.name)}</p>
-        {step.attempts > 1 && <p className="text-sm text-muted-foreground">Attempt {step.attempts}</p>}
-        {step.error && <p className="mt-1 text-sm wrap-break-word whitespace-pre-wrap text-destructive">{step.error}</p>}
+        {step.attempts > 1 && <p className="text-sm text-muted">Attempt {step.attempts}</p>}
+        {step.error && <p className="mt-1 text-sm wrap-break-word whitespace-pre-wrap text-negative-ink">{step.error}</p>}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <StatusBadge status={step.status} />
-        {ms !== null && <span className="text-sm text-muted-foreground tabular-nums">{formatDuration(ms)}</span>}
+        {ms !== null && <span className="text-sm text-muted tabular-nums">{formatDuration(ms)}</span>}
       </div>
     </li>
   );
@@ -225,8 +225,8 @@ function Notice({ tone = "muted", children }: { tone?: "muted" | "error"; childr
       role={tone === "error" ? "alert" : undefined}
       className={
         tone === "error"
-          ? "rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm text-destructive"
-          : "rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground"
+          ? "rounded-xl border border-negative/40 bg-negative-soft px-4 py-4 text-sm text-negative-ink"
+          : "rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted"
       }
     >
       {children}

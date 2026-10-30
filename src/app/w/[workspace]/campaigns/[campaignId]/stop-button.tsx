@@ -57,7 +57,7 @@ export function StopButton({ workspaceId, campaignId }: { workspaceId: string; c
         </Button>
       )}
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-negative-ink">
           {error}
         </p>
       )}

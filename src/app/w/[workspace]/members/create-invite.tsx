@@ -72,13 +72,13 @@ export function CreateInvite({ workspaceId }: { workspaceId: string }) {
             <option value="owner">Owner (can invite people and run the test job)</option>
           </select>
           <ChevronsUpDown
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
             aria-hidden
           />
         </span>
       </label>
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}
@@ -112,7 +112,7 @@ function InviteLink({ invite, onDone }: { invite: Created; onDone: () => void })
       <h2 id="link-heading" className="font-medium wrap-break-word">
         Invite link for {invite.email}
       </h2>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         Send this link to them yourself. It works once, for 7 days, and is shown only now.
       </p>
       <input
@@ -124,7 +124,7 @@ function InviteLink({ invite, onDone }: { invite: Created; onDone: () => void })
         className={cn(inputClass, "font-mono")}
       />
       {copy === "failed" && (
-        <p role="alert" className="text-sm text-muted-foreground">
+        <p role="alert" className="text-sm text-muted">
           Couldn&apos;t copy automatically. The link is selected: copy it from the box above.
         </p>
       )}

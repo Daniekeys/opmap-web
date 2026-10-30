@@ -34,10 +34,10 @@ export function WorkspaceNav({ slug, isOwner }: { slug: string; isOwner: boolean
             aria-current={active ? "page" : undefined}
             className={cn(
               itemClass,
-              active ? "bg-sidebar-accent text-white" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white",
+              active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-accent-soft hover:text-ink",
             )}
           >
-            <Icon className={cn("size-4 shrink-0", active && "text-sidebar-primary")} aria-hidden />
+            <Icon className={cn("size-4 shrink-0", active && "text-accent")} aria-hidden />
             {label}
           </Link>
         );
@@ -47,18 +47,18 @@ export function WorkspaceNav({ slug, isOwner }: { slug: string; isOwner: boolean
 }
 
 const DOTS: Record<Campaign["status"], string> = {
-  draft: "bg-zinc-400",
-  running: "bg-sky-400 animate-pulse",
-  paused: "bg-amber-400",
-  stopped: "bg-zinc-500",
-  done: "bg-emerald-400",
-  failed: "bg-rose-500",
+  draft: "bg-primary",
+  running: "bg-primary animate-pulse",
+  paused: "bg-warning-ink",
+  stopped: "bg-primary",
+  done: "bg-positive",
+  failed: "bg-negative",
 };
 
 // The workspace's campaigns, newest first, each with its lead count.
 export function SidebarCampaigns({ slug, campaigns }: { slug: string; campaigns: Pick<Campaign, "id" | "name" | "status" | "leadCount">[] }) {
   const pathname = usePathname();
-  if (campaigns.length === 0) return <p className="px-3 text-xs text-sidebar-foreground/50">No campaigns yet.</p>;
+  if (campaigns.length === 0) return <p className="px-3 text-xs text-muted">No campaigns yet.</p>;
   return (
     <ul className="flex flex-col gap-0.5">
       {campaigns.map((c) => {
@@ -72,12 +72,12 @@ export function SidebarCampaigns({ slug, campaigns }: { slug: string; campaigns:
               className={cn(
                 itemClass,
                 "h-9",
-                active ? "bg-sidebar-accent text-white" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white",
+                active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-accent-soft hover:text-ink",
               )}
             >
               <span className={cn("size-2 shrink-0 rounded-full", DOTS[c.status])} aria-hidden />
               <span className="min-w-0 flex-1 truncate">{c.name}</span>
-              <span className="shrink-0 rounded-md bg-white/8 px-1.5 py-0.5 text-[11px] tabular-nums text-sidebar-foreground/70">{c.leadCount}</span>
+              <span className="shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-xs tabular-nums text-muted">{c.leadCount}</span>
             </Link>
           </li>
         );

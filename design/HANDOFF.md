@@ -56,6 +56,29 @@ Every inline style value maps to a token. If you find a value that isn't in `tok
 - Radii: 4 tile, 6 control, 8 card, 999 pill.
 - Respect `prefers-reduced-motion` for every animation on the landing page.
 
+## Layout widths
+
+Two rules: the landing page is capped, the app fills the window.
+
+**Landing page (marketing).** Like Stripe and Linear.
+
+- Two containers, both from the `Container` component (`components/container.tsx`, `size` prop): `page` is 1280px, for text, cards, forms and the try-a-search block; `wide` is 1440px, for the photo bands (the street photo, the how-it-works split, the closing photo).
+- Side padding: 16px below 768px, 24px from 768px, 40px from 1280px. The widths are the content box; padding sits outside it.
+- Section backgrounds and the night footer run full width. Everything inside them sits in a container.
+- `container-type: inline-size` goes on the capped inner element, not on the full-width section, so cqw-based headline sizes stop growing at 1280px. The hero looks the same at 1440px and 2560px, with more ground around it.
+- The how-it-works split: the two coloured fields sit inside the wide container, centred, with the ground colour outside them.
+
+**App.** Full screen, like Explee, Linear and Attio, with caps inside the panes.
+
+- The shell always fills the window. The sidebar is fixed at 240px on the left edge. There is no centred app container.
+- Campaign workspace: the lead list is a fixed-width column, 360px to 440px. The detail pane takes the rest of the width, and its content (opportunity card, contacts, evidence) is capped at 880px and left-aligned in the pane.
+- Pipeline: columns fill the width, each 280px to 360px. On wide screens leftover space sits at the right; below the minimum the board scrolls sideways.
+- Forms and long reading (Brand DNA fact review, the describe-a-buyer form, the composer's draft body, settings) use `Container size="read"` (720px), left-aligned in their pane.
+- Page titles, finding sentences and KPI strips line up with the content below them, not with the window edge.
+- Phone layouts are unchanged by these rules.
+
+The widths are Tailwind theme values in `globals.css` (`max-w-page`, `max-w-wide`, `max-w-read`, `max-w-detail`, `max-w-list`, `min-w-list-min`). No other `max-w-[...]` values.
+
 ## Product guardrails the UI must show
 
 - Every claim on an opportunity card links to its source (page, listing or bio, with the date it was read).

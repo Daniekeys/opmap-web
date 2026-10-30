@@ -54,9 +54,9 @@ export function LeadRail({
   );
 
   return (
-    <section aria-label="Businesses" className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs lg:max-h-[calc(100dvh-3rem)]">
+    <section aria-label="Businesses" className="flex flex-col overflow-hidden rounded-2xl border bg-card lg:max-h-[calc(100dvh-3rem)]">
       <div className="flex flex-col gap-3 border-b p-3">
-        <div role="tablist" aria-label="Show" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+        <div role="tablist" aria-label="Show" className="grid grid-cols-3 gap-1 rounded-xl bg-raised p-1">
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -65,19 +65,19 @@ export function LeadRail({
               aria-selected={tab === t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "flex h-10 items-center justify-center gap-1.5 rounded-lg px-1 text-xs font-medium transition-colors sm:text-[13px]",
-                tab === t.key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "flex h-10 items-center justify-center gap-1.5 rounded-lg px-1 text-xs font-medium transition-colors sm:text-xs",
+                tab === t.key ? "bg-background text-foreground" : "text-muted hover:text-foreground",
               )}
             >
               <span className="truncate">{t.label}</span>
-              <span className={cn("rounded-md px-1.5 text-[11px] tabular-nums", tab === t.key ? "bg-primary/10 text-primary" : "bg-background/60")}>{counts[t.key]}</span>
+              <span className={cn("rounded-md px-1.5 text-xs tabular-nums", tab === t.key ? "bg-accent-soft text-accent-ink" : "bg-ground")}>{counts[t.key]}</span>
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
           <label className="relative flex-1">
             <span className="sr-only">Search businesses</span>
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -92,7 +92,7 @@ export function LeadRail({
             title="Only businesses with a phone or WhatsApp number"
             className={cn(
               "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium",
-              phoneOnly ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "bg-background text-muted-foreground hover:text-foreground",
+              phoneOnly ? "border-positive/30 bg-positive-soft text-positive-ink" : "bg-background text-muted hover:text-foreground",
             )}
           >
             <Phone className="size-3.5" aria-hidden /> Has phone
@@ -121,7 +121,7 @@ export function LeadRail({
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="m-3 rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">{children}</p>;
+  return <p className="m-3 rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted">{children}</p>;
 }
 
 function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stage: Stage; active: boolean }) {
@@ -133,7 +133,7 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
       aria-current={active ? "page" : undefined}
       className={cn(
         "group flex gap-3 rounded-xl border px-3 py-3 transition-colors",
-        active ? "border-primary/30 bg-primary/[0.06] ring-1 ring-primary/20" : "border-transparent hover:bg-muted/70",
+        active ? "border-accent/40 bg-accent-soft ring-1 ring-accent/30" : "border-transparent hover:bg-raised",
       )}
     >
       <Avatar name={lead.name} />
@@ -142,37 +142,37 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="truncate text-sm font-semibold">{lead.name}</span>
           {lead.rating !== null && (
             <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-medium">
-              <Star className="size-3 fill-amber-400 text-amber-500" aria-hidden />
+              <Star className="size-3 fill-warning-ink text-warning-ink" aria-hidden />
               {lead.rating.toFixed(1)}
-              <span className="font-normal text-muted-foreground">({lead.reviewCount ?? 0})</span>
+              <span className="font-normal text-muted">({lead.reviewCount ?? 0})</span>
             </span>
           )}
         </div>
-        {details && <span className="truncate text-xs text-muted-foreground">{details}</span>}
+        {details && <span className="truncate text-xs text-muted">{details}</span>}
         <div className="mt-0.5 flex items-center gap-1.5">
-          <Channel on={!!whatsapp} tone="bg-emerald-100 text-emerald-700" label="WhatsApp">
+          <Channel on={!!whatsapp} tone="bg-positive-soft text-positive-ink" label="WhatsApp">
             <MessageCircle className="size-3" />
           </Channel>
-          <Channel on={!!phone} tone="bg-violet-100 text-violet-700" label="Phone">
+          <Channel on={!!phone} tone="bg-accent-soft text-accent-ink" label="Phone">
             <Phone className="size-3" />
           </Channel>
-          <Channel on={!!email} tone="bg-sky-100 text-sky-700" label="Email">
+          <Channel on={!!email} tone="bg-neutral-soft text-neutral-ink" label="Email">
             <Mail className="size-3" />
           </Channel>
-          <Channel on={!!website && website.label !== "dead"} tone="bg-indigo-100 text-indigo-700" label="Website">
+          <Channel on={!!website && website.label !== "dead"} tone="bg-accent-soft text-accent-ink" label="Website">
             <Globe className="size-3" />
           </Channel>
           <span className="ml-auto flex items-center gap-1">
             {stage !== "new" ? (
-              <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>
+              <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>
             ) : lead.researched ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-100 px-2 py-0.5 text-[11px] font-medium text-fuchsia-800" title="The deep-dive has run; opening it costs nothing">
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-ink" title="The deep-dive has run; opening it costs nothing">
                 <Sparkles className="size-3" aria-hidden /> Researched
               </span>
             ) : null}
           </span>
         </div>
-        {lead.buyer && <span className="line-clamp-1 text-xs text-muted-foreground/90">{lead.buyer.topReason}</span>}
+        {lead.buyer && <span className="line-clamp-1 text-xs text-muted">{lead.buyer.topReason}</span>}
       </div>
     </Link>
   );
@@ -183,7 +183,7 @@ function Channel({ on, tone, label, children }: { on: boolean; tone: string; lab
   return (
     <span
       title={on ? label : `No ${label.toLowerCase()}`}
-      className={cn("inline-flex size-5.5 items-center justify-center rounded-md", on ? tone : "bg-muted text-muted-foreground/40")}
+      className={cn("inline-flex size-5.5 items-center justify-center rounded-md", on ? tone : "bg-raised text-muted")}
     >
       {children}
       <span className="sr-only">{on ? label : `No ${label.toLowerCase()}`}</span>

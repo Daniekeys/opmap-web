@@ -34,7 +34,7 @@ export function SearchSettingsFields({
             placeholder="No limit"
             className={inputClass}
           />
-          <span className="text-muted-foreground">The most Google searches this campaign may use. It stops there and keeps its leads.</span>
+          <span className="text-muted">The most Google searches this campaign may use. It stops there and keeps its leads.</span>
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
           Searches a day
@@ -48,7 +48,7 @@ export function SearchSettingsFields({
             placeholder={dailyCap ? `Up to ${dailyCap}` : "Shared limit"}
             className={inputClass}
           />
-          <span className="text-muted-foreground">
+          <span className="text-muted">
             This campaign&apos;s own pace{dailyCap ? `, up to the shared limit of ${dailyCap} a day` : ", up to the shared daily limit"}.
           </span>
         </label>
@@ -59,7 +59,7 @@ export function SearchSettingsFields({
             <option value="2">2 pages (up to 40)</option>
             <option value="3">3 pages (up to 60)</option>
           </select>
-          <span className="text-muted-foreground">Each page is one search. Fewer pages can miss businesses in busy areas.</span>
+          <span className="text-muted">Each page is one search. Fewer pages can miss businesses in busy areas.</span>
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
           Neighbourhood searches per city
@@ -70,7 +70,7 @@ export function SearchSettingsFields({
               </option>
             ))}
           </select>
-          <span className="text-muted-foreground">Extra searches by neighbourhood name, one page each.</span>
+          <span className="text-muted">Extra searches by neighbourhood name, one page each.</span>
         </label>
       </div>
     </fieldset>

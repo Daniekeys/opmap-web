@@ -30,7 +30,7 @@ async function Profile({ params }: { params: Props["params"] }) {
     <div className="flex flex-col gap-1">
       <Link
         href={back}
-        className="-ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="-ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm font-medium text-muted hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden />
         Brand DNA
@@ -38,7 +38,7 @@ async function Profile({ params }: { params: Props["params"] }) {
       <h1 className="text-2xl font-semibold tracking-tight">
         Version {profile.version} <VersionBadge status={profile.status} />
       </h1>
-      <p className="text-sm text-muted-foreground wrap-break-word">
+      <p className="text-sm text-muted wrap-break-word">
         Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt)}
         {profile.source === "website" && `, ${detail.pages.length} ${detail.pages.length === 1 ? "page" : "pages"}`}.
       </p>
@@ -65,7 +65,7 @@ async function Profile({ params }: { params: Props["params"] }) {
   return (
     <>
       {header}
-      <p className="rounded-lg bg-muted px-3 py-2 text-sm">
+      <p className="rounded-lg bg-raised px-3 py-2 text-sm">
         {profile.status === "approved"
           ? `Approved ${formatDateTime(profile.approvedAt!)}. This is the profile messages to leads use.`
           : profile.status === "retired"
@@ -83,7 +83,7 @@ async function Profile({ params }: { params: Props["params"] }) {
             <ul className="divide-y rounded-xl border bg-card">
               {facts.map((fact) => (
                 <li key={fact.id} className="flex flex-col gap-2 px-4 py-3">
-                  <p className={fact.status === "rejected" ? "text-muted-foreground line-through" : "font-medium"}>
+                  <p className={fact.status === "rejected" ? "text-muted line-through" : "font-medium"}>
                     {fact.text}
                     {fact.status === "rejected" && <span className="sr-only"> (rejected)</span>}
                   </p>

@@ -124,7 +124,7 @@ export function BrandRunner({
     <>
       {isOwner ? (
         <form onSubmit={start} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <div role="group" aria-label="Read from" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          <div role="group" aria-label="Read from" className="grid grid-cols-2 gap-1 rounded-lg bg-raised p-1">
             {(
               [
                 ["website", "My website"],
@@ -141,7 +141,7 @@ export function BrandRunner({
                 }}
                 className={cn(
                   "h-11 rounded-md text-sm font-medium",
-                  mode === value ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  mode === value ? "bg-background" : "text-muted hover:text-foreground",
                 )}
               >
                 {label}
@@ -166,7 +166,7 @@ export function BrandRunner({
                   className={inputClass}
                 />
               </label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted">
                 We read up to 10 pages (home, about, services, portfolio, contact) and draft your profile. Takes about a
                 minute. If the site hasn&apos;t changed since the last run, the earlier result is reused for free.
               </p>
@@ -186,7 +186,7 @@ export function BrandRunner({
                   placeholder="I make and sell liquid soap in Lagos, in 5 and 25 litre kegs."
                   className={cn(inputClass, "h-auto min-h-32 py-2.5 leading-relaxed")}
                 />
-                <span className="flex justify-between gap-3 font-normal text-muted-foreground">
+                <span className="flex justify-between gap-3 font-normal text-muted">
                   <span>What you sell, who buys it, where, and anything you can prove (years, customers, numbers).</span>
                   <span className="shrink-0 tabular-nums" aria-live="polite">
                     {text.trim().length}/{MAX_DESCRIPTION_CHARS}
@@ -195,7 +195,7 @@ export function BrandRunner({
               </label>
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 <span>
-                  Instagram handle <span className="font-normal text-muted-foreground">(optional)</span>
+                  Instagram handle <span className="font-normal text-muted">(optional)</span>
                 </span>
                 <input
                   name="instagram"
@@ -207,7 +207,7 @@ export function BrandRunner({
                   defaultValue={instagram ? `@${instagram}` : ""}
                   className={inputClass}
                 />
-                <span className="font-normal text-muted-foreground">
+                <span className="font-normal text-muted">
                   Kept with your profile. We don&apos;t read Instagram, so paste your bio or best captions into the
                   description if they say more.
                 </span>
@@ -216,7 +216,7 @@ export function BrandRunner({
           )}
 
           {error && (
-            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
               {error}
             </p>
           )}
@@ -233,17 +233,17 @@ export function BrandRunner({
           </Button>
         </form>
       ) : (
-        <p className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground wrap-break-word">
+        <p className="rounded-xl border bg-card px-4 py-3 text-sm text-muted wrap-break-word">
           {website ? `Website: ${website}. ` : ""}Only an owner can start a new run. You can review and fix facts in a
           draft.
         </p>
       )}
 
       {problem && (
-        <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm">
-          <p className="font-medium text-destructive">{problem.title}</p>
-          <p className="mt-1 text-destructive">{problem.help}</p>
-          {latestRun?.error && <p className="mt-2 text-muted-foreground wrap-break-word">Details: {latestRun.error}</p>}
+        <div role="alert" className="rounded-xl border border-negative/40 bg-negative-soft px-4 py-4 text-sm">
+          <p className="font-medium text-negative-ink">{problem.title}</p>
+          <p className="mt-1 text-negative-ink">{problem.help}</p>
+          {latestRun?.error && <p className="mt-2 text-muted wrap-break-word">Details: {latestRun.error}</p>}
         </div>
       )}
 

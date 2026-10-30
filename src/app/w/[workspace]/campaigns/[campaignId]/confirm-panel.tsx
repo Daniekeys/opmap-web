@@ -128,7 +128,7 @@ export function ConfirmPanel({
 
       <SearchSettingsFields value={draft} onChange={setDraft} dailyCap={estimate.dailyCap} disabled={!isOwner || starting} />
       {invalid && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-negative-ink">
           {invalid}
         </p>
       )}
@@ -146,34 +146,34 @@ export function ConfirmPanel({
           {inFreeTier ? "Inside the free tier" : "More than the free tier left this month"}; {cost} at list price. At {shown.perDay} a day that takes{" "}
           {days} {shown.daysAtDailyCap.max === 1 ? "day" : "days"}.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           {shown.callsLeft.today} searches left today and {shown.callsLeft.month} this month, shared by every workspace. When today&apos;s run
           out, the campaign pauses until tomorrow, then carries on by itself (in development, when an owner taps Resume search). You can stop it
           at any time.
         </p>
         {budgetLeft === 0 && (
-          <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <p role="alert" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
             The search budget is used up ({shown.callsUsed} searches). Raise it, or clear it for no limit, to search further.
           </p>
         )}
         {shown.warning && (
-          <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <p role="alert" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
             {shown.warning}
           </p>
         )}
         {shown.unmapped.length > 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted">
             Not counted yet: {shown.unmapped.join(", ")}. Their map boundary is looked up when the search starts.
           </p>
         )}
       </div>
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}
       {!supported ? (
-        <p className="text-sm text-muted-foreground">Only local businesses can be searched for now, so this draft can&apos;t be started.</p>
+        <p className="text-sm text-muted">Only local businesses can be searched for now, so this draft can&apos;t be started.</p>
       ) : isOwner ? (
         <Button
           className="h-auto min-h-11 py-2 text-base whitespace-normal sm:self-start sm:px-5"
@@ -183,7 +183,7 @@ export function ConfirmPanel({
           {starting ? "Starting" : `${continuing ? "Continue search" : "Confirm and search"}: about ${calls} searches, ${cost}`}
         </Button>
       ) : (
-        <p className="text-sm text-muted-foreground">Only an owner can start a campaign or change its settings, because it uses the Google searches both teams share.</p>
+        <p className="text-sm text-muted">Only an owner can start a campaign or change its settings, because it uses the Google searches both teams share.</p>
       )}
     </section>
   );

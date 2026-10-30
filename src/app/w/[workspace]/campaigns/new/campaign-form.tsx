@@ -167,12 +167,12 @@ export function CampaignForm({
       <button
         type="button"
         onClick={onBack}
-        className="-mx-1 -mt-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="-mx-1 -mt-1 inline-flex min-h-11 items-center gap-1 self-start px-1 text-sm font-medium text-muted hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden /> All segments
       </button>
       {start && (
-        <p className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+        <p className="flex items-start gap-2 rounded-lg bg-raised px-3 py-2 text-sm">
           <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             Suggestion {start.segment.rank}. {start.segment.pain} Change anything that&apos;s off.
@@ -206,7 +206,7 @@ export function CampaignForm({
           autoComplete="off"
           className={inputClass}
         />
-        <span className="font-normal text-muted-foreground">
+        <span className="font-normal text-muted">
           Up to 3, separated by commas, the way a person would search.
           {!start && " Left empty, the name above is searched."}
         </span>
@@ -214,7 +214,7 @@ export function CampaignForm({
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         <span>
-          What to pitch first <span className="font-normal text-muted-foreground">(optional)</span>
+          What to pitch first <span className="font-normal text-muted">(optional)</span>
         </span>
         <input
           name="pitch"
@@ -229,7 +229,7 @@ export function CampaignForm({
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-medium">Buyer signals</legend>
-        <p className="-mt-1 text-sm text-muted-foreground">Leads that match these rank higher. Nothing is filtered out.</p>
+        <p className="-mt-1 text-sm text-muted">Leads that match these rank higher. Nothing is filtered out.</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5 text-sm">
             Reviews, at least
@@ -294,7 +294,7 @@ export function CampaignForm({
               key={t.kind}
               className={cn(
                 "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
-                kind === t.kind ? "border-foreground bg-muted/50" : "border-border",
+                kind === t.kind ? "border-ink bg-raised" : "border-border",
               )}
             >
               <input
@@ -309,10 +309,10 @@ export function CampaignForm({
                 <span className="font-medium">
                   {t.label}
                   {suggestion.state === "done" && suggestion.answer.kind === t.kind && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">suggested</span>
+                    <span className="ml-2 text-xs font-normal text-muted">suggested</span>
                   )}
                 </span>
-                <span className="text-sm text-muted-foreground">{t.help}</span>
+                <span className="text-sm text-muted">{t.help}</span>
               </span>
             </label>
           ))}
@@ -321,16 +321,16 @@ export function CampaignForm({
 
       <PlacePicker workspaceId={workspaceId} chosen={chosen} onChange={setChosen} />
       {notSearchable.length > 0 && (
-        <p className="text-sm text-muted-foreground">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
+        <p className="text-sm text-muted">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
       )}
 
       {unsupported && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
           Only local businesses can be searched for now. You can save this draft, but it can&apos;t be started yet.
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}
@@ -345,15 +345,15 @@ function SuggestionNote({ suggestion }: { suggestion: Suggestion }) {
   if (suggestion.state === "idle") return null;
   if (suggestion.state === "loading") {
     return (
-      <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+      <p className="flex items-center gap-2 text-sm text-muted" role="status">
         <LoaderCircle className="size-4 animate-spin" aria-hidden /> Checking where these are found
       </p>
     );
   }
-  if (suggestion.state === "failed") return <p className="text-sm text-muted-foreground">{suggestion.message}</p>;
+  if (suggestion.state === "failed") return <p className="text-sm text-muted">{suggestion.message}</p>;
   const label = TARGET_KINDS.find((t) => t.kind === suggestion.answer.kind)!.label.toLowerCase();
   return (
-    <p className="flex items-start gap-2 text-sm text-muted-foreground">
+    <p className="flex items-start gap-2 text-sm text-muted">
       <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
       <span>
         Suggested: {label}. {suggestion.answer.reason} Change it if that&apos;s wrong.
@@ -407,7 +407,7 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Where
         <span className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <input
             type="search"
             value={text}
@@ -417,13 +417,13 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
             className={cn(inputClass, "pl-9")}
           />
         </span>
-        <span className="font-normal text-muted-foreground">A state runs its towns biggest first. Pick as many places as you like.</span>
+        <span className="font-normal text-muted">A state runs its towns biggest first. Pick as many places as you like.</span>
       </label>
 
       {chosen.length > 0 && (
         <ul className="flex flex-wrap gap-2" aria-label="Chosen places">
           {chosen.map((a) => (
-            <li key={a.id} className="flex items-center gap-1 rounded-full bg-muted py-1 pr-1 pl-3 text-sm">
+            <li key={a.id} className="flex items-center gap-1 rounded-full bg-raised py-1 pr-1 pl-3 text-sm">
               {areaLabel(a)}
               <button
                 type="button"
@@ -439,12 +439,12 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
       )}
 
       {loading && text.trim().length >= 2 && (
-        <p className="text-sm text-muted-foreground" role="status">
+        <p className="text-sm text-muted" role="status">
           Looking up places
         </p>
       )}
-      {failed && <p className="text-sm text-destructive">Couldn&apos;t look up places. Try again.</p>}
-      {shown && shown.length === 0 && <p className="text-sm text-muted-foreground">No place called &quot;{text.trim()}&quot; in the list.</p>}
+      {failed && <p className="text-sm text-negative-ink">Couldn&apos;t look up places. Try again.</p>}
+      {shown && shown.length === 0 && <p className="text-sm text-muted">No place called &quot;{text.trim()}&quot; in the list.</p>}
       {shown && shown.length > 0 && (
         <ul className="divide-y rounded-lg border">
           {shown.map((a) => {
@@ -455,13 +455,13 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
                   type="button"
                   disabled={disabled}
                   onClick={() => pick(a)}
-                  className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{areaLabel(a)}</span>
-                    {disabled && <span className="block text-xs text-muted-foreground">Whole countries can&apos;t be searched yet</span>}
+                    {disabled && <span className="block text-xs text-muted">Whole countries can&apos;t be searched yet</span>}
                   </span>
-                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">{LEVELS[a.level]}</span>
+                  <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-xs">{LEVELS[a.level]}</span>
                 </button>
               </li>
             );

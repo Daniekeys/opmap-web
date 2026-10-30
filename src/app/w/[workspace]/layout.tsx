@@ -21,19 +21,19 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[w
         sidebar={
           <div className="flex h-full flex-col gap-5 overflow-y-auto px-3 py-4">
             <div className="px-2 pt-1">
-              <Logo onDark />
+              <Logo />
             </div>
-            <Suspense fallback={<div className="h-11 animate-pulse rounded-lg bg-sidebar-accent" />}>
+            <Suspense fallback={<div className="h-11 animate-pulse rounded-lg bg-accent-soft" />}>
               <Switcher params={params} />
             </Suspense>
-            <Suspense fallback={<div className="h-52 animate-pulse rounded-lg bg-sidebar-accent/50" />}>
+            <Suspense fallback={<div className="h-52 animate-pulse rounded-lg bg-accent-soft" />}>
               <Nav params={params} />
             </Suspense>
             <Suspense fallback={null}>
               <Campaigns params={params} />
             </Suspense>
-            <div className="mt-auto border-t border-sidebar-border pt-3">
-              <SignOutButton variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white" />
+            <div className="mt-auto border-t border-border pt-3">
+              <SignOutButton variant="ghost" className="w-full justify-start gap-3 text-muted hover:bg-accent-soft hover:text-ink" />
             </div>
           </div>
         }
@@ -47,7 +47,7 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[w
 function ShellLoading() {
   return (
     <div className="flex min-h-dvh w-full">
-      <div className="hidden w-64 shrink-0 bg-sidebar lg:block" />
+      <div className="hidden w-64 shrink-0 bg-ground lg:block" />
       <div className="flex-1" />
     </div>
   );
@@ -72,13 +72,13 @@ async function Campaigns({ params }: { params: Params }) {
   return (
     <section aria-labelledby="sidebar-campaigns" className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between px-3">
-        <h2 id="sidebar-campaigns" className="text-[11px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">
+        <h2 id="sidebar-campaigns" className="text-xs font-semibold tracking-wider text-muted uppercase">
           Campaigns
         </h2>
         <Link
           href={`/w/${workspace.slug}/campaigns/new`}
           aria-label="New campaign"
-          className="inline-flex size-7 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-white"
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted hover:bg-accent-soft hover:text-ink"
         >
           <Plus className="size-4" aria-hidden />
         </Link>

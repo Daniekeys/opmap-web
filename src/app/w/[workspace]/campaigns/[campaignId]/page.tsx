@@ -76,25 +76,25 @@ async function CampaignView({ params }: { params: Props["params"] }) {
 // since opening a lead that isn't researched yet starts its paid deep-dive.
 function PickHint({ count }: { count: number }) {
   return (
-    <div className="relative hidden overflow-hidden rounded-2xl border bg-card p-8 shadow-xs lg:block">
-      <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-gradient-to-br from-indigo-400/25 via-fuchsia-400/20 to-amber-300/20 blur-3xl" aria-hidden />
+    <div className="relative hidden overflow-hidden rounded-2xl border bg-card p-8 lg:block">
+      <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full" aria-hidden />
       <div className="relative flex flex-col gap-3">
-        <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-md shadow-indigo-500/30" aria-hidden>
+        <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-raised text-ink" aria-hidden>
           <MousePointerClick className="size-5" />
         </span>
         <h2 className="text-lg font-semibold">Pick a business to see its opportunity</h2>
-        <p className="max-w-md text-sm text-muted-foreground">
+        <p className="max-w-md text-sm text-muted">
           {count} {count === 1 ? "business" : "businesses"} on the left, best fit first. Opening one researches it (about a minute, the first time), then writes
           messages you can send on WhatsApp, email or a call.
         </p>
         <ol className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
           {[
-            ["1", "Open a business", "from-indigo-500 to-violet-500"],
-            ["2", "Check the opportunity", "from-fuchsia-500 to-pink-500"],
-            ["3", "Send and log the outcome", "from-emerald-500 to-teal-500"],
+            ["1", "Open a business", ""],
+            ["2", "Check the opportunity", ""],
+            ["3", "Send and log the outcome", ""],
           ].map(([n, text, tone]) => (
-            <li key={n} className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5">
-              <span className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-semibold text-white", tone)}>{n}</span>
+            <li key={n} className="flex items-center gap-2 rounded-xl bg-raised px-3 py-2.5">
+              <span className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold bg-primary text-on-primary", tone)}>{n}</span>
               {text}
             </li>
           ))}
@@ -113,14 +113,14 @@ const editKey = (c: Campaign) => [c.queries.join(","), c.locations.map((l) => l.
 function NameWordsPanel({ campaign }: { campaign: Campaign }) {
   const words = campaign.nameWords;
   return (
-    <details className="group rounded-2xl border bg-card text-sm shadow-xs">
+    <details className="group rounded-2xl border bg-card text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-medium">
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+        <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         Words used to check names
       </summary>
       <div className="flex flex-col gap-3 border-t px-4 py-3">
         {!words ? (
-          <p className="text-muted-foreground">Not made yet. They are made from this campaign&apos;s segment before its first fit check.</p>
+          <p className="text-muted">Not made yet. They are made from this campaign&apos;s segment before its first fit check.</p>
         ) : (
           <>
             <WordList
@@ -139,14 +139,14 @@ function NameWordsPanel({ campaign }: { campaign: Campaign }) {
 function WordList({ label, hint, words }: { label: string; hint: string; words: string[] }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="text-muted-foreground">{hint}</p>
+      <p className="text-xs font-medium tracking-wide text-muted uppercase">{label}</p>
+      <p className="text-muted">{hint}</p>
       {words.length === 0 ? (
-        <p className="text-muted-foreground">None</p>
+        <p className="text-muted">None</p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
           {words.map((w) => (
-            <li key={w} className="rounded-full bg-muted px-2 py-1 text-xs">
+            <li key={w} className="rounded-full bg-raised px-2 py-1 text-xs">
               {w}
             </li>
           ))}
@@ -163,7 +163,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
     // development, where nothing restarts it by itself).
     const due = resumeDue(campaign.resumeAt);
     return (
-      <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+      <div role="status" className="rounded-2xl border border-warning-ink/30 bg-warning-soft px-4 py-3 text-sm text-warning-ink">
         <p className="font-medium">
           {due ? "Paused: the limit has lifted" : `Paused until ${campaign.resumeAt ? pausedUntil(campaign.resumeAt) : "the limit resets"} (Lagos time)`}
         </p>
@@ -181,7 +181,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
     return (
       <div role="status" className="rounded-2xl border px-4 py-3 text-sm">
         <p className="font-medium">Stopped</p>
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-1 text-muted">
           {campaign.pauseReason ?? "Stopped by an owner."} It used {campaign.callsUsed} Google {campaign.callsUsed === 1 ? "search" : "searches"}, and the{" "}
           {leadCount} {leadCount === 1 ? "lead" : "leads"} it found {leadCount === 1 ? "is" : "are"} in the list.{" "}
           {isOwner ? "Edit it, or change its settings below and continue the search." : "An owner can edit it and continue the search."}
@@ -191,7 +191,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
   }
   if (campaign.status === "done") {
     return (
-      <p role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+      <p role="status" className="rounded-2xl border border-positive/30 bg-positive-soft px-4 py-3 text-sm text-positive-ink">
         Complete. The search covered every place in this campaign and found {leadCount} {leadCount === 1 ? "lead" : "leads"} that fit.
       </p>
     );
@@ -199,7 +199,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
   if (campaign.status === "running") {
     const budget = campaign.settings.maxCalls;
     return (
-      <div role="status" className="rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+      <div role="status" className="rounded-2xl border bg-card px-4 py-3 text-sm text-muted">
         <p>
           Searching. Leads appear in the list as they are found and checked; this page updates by itself. {campaign.callsUsed}
           {budget !== null ? ` of ${budget}` : ""} Google searches used so far.
@@ -210,7 +210,7 @@ function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: C
   }
   if (campaign.status === "failed") {
     return (
-      <p role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+      <p role="alert" className="rounded-2xl border border-negative/40 bg-negative-soft px-4 py-3 text-sm text-negative-ink">
         The search stopped with an error. What it found is kept in the list; an owner can start it again.
       </p>
     );

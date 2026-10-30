@@ -20,7 +20,7 @@ async function FirstWorkspace() {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-4 py-10">
       <h1 className="text-xl font-semibold">No workspace yet</h1>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         {user.email} is not a member of any workspace. Ask a workspace owner for an invite link.
       </p>
       <SignOutButton className="self-start" />

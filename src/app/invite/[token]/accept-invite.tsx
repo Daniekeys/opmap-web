@@ -85,14 +85,14 @@ export function AcceptInvite({ token, email, hasAccount }: { token: string; emai
               aria-describedby="password-hint"
               className={inputClass}
             />
-            <span id="password-hint" className="text-sm font-normal text-muted-foreground">
+            <span id="password-hint" className="text-sm font-normal text-muted">
               At least 8 characters.
             </span>
           </label>
         </>
       )}
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}

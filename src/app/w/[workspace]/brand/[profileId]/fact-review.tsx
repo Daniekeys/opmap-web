@@ -143,12 +143,12 @@ export function FactReview({
       <section aria-label="Review progress" className="flex flex-col gap-2">
         <p className="text-sm font-medium">
           {decided} of {facts.length} facts decided
-          {pending > 0 && <span className="text-muted-foreground">, {pending} to go</span>}
+          {pending > 0 && <span className="text-muted">, {pending} to go</span>}
         </p>
-        <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className="h-full bg-foreground transition-all" style={{ width: `${facts.length ? (decided / facts.length) * 100 : 0}%` }} />
+        <div className="h-2 overflow-hidden rounded-full bg-raised" aria-hidden>
+          <div className="h-full bg-accent transition-all" style={{ width: `${facts.length ? (decided / facts.length) * 100 : 0}%` }} />
         </div>
-        <p className="hidden text-sm text-muted-foreground sm:block">
+        <p className="hidden text-sm text-muted sm:block">
           Approve what is true today, fix the wording, reject the rest. Only approved facts can appear in messages to leads.
         </p>
       </section>
@@ -167,17 +167,17 @@ export function FactReview({
               }}
               className={cn(
                 "h-11 shrink-0 rounded-full border px-4 text-sm font-medium whitespace-nowrap",
-                active ? "border-foreground bg-foreground text-background" : "bg-card hover:bg-muted",
+                active ? "border-ink bg-primary text-on-primary" : "bg-card hover:bg-raised",
               )}
             >
-              {label} <span className={active ? "opacity-70" : "text-muted-foreground"}>{count}</span>
+              {label} <span className={active ? "opacity-70" : "text-muted"}>{count}</span>
             </button>
           );
         })}
       </div>
 
       {visible.length === 0 ? (
-        <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm text-muted">
           {emptyFactsMessage(filter)}
         </p>
       ) : (
@@ -193,7 +193,7 @@ export function FactReview({
             >
               <ChevronLeft aria-hidden />
             </Button>
-            <p className="flex-1 text-center text-sm text-muted-foreground tabular-nums" aria-live="polite">
+            <p className="flex-1 text-center text-sm text-muted tabular-nums" aria-live="polite">
               Fact {current + 1} of {visible.length}
             </p>
             <Button
@@ -231,7 +231,7 @@ export function FactReview({
           <h2 id="missing-heading" className="font-medium">
             No longer on your site
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted">
             These were approved last time but this crawl didn&apos;t find them. They drop out unless you keep them as your
             own facts.
           </p>
@@ -263,7 +263,7 @@ export function FactReview({
         )}
       >
         {approveError && (
-          <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive sm:order-last">
+          <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink sm:order-last">
             {approveError}
           </p>
         )}
@@ -272,14 +272,14 @@ export function FactReview({
             <Button className="h-11 text-base sm:px-5" disabled={pending > 0 || approving} onClick={approveProfile}>
               {approving ? "Approving" : `Approve version ${profile.version}`}
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted">
               {pending > 0
                 ? `Decide the ${pending} remaining ${pending === 1 ? "fact" : "facts"} first.`
                 : "Replaces the approved profile used in messages."}
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted">
             {pending > 0
               ? `${pending} ${pending === 1 ? "fact" : "facts"} left to decide. An owner approves the version once all are decided.`
               : "All decided. An owner can approve this version now."}
@@ -291,14 +291,14 @@ export function FactReview({
 }
 
 function StatusChip({ status }: { status: Fact["status"] }) {
-  if (status === "pending") return <span className="text-xs font-medium text-muted-foreground">Not decided</span>;
+  if (status === "pending") return <span className="text-xs font-medium text-muted">Not decided</span>;
   return status === "approved" ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+    <span className="inline-flex items-center gap-1 rounded-full bg-positive-soft px-2 py-0.5 text-xs font-medium text-positive-ink">
       <Check className="size-3.5" aria-hidden />
       Approved
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+    <span className="inline-flex items-center gap-1 rounded-full bg-negative-soft px-2 py-0.5 text-xs font-medium text-negative-ink">
       <X className="size-3.5" aria-hidden />
       Rejected
     </span>
@@ -330,12 +330,12 @@ function FactCard({
       aria-labelledby={textId}
       className={cn(
         "flex flex-col gap-3 rounded-xl border bg-card p-4",
-        fact.status === "approved" && "border-emerald-300",
+        fact.status === "approved" && "border-positive/30",
         fact.status === "rejected" && "opacity-70",
       )}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{kindLabel(fact.kind)}</span>
+        <span className="text-xs font-medium tracking-wide text-muted uppercase">{kindLabel(fact.kind)}</span>
         {fact.previouslyApproved && <PreviouslyApproved />}
         <span className="ml-auto">
           <StatusChip status={fact.status} />
@@ -377,12 +377,12 @@ function FactCard({
         </p>
       )}
 
-      {fact.originalText && <p className="text-sm text-muted-foreground wrap-break-word">Site wording: {fact.originalText}</p>}
+      {fact.originalText && <p className="text-sm text-muted wrap-break-word">Site wording: {fact.originalText}</p>}
       {fact.possiblyStale && <StaleFlag reason={fact.staleReason} />}
       <FactSource fact={fact} />
 
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}
@@ -424,10 +424,10 @@ function MissingRow({ fact, onKeep }: { fact: MissingFact; onKeep: () => Promise
   const [error, setError] = useState<string | null>(null);
   return (
     <li className="flex flex-col gap-2 px-4 py-3">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{kindLabel(fact.kind)}</p>
+      <p className="text-xs font-medium tracking-wide text-muted uppercase">{kindLabel(fact.kind)}</p>
       <p className="font-medium wrap-break-word">{fact.text}</p>
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-negative-ink">
           {error}
         </p>
       )}
@@ -484,7 +484,7 @@ function AddFact({ onAdd }: { onAdd: (body: AddFactBody) => Promise<Result<FactR
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <h2 className="font-medium">Add a fact by hand</h2>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         For something true that your site doesn&apos;t say. It has no source page, so it is marked as added by you.
       </p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
@@ -498,7 +498,7 @@ function AddFact({ onAdd }: { onAdd: (body: AddFactBody) => Promise<Result<FactR
             ))}
           </select>
           <ChevronsUpDown
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
             aria-hidden
           />
         </span>
@@ -508,12 +508,12 @@ function AddFact({ onAdd }: { onAdd: (body: AddFactBody) => Promise<Result<FactR
         <textarea name="text" required rows={3} maxLength={500} className={cn(inputClass, "h-auto min-h-24 py-2")} />
       </label>
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}
       {added && !error && (
-        <p role="status" className="text-sm text-muted-foreground wrap-break-word">
+        <p role="status" className="text-sm text-muted wrap-break-word">
           Added &ldquo;{added}&rdquo;.
         </p>
       )}

@@ -54,35 +54,35 @@ export function Possibles({ workspaceId, campaignId, count }: { workspaceId: str
 
   const open = view.state !== "hidden";
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-xs">
+    <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => (open ? setView({ state: "hidden" }) : void load())}
         className="flex min-h-11 items-center gap-3 text-left"
       >
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700" aria-hidden>
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning-ink" aria-hidden>
           <HelpCircle className="size-4" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm font-semibold">Possible businesses ({count})</span>
-          <span className="text-xs text-muted-foreground">The fit check wasn&apos;t sure about these. Promote any that fit.</span>
+          <span className="text-xs text-muted">The fit check wasn&apos;t sure about these. Promote any that fit.</span>
         </span>
-        <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cn("size-4 shrink-0 text-muted transition-transform", open && "rotate-180")} aria-hidden />
       </button>
       {message && (
-        <p role="status" className={cn("rounded-lg px-3 py-2 text-sm", message.ok ? "bg-emerald-50 text-emerald-950" : "bg-destructive/10 text-destructive")}>
+        <p role="status" className={cn("rounded-lg px-3 py-2 text-sm", message.ok ? "bg-positive-soft text-positive-ink" : "bg-negative-soft text-negative-ink")}>
           {message.text}
         </p>
       )}
       {view.state === "loading" && (
         <div className="flex flex-col gap-2" role="status" aria-label="Loading possible businesses">
-          <div className="h-16 animate-pulse rounded-xl bg-muted" />
-          <div className="h-16 animate-pulse rounded-xl bg-muted" />
+          <div className="h-16 animate-pulse rounded-xl bg-raised" />
+          <div className="h-16 animate-pulse rounded-xl bg-raised" />
         </div>
       )}
       {view.state === "failed" && (
-        <p role="alert" className="flex flex-wrap items-center gap-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="flex flex-wrap items-center gap-3 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           Couldn&apos;t load the possible businesses.
           <Button variant="outline" className="h-11 px-4" onClick={load}>
             Try again
@@ -91,7 +91,7 @@ export function Possibles({ workspaceId, campaignId, count }: { workspaceId: str
       )}
       {view.state === "shown" &&
         (view.possibles.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">No possible businesses left.</p>
+          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted">No possible businesses left.</p>
         ) : (
           <ul className="flex flex-col divide-y rounded-xl border">
             {view.possibles.map((p) => (
@@ -100,16 +100,16 @@ export function Possibles({ workspaceId, campaignId, count }: { workspaceId: str
                   <Avatar name={p.name} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium wrap-break-word">{p.name}</p>
-                    <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                    <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                       {[categoryText(p.category), p.city].filter(Boolean).join(" · ")}
                       {p.rating !== null && (
                         <span className="inline-flex items-center gap-0.5">
-                          <Star className="size-3 fill-amber-400 text-amber-500" aria-hidden />
+                          <Star className="size-3 fill-warning-ink text-warning-ink" aria-hidden />
                           {p.rating.toFixed(1)}
                         </span>
                       )}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">Why it&apos;s unsure: {p.reason}</p>
+                    <p className="mt-1 text-xs text-muted">Why it&apos;s unsure: {p.reason}</p>
                   </div>
                 </div>
                 <Button variant="outline" className="h-11 shrink-0 px-4" onClick={() => promote(p)} disabled={promoting !== null}>

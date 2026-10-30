@@ -41,7 +41,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
     <div className="flex flex-col gap-5">
       <Link
         href={`/w/${slug}/campaigns`}
-        className="-mt-2 -ml-2 inline-flex h-9 items-center gap-1 self-start px-2 text-sm text-muted-foreground hover:text-foreground"
+        className="-mt-2 -ml-2 inline-flex h-9 items-center gap-1 self-start px-2 text-sm text-muted hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden /> All campaigns
       </Link>
@@ -54,12 +54,12 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {kind && <span className="rounded-full bg-secondary px-2.5 py-1 font-medium text-secondary-foreground">{kind.label}</span>}
             {campaign.queries.map((q) => (
-              <span key={q} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted-foreground">
+              <span key={q} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted">
                 <Search className="size-3" aria-hidden /> {q}
               </span>
             ))}
             {campaign.locations.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted-foreground">
+              <span key={l.id} className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-muted">
                 <MapPin className="size-3" aria-hidden /> {l.name}
               </span>
             ))}
@@ -68,9 +68,9 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
         {leads.length > 0 && (
           <Link
             href={`${base}/pipeline`}
-            className="inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-xl border bg-card px-4 text-sm font-medium shadow-xs hover:bg-muted"
+            className="inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-xl border bg-card px-4 text-sm font-medium hover:bg-raised"
           >
-            <SquareKanban className="size-4 text-primary" aria-hidden /> Pipeline
+            <SquareKanban className="size-4 text-accent-ink" aria-hidden /> Pipeline
           </Link>
         )}
       </div>
@@ -80,12 +80,12 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
   const stats = (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat icon={<Store className="size-4" />} tone="from-indigo-500 to-violet-500" label="Leads" value={leads.length} />
-        <Stat icon={<Sparkles className="size-4" />} tone="from-fuchsia-500 to-pink-500" label="Researched" value={leads.filter((l) => l.researched).length} />
-        <Stat icon={<Users className="size-4" />} tone="from-sky-500 to-cyan-500" label="Contacted" value={count(["sent", "replied", "meeting", "won", "lost"])} />
-        <Stat icon={<MessageSquareReply className="size-4" />} tone="from-emerald-500 to-teal-500" label="Replied or better" value={count(["replied", "meeting", "won"])} />
+        <Stat icon={<Store className="size-4" />} tone="" label="Leads" value={leads.length} />
+        <Stat icon={<Sparkles className="size-4" />} tone="" label="Researched" value={leads.filter((l) => l.researched).length} />
+        <Stat icon={<Users className="size-4" />} tone="" label="Contacted" value={count(["sent", "replied", "meeting", "won", "lost"])} />
+        <Stat icon={<MessageSquareReply className="size-4" />} tone="" label="Replied or better" value={count(["replied", "meeting", "won"])} />
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted">
         {campaign.callsUsed}
         {budget !== null ? ` of ${budget}` : ""} Google {campaign.callsUsed === 1 ? "search" : "searches"} used
       </p>
@@ -106,13 +106,13 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
 
 function Stat({ icon, tone, label, value }: { icon: React.ReactNode; tone: string; label: string; value: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-xs sm:p-4">
-      <span className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm", tone)} aria-hidden>
+    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 sm:p-4">
+      <span className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-raised text-ink", tone)} aria-hidden>
         {icon}
       </span>
       <div className="flex min-w-0 flex-col">
         <span className="text-xl font-semibold tabular-nums leading-tight">{value}</span>
-        <span className="truncate text-xs text-muted-foreground">{label}</span>
+        <span className="truncate text-xs text-muted">{label}</span>
       </div>
     </div>
   );
