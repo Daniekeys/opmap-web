@@ -695,7 +695,7 @@ const FEEDBACK: Record<ContactRow["kind"], { type: "wrong_number" | "bounced" | 
 
 const KIND_NAMES: Record<ContactRow["kind"], string> = { phone: "Phone", whatsapp: "WhatsApp", email: "Email", person: "Contact" };
 
-const OPT_OUT_CONFIRM = "They asked not to be contacted? Their email, website domain and numbers go on your suppression list, and no messages will be shown for them.";
+const OPT_OUT_CONFIRM = "They asked not to be contacted? Their email and numbers go on your suppression list (and their email domain, when it's their own website's), and no messages will be shown for them.";
 
 type OutcomeTap = ReturnType<typeof useOutcomeTap>;
 
