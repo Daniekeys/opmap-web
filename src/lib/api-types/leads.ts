@@ -119,6 +119,8 @@ export type Campaign = {
   callsUsed: number;
   leadCount: number;
   createdAt: string;
+  // When its search was first started; null for a draft.
+  startedAt: string | null;
 };
 
 // Why a campaign is paused: Google was off on the server ("setup", no reset

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import { campaignContext, citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -93,6 +93,43 @@ describe("findingSentence", () => {
     expect(findingSentence({ leads: [], stages, status: "paused", callsUsed: 6 })).toBe("No businesses that fit so far.");
     // Searched, fit checks finished, none fit.
     expect(findingSentence({ leads: [], stages, status: "done", callsUsed: 6 })).toBe("The search found no businesses that fit.");
+  });
+});
+
+describe("campaignContext", () => {
+  const segment = { setId: "set-1", rank: 1, name: "Fast food restaurants", edited: false, searchTerms: [], whyTheyBuy: "", pain: "", pitchFirst: "", buyerSignals: { minReviews: null, minRating: null, website: "any" as const, socials: "any" as const, categories: [] } };
+  const area = (name: string) => ({ id: name, name, level: "city" as const, parentName: null, country: "NG", population: null });
+  const campaign = {
+    segment: "Fast food restaurants",
+    buyerSegment: segment,
+    locations: [area("Ilorin"), area("Offa")],
+    brandProfileVersion: 4,
+    startedAt: "2026-10-31T16:05:17Z",
+  };
+  const brand = { approved: { version: 4 }, versions: [{ id: "p4", version: 4 }, { id: "p3", version: 3 }] };
+
+  it("says who it is for, where, the Brand DNA it was built from and when it started", () => {
+    expect(campaignContext(campaign, brand)).toEqual({
+      who: "Fast food restaurants",
+      where: "Ilorin, Offa",
+      brand: { label: "Brand DNA v4", profileId: "p4" },
+      started: "Started 31 Oct",
+      newer: null,
+    });
+  });
+
+  it("marks the user's own segment, and a draft as not started", () => {
+    const own = campaignContext({ ...campaign, buyerSegment: { ...segment, setId: null, name: "Chop bars near campus" }, startedAt: null }, brand);
+    expect([own.who, own.started]).toEqual(["Your own: Chop bars near campus", null]);
+    // Made before segments: its typed segment.
+    expect(campaignContext({ ...campaign, buyerSegment: null }, brand).who).toBe("Your own: Fast food restaurants");
+  });
+
+  it("says in one line when a newer Brand DNA has been approved since", () => {
+    const later = campaignContext(campaign, { approved: { version: 5 }, versions: [{ id: "p5", version: 5 }, ...brand.versions] });
+    expect(later.newer).toBe("Brand DNA v5 has been approved since. This campaign still uses v4.");
+    expect(later.brand).toEqual({ label: "Brand DNA v4", profileId: "p4" });
+    expect(campaignContext({ ...campaign, brandProfileVersion: null }, brand)).toMatchObject({ brand: null, newer: null });
   });
 });
 

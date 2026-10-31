@@ -1,6 +1,7 @@
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
-import type { CampaignStatus, Lead } from "./api-types/leads";
+import type { ProfileSummary } from "./api-types/brand";
+import type { Campaign, CampaignStatus, Lead } from "./api-types/leads";
 import type { Stage } from "./api-types/outcomes";
 import type { Cite, DatedCite } from "./api-types/research";
 import { formatDay } from "./format";
@@ -64,6 +65,29 @@ export function findingSentence({
   }
   if (fresh.length === 0) return "Every business here has been contacted.";
   return `${fresh.length} of ${leads.length} businesses haven't been contacted yet.`;
+}
+
+// The line under a campaign's title: who it is for (a suggested segment's
+// name, or the user's own words), where, the Brand DNA version it was built
+// from (with the version to link to, when it is still listed), when its search
+// started, and a note when a newer version has been approved since.
+export function campaignContext(
+  campaign: Pick<Campaign, "segment" | "buyerSegment" | "locations" | "brandProfileVersion" | "startedAt">,
+  brand: { approved: Pick<ProfileSummary, "version"> | null; versions: Pick<ProfileSummary, "id" | "version">[] },
+) {
+  const segment = campaign.buyerSegment;
+  const who = segment?.setId ? segment.name : `Your own: ${segment?.name ?? campaign.segment}`;
+  const where = campaign.locations.map((l) => l.name).join(", ");
+  const built = campaign.brandProfileVersion;
+  const profile = built === null ? null : (brand.versions.find((v) => v.version === built) ?? null);
+  const approved = brand.approved?.version ?? null;
+  return {
+    who,
+    where,
+    brand: built === null ? null : { label: `Brand DNA v${built}`, profileId: profile?.id ?? null },
+    started: campaign.startedAt ? `Started ${formatDay(campaign.startedAt)}` : null,
+    newer: built !== null && approved !== null && approved > built ? `Brand DNA v${approved} has been approved since. This campaign still uses v${built}.` : null,
+  };
 }
 
 // " 3 of them are in Ikate and Osapa.", when two places hold most but not all.

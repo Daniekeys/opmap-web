@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { CampaignStatusBadge } from "@/components/campaign-status";
-import { getCampaign, getCampaignLeads, getPipeline, getWorkspace } from "@/lib/api";
+import { getBrand, getCampaign, getCampaignLeads, getPipeline, getWorkspace } from "@/lib/api";
 import type { Stage } from "@/lib/api-types/outcomes";
-import { findingSentence } from "@/lib/campaign-view";
+import { campaignContext, findingSentence } from "@/lib/campaign-view";
 import { cn } from "@/lib/utils";
 import { CampaignFrame } from "./campaign-frame";
 import { LeadRail } from "./lead-rail";
 
 type Props = LayoutProps<"/w/[workspace]/campaigns/[campaignId]">;
 
-// A campaign's workspace (design/screens/Main.dc.html): its title, the one
-// finding that matters, its figures, the list of its leads, and beside it
+// A campaign's workspace (design/screens/Main.dc.html): its title, who it is
+// for and where, the one finding that matters, its figures, the list of its leads, and beside it
 // whatever is open (the campaign itself, a lead, or the pipeline).
 export default function CampaignLayout({ params, children }: Props) {
   return (
@@ -24,11 +24,13 @@ export default function CampaignLayout({ params, children }: Props) {
 async function Workspace({ params, children }: { params: Props["params"]; children: React.ReactNode }) {
   const { workspace: slug, campaignId } = await params;
   const workspace = await getWorkspace(slug);
-  const [{ campaign, possibleCount }, { leads }, pipeline] = await Promise.all([
+  const [{ campaign, possibleCount }, { leads }, pipeline, brand] = await Promise.all([
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
     getPipeline(workspace.id, campaignId),
+    getBrand(workspace.id),
   ]);
+  const context = campaignContext(campaign, brand);
   const stages: Record<string, Stage> = {};
   for (const s of pipeline.stages) for (const l of s.leads) stages[l.leadId] = s.stage;
   const base = `/w/${slug}/campaigns/${campaign.id}`;
@@ -41,6 +43,23 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] wrap-break-word sm:text-title sm:tracking-[-0.02em]">{campaign.name}</h1>
           <CampaignStatusBadge campaign={campaign} />
         </div>
+        <p className="text-sm text-muted">
+          {[context.who, context.where].filter(Boolean).join(" · ")}
+          {context.brand && (
+            <>
+              {" · "}
+              {context.brand.profileId ? (
+                <Link href={`/w/${slug}/brand/${context.brand.profileId}`} className="font-medium text-accent-ink underline-offset-4 hover:text-accent hover:underline">
+                  {context.brand.label}
+                </Link>
+              ) : (
+                context.brand.label
+              )}
+            </>
+          )}
+          {context.started && ` · ${context.started}`}
+        </p>
+        {context.newer && <p className="text-sm text-warning-ink">{context.newer}</p>}
         <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status, callsUsed: campaign.callsUsed })}</p>
       </div>
       {leads.length > 0 && (
