@@ -179,7 +179,7 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
   if (blocked === "no_target") {
     return (
       <Box icon={<Phone className="size-4" aria-hidden />} title="No checked contact to send to">
-        A WhatsApp number needs a WhatsApp link they published, and an email must be on their own site. Call them from the number above, or check their details first.
+        WhatsApp needs a WhatsApp link they published or a Nigerian mobile number, email must be on their own site, and a call needs a phone number. Check their details first.
       </Box>
     );
   }
@@ -408,10 +408,22 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
   const open = { target: "_blank", rel: "noreferrer noopener" } as const;
   const sendClass = cn(sendBase, SEND, phone ? "h-13 w-full text-base" : "h-10");
   if (draft.channel === "whatsapp") {
-    return (
+    const link = (
       <a href={whatsappSendHref(target.value, draft.body)} {...open} className={sendClass} onClick={() => onSend("whatsapp")}>
         <MessageCircle className="size-4" aria-hidden /> Open in WhatsApp
       </a>
+    );
+    if (target.label !== "likely") return link;
+    return phone ? (
+      <div className="flex flex-col gap-1">
+        {link}
+        <LikelyOnWhatsapp className="self-center" />
+      </div>
+    ) : (
+      <span className="inline-flex items-center gap-2">
+        {link}
+        <LikelyOnWhatsapp />
+      </span>
     );
   }
   if (draft.channel === "email") {
@@ -443,11 +455,22 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
   );
 }
 
+// A Nigerian mobile number with no WhatsApp link from them: probably on
+// WhatsApp, not checked.
+export function LikelyOnWhatsapp({ className }: { className?: string }) {
+  return (
+    <span className={cn("text-xs text-muted", className)} title="A Nigerian mobile number, but no WhatsApp link from them">
+      Likely on WhatsApp
+    </span>
+  );
+}
+
+// One line under the draft when its Open button is hidden. Copy text stays.
 const TARGET_MISSING: Record<Channel, string> = {
-  whatsapp: "No WhatsApp number they published themselves: copy the message and send it from WhatsApp yourself if you know their number.",
+  whatsapp: "No WhatsApp link from them and no Nigerian mobile number: copy the message and send it from WhatsApp yourself if you know their number.",
   email: "No email found on their own site: copy the message if you have another way to reach them.",
   linkedin: "No LinkedIn page linked from their own site: copy the message to send it there yourself.",
-  call: "No phone number we can stand behind for a call.",
+  call: "No phone number for them: copy the opener if you find one.",
 };
 
 const CHECK_ICONS = {
