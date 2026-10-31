@@ -41,7 +41,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] wrap-break-word sm:text-title sm:tracking-[-0.02em]">{campaign.name}</h1>
           <CampaignStatusBadge campaign={campaign} />
         </div>
-        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status })}</p>
+        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status, callsUsed: campaign.callsUsed })}</p>
       </div>
       {leads.length > 0 && (
         <Link

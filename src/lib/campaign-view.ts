@@ -35,11 +35,25 @@ export function leadMeta(lead: Lead) {
 }
 
 // The one sentence under the title: the most useful thing to do next.
-export function findingSentence({ leads, stages, status }: { leads: Lead[]; stages: Record<string, Stage>; status: CampaignStatus }) {
+// "Found no businesses that fit" only once the search has finished (its fit
+// checks with it); before any Google search has run, it hasn't started.
+export function findingSentence({
+  leads,
+  stages,
+  status,
+  callsUsed,
+}: {
+  leads: Lead[];
+  stages: Record<string, Stage>;
+  status: CampaignStatus;
+  callsUsed: number;
+}) {
   if (leads.length === 0) {
     if (status === "draft") return "Not searched yet. Confirm the search to find businesses that fit.";
     if (status === "running") return "Searching. Businesses that fit show up here as they are checked.";
-    return "The search found no businesses that fit.";
+    if (status === "done") return "The search found no businesses that fit.";
+    if (callsUsed === 0) return "The search hasn't started yet.";
+    return "No businesses that fit so far.";
   }
   const fresh = leads.filter((l) => (stages[l.leadId] ?? "new") === "new");
   const strong = fresh.filter((l) => fitOf(l).strong);
