@@ -15,10 +15,10 @@ export function AppShell({ sidebar, menu, children }: { sidebar: ReactNode; menu
   const [open, setOpen] = useState(false);
   const openButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  // A campaign, the new-campaign segment grid and a Brand DNA version (its
-  // facts beside a side panel) cap their own columns; every other page is a
-  // form or reading, capped at 720.
-  const wide = /\/campaigns\/[^/]+|\/brand\/[^/]+/.test(pathname);
+  // A campaign, the new-campaign segment grid, a Brand DNA version (its
+  // facts beside a side panel) and the messages queue (beside its composer)
+  // cap their own columns; every other page is a form or reading, capped at 720.
+  const wide = /\/campaigns\/[^/]+|\/brand\/[^/]+|\/messages(\/|$)/.test(pathname);
 
   // Any navigation closes the menu.
   const [seen, setSeen] = useState(pathname);

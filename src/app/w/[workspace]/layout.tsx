@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Logo } from "@/components/logo";
 import { MenuNav, type NavData, SidebarNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { getBrand, getMe, getWorkspace, listCampaigns } from "@/lib/api";
+import { getBrand, getMe, getMessages, getWorkspace, listCampaigns } from "@/lib/api";
 
 type Params = LayoutProps<"/w/[workspace]">["params"];
 
@@ -82,13 +82,18 @@ async function Switcher({ params, size }: { params: Params; size: "sidebar" | "m
 async function Nav({ params, size }: { params: Params; size: "sidebar" | "menu" }) {
   // getWorkspace is also the membership check for the shell: an unknown slug is a 404.
   const workspace = await getWorkspace((await params).workspace);
-  const [{ user }, { campaigns }, brand] = await Promise.all([getMe(), listCampaigns(workspace.id), getBrand(workspace.id)]);
+  const [{ user }, { campaigns }, brand, messages] = await Promise.all([getMe(), listCampaigns(workspace.id), getBrand(workspace.id), getMessages(workspace.id)]);
   const data: NavData = {
     slug: workspace.slug,
     isOwner: workspace.role === "owner",
     user,
     campaigns: campaigns.slice(0, 12).map(({ id, name, status, leadCount }) => ({ id, name, status, leadCount })),
     brandPending: brand.draft?.facts.pending ?? 0,
+    messages: {
+      toSend: messages.toSend,
+      newReplies: messages.newReplies,
+      newByCampaign: Object.fromEntries(messages.newRepliesByCampaign.map((c) => [c.campaignId, c.count])),
+    },
   };
   return size === "sidebar" ? <SidebarNav {...data} /> : <MenuNav {...data} />;
 }

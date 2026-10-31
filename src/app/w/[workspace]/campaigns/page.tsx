@@ -4,12 +4,13 @@ import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { CampaignStatusBadge } from "@/components/campaign-status";
 import { PageLoading } from "@/components/page-loading";
-import { getWorkspace, listCampaigns } from "@/lib/api";
+import { getMessages, getWorkspace, listCampaigns } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 
 type Props = PageProps<"/w/[workspace]/campaigns">;
 
-// The workspace's lead-finding campaigns, newest first.
+// The workspace's lead-finding campaigns, newest first, each with its new
+// replies (the sidebar's "Replies and deals" opens this list).
 export default function CampaignsPage({ params }: Props) {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -20,7 +21,8 @@ export default function CampaignsPage({ params }: Props) {
 
 async function Campaigns({ params }: { params: Props["params"] }) {
   const workspace = await getWorkspace((await params).workspace);
-  const { campaigns } = await listCampaigns(workspace.id);
+  const [{ campaigns }, messages] = await Promise.all([listCampaigns(workspace.id), getMessages(workspace.id)]);
+  const fresh = new Map(messages.newRepliesByCampaign.map((x) => [x.campaignId, x.count]));
   const base = `/w/${workspace.slug}/campaigns`;
 
   return (
@@ -53,6 +55,9 @@ async function Campaigns({ params }: { params: Props["params"] }) {
                   <p className="font-semibold wrap-break-word">{c.name}</p>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
                     <CampaignStatusBadge campaign={c} />
+                    {(fresh.get(c.id) ?? 0) > 0 && (
+                      <span className="inline-flex h-6 items-center rounded-full bg-accent-soft px-2.5 text-xs font-medium text-accent-ink">{fresh.get(c.id)} new</span>
+                    )}
                     <span>
                       {c.leadCount} {c.leadCount === 1 ? "lead" : "leads"}
                     </span>

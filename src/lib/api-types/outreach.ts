@@ -68,3 +68,25 @@ export type StartDraftsResponse =
 export type SendVia = "copy" | "whatsapp" | "gmail" | "outlook" | "linkedin" | "call";
 
 export type SendResponse = { stage: Stage; outcome: Outcome | null };
+
+// GET /api/w/:workspaceId/messages: every campaign's leads waiting on the
+// user. "reply": the lead's newest outcome is a reply. "draft": a ready
+// draft on a channel the lead can be sent to, nothing sent yet. Replies
+// first; at most 50 rows, but the counts cover all.
+export type MessageRow = {
+  kind: "reply" | "draft";
+  leadId: string;
+  campaignId: string;
+  businessId: string;
+  name: string;
+  offer: string | null;
+  note: string | null;
+  at: string;
+};
+
+export type MessagesResponse = {
+  toSend: number;
+  newReplies: number;
+  newRepliesByCampaign: { campaignId: string; count: number }[];
+  queue: MessageRow[];
+};

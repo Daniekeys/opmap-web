@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, LayoutGrid, Plus, Star, Users } from "lucide-react";
+import { ChartNoAxesColumnDecreasing, FlaskConical, LayoutGrid, MessageCircle, Plus, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { AuthedUser } from "@/lib/api-types/access";
@@ -18,7 +18,13 @@ export type NavData = {
   campaigns: NavCampaign[];
   // Facts in the Brand DNA draft that still need a decision.
   brandPending: number;
+  // From GET .../messages: leads with messages ready, new replies, and new
+  // replies per campaign id.
+  messages: { toSend: number; newReplies: number; newByCampaign: Record<string, number> };
 };
+
+// A campaign row's note: its new replies, when it has any.
+const newNote = (data: NavData, c: NavCampaign) => (data.messages.newByCampaign[c.id] ? `${data.messages.newByCampaign[c.id]} new` : null);
 
 // The short note beside a campaign: where its search stands, or what it found.
 function campaignNote(c: NavCampaign) {
@@ -38,13 +44,26 @@ function campaignNote(c: NavCampaign) {
   }
 }
 
-function useLinks({ slug, isOwner, brandPending }: NavData) {
+function useLinks({ slug, isOwner, brandPending, messages }: NavData) {
   const pathname = usePathname();
   const is = (href: string, exact = false) => pathname === href || (!exact && pathname.startsWith(`${href}/`));
   const brandNote = brandPending > 0 ? `${brandPending} to review` : "";
+  const accent = "text-accent-ink";
   return {
     is,
     overview: { href: `/w/${slug}`, label: "Overview", icon: LayoutGrid, active: is(`/w/${slug}`, true), note: "" },
+    // The badges hide at 0; the items stay.
+    messages: { href: `/w/${slug}/messages`, label: "Messages to send", icon: MessageCircle, active: is(`/w/${slug}/messages`), note: messages.toSend > 0 ? String(messages.toSend) : "", noteClass: accent },
+    // Replies sit in each campaign's pipeline, so this opens the campaigns
+    // list, where every campaign shows its own new replies.
+    replies: {
+      href: `/w/${slug}/campaigns`,
+      label: "Replies and deals",
+      icon: ChartNoAxesColumnDecreasing,
+      active: false,
+      note: messages.newReplies > 0 ? `${messages.newReplies} new` : "",
+      noteClass: accent,
+    },
     brand: { href: `/w/${slug}/brand`, label: "Brand DNA", icon: Star, active: is(`/w/${slug}/brand`), note: brandNote },
     owner: isOwner
       ? [
@@ -60,13 +79,19 @@ function useLinks({ slug, isOwner, brandPending }: NavData) {
 // Desktop: an open-plane list on the ground, rows 34px, the active row tinted.
 export function SidebarNav(data: NavData) {
   const links = useLinks(data);
-  const top = [links.overview, links.brand, ...links.owner];
+  const top: { href: string; label: string; icon: typeof Star; active: boolean; note: string; noteClass?: string }[] = [
+    links.overview,
+    links.messages,
+    links.replies,
+    links.brand,
+    ...links.owner,
+  ];
   const onCampaigns = links.is(links.campaignsHref, true);
 
   return (
     <>
       <nav aria-label="Workspace" className="flex flex-col gap-0.5">
-        {top.map(({ href, label, icon: Icon, active, note }) => (
+        {top.map(({ href, label, icon: Icon, active, note, noteClass }) => (
           <Link
             key={href}
             href={href}
@@ -78,7 +103,7 @@ export function SidebarNav(data: NavData) {
           >
             <Icon className={cn("size-4 shrink-0", active ? "text-accent" : "text-muted")} strokeWidth={1.5} aria-hidden />
             <span className="flex-1 truncate">{label}</span>
-            {note && <span className="shrink-0 text-xs font-normal text-muted">{note}</span>}
+            {note && <span className={cn("shrink-0 text-xs font-normal tabular-nums", noteClass ?? "text-muted")}>{note}</span>}
           </Link>
         ))}
       </nav>
@@ -95,6 +120,7 @@ export function SidebarNav(data: NavData) {
         {data.campaigns.map((c) => {
           const href = `${links.campaignsHref}/${c.id}`;
           const active = links.is(href);
+          const fresh = newNote(data, c);
           return (
             <Link
               key={c.id}
@@ -106,7 +132,7 @@ export function SidebarNav(data: NavData) {
               )}
             >
               <span className="min-w-0 truncate">{c.name}</span>
-              <span className="shrink-0 text-xs font-normal text-muted tabular-nums">{campaignNote(c)}</span>
+              <span className={cn("shrink-0 text-xs font-normal tabular-nums", fresh ? "text-accent-ink" : "text-muted")}>{fresh ?? campaignNote(c)}</span>
             </Link>
           );
         })}
@@ -147,7 +173,8 @@ export function MenuNav(data: NavData) {
           <div className="overflow-hidden rounded-card border border-border bg-surface">
             {data.campaigns.map((c) => {
               const href = `${links.campaignsHref}/${c.id}`;
-              return <MenuRow key={c.id} href={href} label={c.name} note={campaignNote(c)} active={links.is(href)} />;
+              const fresh = newNote(data, c);
+              return <MenuRow key={c.id} href={href} label={c.name} note={fresh ?? campaignNote(c)} noteClass={fresh ? "text-accent-ink" : undefined} active={links.is(href)} />;
             })}
           </div>
         ) : (
@@ -159,6 +186,15 @@ export function MenuNav(data: NavData) {
         >
           New campaign
         </Link>
+      </nav>
+
+      <nav aria-label="Outreach" className="flex flex-col gap-1.5">
+        <span className="px-1 text-xs text-muted">Outreach</span>
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
+          {[links.messages, links.replies].map((l) => (
+            <MenuRow key={l.label} href={l.href} label={l.label} note={l.note} noteClass={l.noteClass} active={l.active} />
+          ))}
+        </div>
       </nav>
 
       <nav aria-label="Your business" className="flex flex-col gap-1.5">

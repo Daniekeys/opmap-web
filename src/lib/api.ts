@@ -8,7 +8,7 @@ import type { ApiErrorResponse } from "./api-types/errors";
 import type { CampaignDetailResponse, CampaignProgressResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
 import type { PipelineResponse } from "./api-types/outcomes";
-import type { LeadOutreachResponse } from "./api-types/outreach";
+import type { LeadOutreachResponse, MessagesResponse } from "./api-types/outreach";
 import type { LeadResearchResponse } from "./api-types/research";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
@@ -96,6 +96,9 @@ export const getLeadResearch = (workspaceId: string, campaignId: string, leadId:
 // The lead page's drafts, contact points and outcomes.
 export const getLeadOutreach = (workspaceId: string, campaignId: string, leadId: string) =>
   apiGet<LeadOutreachResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}/outreach`);
+
+// Every campaign's leads waiting on the user, and the sidebar's counts.
+export const getMessages = cache((workspaceId: string) => apiGet<MessagesResponse>(`/api/w/${workspaceId}/messages`));
 
 // The campaign's leads by stage.
 export const getPipeline = cache((workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`));
