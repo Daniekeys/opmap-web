@@ -2,7 +2,7 @@
 // summary, and the sentence under the campaign's title.
 import type { CampaignStatus, Lead } from "./api-types/leads";
 import type { Stage } from "./api-types/outcomes";
-import type { DatedCite } from "./api-types/research";
+import type { Cite, DatedCite } from "./api-types/research";
 import { formatDay } from "./format";
 import { categoryText, FIT_WORDS, labelText } from "./leads";
 
@@ -68,3 +68,27 @@ export const readOn = (iso: string | null) => (iso ? `read ${formatDay(iso)}` : 
 // When a cite's page was read: its own read, or the research's finish time
 // when the page has been read again since. Approved facts carry no date.
 export const citeReadAt = (cite: DatedCite, finishedAt: string | null) => (cite.kind === "fact" ? null : (cite.fetchedAt ?? finishedAt));
+
+const SOCIAL_HOSTS: [RegExp, string][] = [
+  [/instagram\.com$/, "Instagram bio"],
+  [/facebook\.com$/, "Facebook page"],
+  [/tiktok\.com$/, "TikTok profile"],
+  [/(^|\.)x\.com$|twitter\.com$/, "X profile"],
+  [/linkedin\.com$/, "LinkedIn page"],
+];
+
+// The page, listing or bio a piece of evidence came from.
+export function citeName(cite: Cite) {
+  if (cite.kind === "fact") return "Your approved fact";
+  if (cite.kind === "signal") return "Our check";
+  if (cite.sourceType === "places") return "Google Maps listing";
+  if (cite.sourceType === "search") return "A search result";
+  try {
+    const host = new URL(cite.url).hostname.replace(/^www\./, "");
+    const social = SOCIAL_HOSTS.find(([re]) => re.test(host));
+    if (social) return social[1];
+  } catch {
+    // Not a URL: fall through to the plain name.
+  }
+  return "Their website";
+}

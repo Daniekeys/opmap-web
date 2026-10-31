@@ -1,6 +1,8 @@
 // Send links and plain words for drafts and outcomes (spec, Core pipelines > 4).
-import type { Stage } from "./api-types/outcomes";
-import type { Channel } from "./api-types/outreach";
+import type { Outcome, Stage } from "./api-types/outcomes";
+import type { Channel, Draft } from "./api-types/outreach";
+import type { OpportunityCard } from "./api-types/research";
+import { citeName, citeReadAt } from "./campaign-view";
 
 const enc = encodeURIComponent;
 
@@ -52,4 +54,72 @@ export function outcomeText(o: { type: string; channel: string | null; contactVa
   if (o.contactValue) return `${name}: ${formatValue(o.contactValue)}`;
   if (o.channel) return `${name} · ${CHANNEL_NAMES[o.channel as Channel] ?? o.channel}`;
   return name;
+}
+
+// ---- the composer ------------------------------------------------------------
+
+// Opening or copying a draft logs Sent once per channel, so "Mark as sent"
+// is offered only until this channel has a Sent.
+export const canMarkSent = (channel: Channel, outcomes: Pick<Outcome, "type" | "channel">[]) =>
+  !outcomes.some((o) => o.type === "sent" && o.channel === channel);
+
+// When each page a card quotes was read, by source id: a draft's claims
+// cite the same pages without the date.
+export function sourceReadDates(card: OpportunityCard, finishedAt: string | null) {
+  const dates = new Map<string, string | null>();
+  for (const claim of [card.offer, card.gap, ...card.why, card.angle]) {
+    for (const cite of claim?.cites ?? []) if (cite.kind !== "fact") dates.set(cite.sourceId, citeReadAt(cite, finishedAt));
+  }
+  return dates;
+}
+
+export type Check = { text: string; state: "pass" | "fail" | "info" };
+
+// "their website", "their Instagram bio", "a search result".
+function sourcePhrase(name: string) {
+  if (name === "Their website") return "their website";
+  if (name === "A search result") return "a search result";
+  if (name === "Our check") return "our own check";
+  return `their ${name}`;
+}
+
+const listWords = (words: string[]) => (words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`);
+
+// Signed when a line of the body is the name, or starts "Name, site".
+function signedAs(body: string, name: string) {
+  const n = name.trim().toLowerCase();
+  return body.split("\n").some((line) => {
+    const t = line.trim().toLowerCase();
+    return t === n || t.startsWith(`${n},`);
+  });
+}
+
+// What the Checks panel lists for a ready draft (it is only shown for a lead
+// not on the opt-out list). An email's opt-out line and sign-off are read
+// from the body as it will be sent: missing is a failed check.
+export function draftChecks(draft: Draft, rules: { optOut: string; sender: string | null }): Check[] {
+  const checks: Check[] = [{ text: "Not on your opt-out list", state: "pass" }];
+  const claims = draft.lines.filter((l) => l.kind === "claim");
+  const unsourced = claims.filter((l) => l.cites.length === 0).length;
+  const aboutThem = claims.filter((l) => l.cites.some((c) => c.kind !== "fact"));
+  const aboutYou = claims.length - unsourced - aboutThem.length;
+  if (aboutThem.length > 0) {
+    const names = [...new Set(aboutThem.flatMap((l) => l.cites.filter((c) => c.kind !== "fact").map((c) => sourcePhrase(citeName(c)))))];
+    checks.push({ text: `${aboutThem.length} ${aboutThem.length === 1 ? "claim" : "claims"} about them, from ${listWords(names)}`, state: "pass" });
+  }
+  if (aboutYou > 0) checks.push({ text: `${aboutYou} ${aboutYou === 1 ? "claim" : "claims"} about you, from your approved facts`, state: "pass" });
+  if (unsourced > 0) checks.push({ text: `${unsourced} ${unsourced === 1 ? "claim has" : "claims have"} no source`, state: "fail" });
+  if (draft.channel === "email") {
+    checks.push(draft.body.includes(rules.optOut.trim()) ? { text: "Opt-out line included", state: "pass" } : { text: "Opt-out line missing", state: "fail" });
+    checks.push(
+      !rules.sender
+        ? { text: "No business name to sign as: approve your Brand DNA", state: "fail" }
+        : signedAs(draft.body, rules.sender)
+          ? { text: `Signed as ${rules.sender}`, state: "pass" }
+          : { text: `Not signed as ${rules.sender}`, state: "fail" },
+    );
+  }
+  const removed = draft.removed.filter((r) => r.text !== "(whole draft)").length;
+  if (removed > 0) checks.push({ text: `${removed} ${removed === 1 ? "sentence" : "sentences"} removed: ${removed === 1 ? "its source didn't" : "their sources didn't"} back ${removed === 1 ? "it" : "them"}`, state: "info" });
+  return checks;
 }

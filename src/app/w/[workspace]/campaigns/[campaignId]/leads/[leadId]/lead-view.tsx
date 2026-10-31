@@ -9,8 +9,8 @@ import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/api-types/leads";
 import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
-import type { Cite, Claim, DatedCite, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
-import { citeReadAt, readOn } from "@/lib/campaign-view";
+import type { Claim, DatedCite, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import { citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/lib/leads";
@@ -259,10 +259,16 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                     </div>
                   </div>
                 )}
-                <p className="text-sm text-muted">
-                  Offer: <span className="text-ink">{chosenCard.offer?.text ?? "Opportunity"}</span>
-                </p>
-                <CardDrafts key={chosenCard.id} base={base} workspaceId={workspaceId} slug={slug} opportunityId={chosenCard.id} outreach={outreach} onChange={reloadOutreach} />
+                <CardDrafts
+                  key={chosenCard.id}
+                  base={base}
+                  workspaceId={workspaceId}
+                  slug={slug}
+                  card={chosenCard}
+                  finishedAt={data.result?.finishedAt ?? null}
+                  outreach={outreach}
+                  onChange={reloadOutreach}
+                />
               </section>
             ) : (
               <EmptyState title="No messages yet">
@@ -562,30 +568,6 @@ function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null })
       )}
     </div>
   );
-}
-
-const SOCIAL_HOSTS: [RegExp, string][] = [
-  [/instagram\.com$/, "Instagram bio"],
-  [/facebook\.com$/, "Facebook page"],
-  [/tiktok\.com$/, "TikTok profile"],
-  [/(^|\.)x\.com$|twitter\.com$/, "X profile"],
-  [/linkedin\.com$/, "LinkedIn page"],
-];
-
-// The page, listing or bio a piece of evidence came from.
-function citeName(cite: Cite) {
-  if (cite.kind === "fact") return "Your approved fact";
-  if (cite.kind === "signal") return "Our check";
-  if (cite.sourceType === "places") return "Google Maps listing";
-  if (cite.sourceType === "search") return "A search result";
-  try {
-    const host = new URL(cite.url).hostname.replace(/^www\./, "");
-    const social = SOCIAL_HOSTS.find(([re]) => re.test(host));
-    if (social) return social[1];
-  } catch {
-    // Not a URL: fall through to the plain name.
-  }
-  return "Their website";
 }
 
 function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) {

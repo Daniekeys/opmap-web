@@ -35,7 +35,10 @@ export type LeadOutreachResponse = {
   stage: Stage;
   suppressed: boolean;
   blocked: Blocked | null;
-  country: { code: string; law: string; emailNote: string | null };
+  // optOut: the line every email draft ends with, for this country.
+  country: { code: string; law: string; optOut: string; emailNote: string | null };
+  // Who drafts sign as, or null when Brand DNA isn't usable.
+  sender: { name: string } | null;
   targets: Record<Channel, Target | null>;
   contacts: ContactRow[];
   cards: {
