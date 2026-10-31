@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 // content. On a phone the campaign's own page shows its title, figures and
 // the list; a lead (or the pipeline) opens on its own, full width. While the
 // search runs or waits (paneFirst), the campaign's page comes before the list
-// on a phone, so its progress isn't below every lead.
+// on a phone, so its progress isn't below every lead. The pipeline
+// (Pipeline.dc.html) is a page of its own at every width, full width.
 export function CampaignFrame({
   base,
   header,
@@ -26,7 +27,9 @@ export function CampaignFrame({
   paneFirst?: boolean;
   children: ReactNode;
 }) {
-  const atRoot = usePathname() === base;
+  const path = usePathname();
+  const atRoot = path === base;
+  if (path === `${base}/pipeline`) return <div className="flex w-full min-w-0 flex-col gap-6">{children}</div>;
   return (
     <div className="flex w-full flex-col gap-6">
       <div className={cn("flex w-full max-w-workspace flex-col gap-4 sm:gap-6", !atRoot && "hidden lg:flex")}>

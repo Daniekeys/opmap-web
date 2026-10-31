@@ -25,17 +25,27 @@ export type Outcome = {
 
 export type OutcomeResponse = { stage: Stage; outcome: Outcome };
 
+// offer: the service of the card the lead's newest messages were written
+// from, or null. optedOut: the lead ever asked not to be contacted.
 export type PipelineLead = {
   leadId: string;
+  businessId: string;
   name: string;
   city: string | null;
   category: string | null;
   stage: Stage;
-  lastOutcome: { type: string; channel: string | null; createdAt: string } | null;
+  offer: string | null;
+  optedOut: boolean;
+  lastOutcome: { type: string; channel: string | null; note: string | null; createdAt: string } | null;
 };
+
+// Distinct leads that ever had each outcome or a later one (messaged: any
+// Sent), from outcome history; the stages are each lead's current stage.
+export type PipelineFunnel = { messaged: number; replied: number; meeting: number; won: number };
 
 // GET /api/w/:workspaceId/campaigns/:campaignId/pipeline
 export type PipelineResponse = {
   campaignId: string;
+  funnel: PipelineFunnel;
   stages: { stage: Stage; count: number; leads: PipelineLead[] }[];
 };

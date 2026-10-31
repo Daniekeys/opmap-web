@@ -52,6 +52,9 @@
   --container-detail: 880px;
   --container-list: 440px;
   --container-list-min: 360px;
+  /* Pipeline columns: 200 to 360px each, leftover space at the right. */
+  --container-column: 360px;
+  --container-column-min: 200px;
   /* The campaign workspace: list (440) + gutter (24) + detail content (880). */
   --container-workspace: 1344px;
   --spacing-sidebar: 240px;

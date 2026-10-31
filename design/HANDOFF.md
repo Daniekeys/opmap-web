@@ -72,7 +72,7 @@ Two rules: the landing page is capped, the app fills the window.
 
 - The shell always fills the window. The sidebar is fixed at 240px on the left edge. There is no centred app container.
 - Campaign workspace: the lead list is a fixed-width column, 360px to 440px. The detail pane takes the rest of the width, and its content (opportunity card, contacts, evidence) is capped at 880px and left-aligned in the pane.
-- Pipeline: columns fill the width, each 280px to 360px. On wide screens leftover space sits at the right; below the minimum the board scrolls sideways.
+- Pipeline: columns fill the width, each 200px to 360px, so all five fit beside the sidebar at 1440px. On wide screens leftover space sits at the right; below the minimum the board scrolls sideways.
 - Forms and long reading (Brand DNA fact review, the describe-a-buyer form, the composer's draft body, settings) use `Container size="read"` (720px), left-aligned in their pane.
 - Page titles, finding sentences and KPI strips line up with the content below them, not with the window edge.
 - Phone layouts are unchanged by these rules.

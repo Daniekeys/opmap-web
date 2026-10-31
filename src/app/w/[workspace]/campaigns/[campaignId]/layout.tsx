@@ -31,11 +31,8 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
   ]);
   const stages: Record<string, Stage> = {};
   for (const s of pipeline.stages) for (const l of s.leads) stages[l.leadId] = s.stage;
-  const count = (wanted: Stage[]) => pipeline.stages.filter((s) => wanted.includes(s.stage)).reduce((n, s) => n + s.count, 0);
   const base = `/w/${slug}/campaigns/${campaign.id}`;
-  const messaged = count(["sent", "replied", "meeting", "won", "lost"]);
-  const replied = count(["replied", "meeting", "won"]);
-  const meetings = count(["meeting", "won"]);
+  const { messaged, replied, meeting: meetings } = pipeline.funnel;
 
   const header = (
     <div className="flex flex-wrap items-start justify-between gap-4">

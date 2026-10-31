@@ -26,6 +26,7 @@ type Props = {
   initial: LeadResearchResponse;
   initialOutreach: LeadOutreachResponse;
   listLead: Lead | null;
+  openOn?: "opportunity" | "messages";
 };
 
 // What happened when we asked for a run, when it isn't a run to follow.
@@ -45,13 +46,13 @@ const outlineLink = "inline-flex h-11 items-center justify-center gap-2 rounded-
 // on a phone): opens the deep-dive on first view (once; the API makes sure two
 // people opening it start one run), follows its progress, and shows the
 // opportunity cards, "Not enough information", or what went wrong.
-export function LeadView({ workspaceId, slug, campaignId, initial, initialOutreach, listLead }: Props) {
+export function LeadView({ workspaceId, slug, campaignId, initial, initialOutreach, listLead, openOn = "opportunity" }: Props) {
   const [data, setData] = useState(initial);
   const [outreach, setOutreach] = useState(initialOutreach);
   const [ask, setAsk] = useState<Ask>({ state: "idle" });
   // A run this page started or joined, before the GET shows it.
   const [runId, setRunId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("opportunity");
+  const [tab, setTab] = useState<Tab>(openOn);
   // The card shown in full on the Opportunity tab, and written from on Messages.
   const [cardId, setCardId] = useState<string | null>(null);
   const base = `/api/w/${workspaceId}/campaigns/${campaignId}/leads/${data.lead.leadId}`;

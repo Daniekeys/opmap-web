@@ -9,16 +9,18 @@ type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]/leads/[leadId]">;
 // One lead: who they are, the deep-dive's opportunity cards, the messages
 // written from them and the outcome buttons. The first view starts the
 // deep-dive (LeadView); after that the saved cards and messages load free.
-export default function LeadPage({ params }: Props) {
+// ?tab=messages opens it on the Messages tab (the pipeline's "Reply to").
+export default function LeadPage({ params, searchParams }: Props) {
   return (
     <Suspense fallback={<DetailLoading />}>
-      <LeadPageView params={params} />
+      <LeadPageView params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function LeadPageView({ params }: { params: Props["params"] }) {
+async function LeadPageView({ params, searchParams }: { params: Props["params"]; searchParams: Props["searchParams"] }) {
   const { workspace: slug, campaignId, leadId } = await params;
+  const openOn = (await searchParams).tab === "messages" ? "messages" : "opportunity";
   const workspace = await getWorkspace(slug);
   // The list's row (shared with the campaign layout's read) has every contact
   // point with its label; the research has the cards.
@@ -43,6 +45,7 @@ async function LeadPageView({ params }: { params: Props["params"] }) {
         initial={research}
         initialOutreach={outreach}
         listLead={leads.find((l) => l.leadId === leadId) ?? null}
+        openOn={openOn}
       />
     </>
   );

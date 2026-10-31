@@ -10,7 +10,7 @@ Build:
 - Send targets only from contact points labelled found, verified or confirmed (WhatsApp confirmed, email found or verified, LinkedIn verified); the Google Maps listing phone (single source) for the call opener only. Never a guessed email.
 - Copy buttons, `wa.me` links with the text, Gmail and Outlook compose links, LinkedIn and tel links. Each is an event; the first per channel is a "sent" outcome and moves a new lead to Sent.
 - Outcome buttons (sent, replied, meeting, won, lost), data-feedback buttons (wrong number, bounced, not the owner) that lower that contact point's confidence on the shared record (`contact_feedback`, worker pipeline `contact_feedback`), and "They asked not to be contacted" (suppression list). Every tap is an outcome and an event. An opted-out lead has no Sent button, and the API refuses a Sent tap for it with 409 (added 2026-10-30).
-- Pipeline view of a campaign's leads by stage. Suppression list checked before any draft is shown.
+- Pipeline view of a campaign's leads by stage, with Messaged, Replied, Meeting and Won counts from outcome history (decisions log, 2026-10-31). Suppression list checked before any draft is shown.
 - Eval: `npm run eval:deepdive -- drafts` writes and checks the four drafts for the first card of each eval lead with cards and reports cost and time per lead.
 - Mobile first: 380 px first, copy, WhatsApp and outcome buttons at least 44 px tall.
 
