@@ -17,7 +17,7 @@ import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/l
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
-import { CardDrafts, OutcomePanel } from "./outreach-panel";
+import { CardDrafts, LikelyOnWhatsapp, OutcomePanel } from "./outreach-panel";
 
 type Props = {
   workspaceId: string;
@@ -157,7 +157,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   return (
     <div className="flex flex-col gap-4 pb-28 sm:pb-0">
       <section aria-label={data.lead.name} className="flex flex-col sm:rounded-card sm:border sm:border-border sm:bg-surface">
-        <LeadHeader lead={data.lead} stage={outreach.stage} suppressed={suppressed} primary={primary} />
+        <LeadHeader lead={data.lead} stage={outreach.stage} targets={outreach.targets} suppressed={suppressed} primary={primary} />
 
         <div role="tablist" aria-label="Lead" className="-mx-4 flex gap-6 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-6">
           {tabs.map((t) => (
@@ -342,15 +342,19 @@ function describe(lead: LeadResearchResponse["lead"]) {
 function LeadHeader({
   lead,
   stage,
+  targets,
   suppressed,
   primary,
 }: {
   lead: LeadResearchResponse["lead"];
   stage: LeadOutreachResponse["stage"];
+  targets: LeadOutreachResponse["targets"];
   suppressed: boolean;
   primary: React.ReactNode;
 }) {
   const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
+  // The same send targets as the composer, so the two never disagree.
+  const { whatsapp, call } = targets;
   return (
     <div className="flex flex-col gap-4 pb-4 sm:border-b sm:border-rule sm:px-6 sm:py-5">
       <div className="flex items-center gap-3 sm:gap-3.5">
@@ -374,14 +378,17 @@ function LeadHeader({
       ) : (
         <div className="flex flex-wrap gap-2">
           <span className="hidden sm:contents">{primary}</span>
-          {lead.whatsapp && (
-            <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
-              <MessageCircle className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Chat on WhatsApp
-            </a>
+          {whatsapp && (
+            <span className="inline-flex items-center gap-2">
+              <a href={whatsappHref(whatsapp.value)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+                <MessageCircle className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Chat on WhatsApp
+              </a>
+              {whatsapp.label === "likely" && <LikelyOnWhatsapp />}
+            </span>
           )}
-          {lead.phone && (
-            <a href={telHref(lead.phone.value)} className={outlineLink}>
-              <Phone className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> {formatPhone(lead.phone.value)}
+          {call && (
+            <a href={telHref(call.value)} className={outlineLink}>
+              <Phone className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> {formatPhone(call.value)}
             </a>
           )}
           {website && (
