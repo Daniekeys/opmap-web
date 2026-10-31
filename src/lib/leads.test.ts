@@ -70,8 +70,10 @@ describe("campaign status", () => {
   it("shows a cap pause as paused until tomorrow, in Lagos time", () => {
     // Pacific midnight is 08:00 in Lagos.
     expect(pausedUntil("2026-10-26T07:00:00Z", now)).toBe("tomorrow, 08:00");
-    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z" }, now)).toBe("Paused until tomorrow, 08:00");
-    expect(statusText({ status: "done", resumeAt: null }, now)).toBe("Complete");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z", pauseKind: null }, now)).toBe("Paused until tomorrow, 08:00");
+    expect(statusText({ status: "done", resumeAt: null, pauseKind: null }, now)).toBe("Complete");
+    // Google off isn't a limit: no time.
+    expect(statusText({ status: "paused", resumeAt: null, pauseKind: "setup" }, now)).toBe("Paused, Google search was off");
   });
 
   it("offers Resume search only once the resume time has passed", () => {
@@ -79,7 +81,7 @@ describe("campaign status", () => {
     expect(resumeDue("2026-10-25T15:00:00Z", now)).toBe(true);
     expect(resumeDue("2026-10-26T07:00:00Z", now)).toBe(false);
     expect(resumeDue(null, now)).toBe(false);
-    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, now)).toBe("Paused, limit lifted");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z", pauseKind: null }, now)).toBe("Paused, limit lifted");
   });
 });
 
@@ -109,6 +111,6 @@ describe("search settings form", () => {
   });
 
   it("names a stopped campaign", () => {
-    expect(statusText({ status: "stopped", resumeAt: null })).toBe("Stopped");
+    expect(statusText({ status: "stopped", resumeAt: null, pauseKind: null })).toBe("Stopped");
   });
 });

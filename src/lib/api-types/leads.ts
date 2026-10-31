@@ -112,12 +112,18 @@ export type Campaign = {
   // stopped campaign keeps why it stopped here too.
   resumeAt: string | null;
   pauseReason: string | null;
+  // Set while paused: what paused it ("setup": Google was off, no reset time).
+  pauseKind: PauseKind | null;
   settings: SearchSettings;
   // Google searches the campaign has made so far.
   callsUsed: number;
   leadCount: number;
   createdAt: string;
 };
+
+// Why a campaign is paused: Google was off on the server ("setup", no reset
+// time), or a Google cap that resets at resumeAt.
+export type PauseKind = "setup" | "campaign_daily" | "daily_cap" | "monthly_cap" | "google_quota";
 
 // A campaign's search settings: the most Google searches it may use (null: no
 // budget), pages per map tile (1 to 3), neighbourhood searches per city (0 to
