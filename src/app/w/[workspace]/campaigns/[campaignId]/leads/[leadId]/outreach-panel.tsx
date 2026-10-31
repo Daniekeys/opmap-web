@@ -282,7 +282,7 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       <div className="flex flex-col gap-2">
         <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Draft not ready">
           {why === "no what you offer passed the checks"
-            ? "We removed the line about what you offer because it isn't in your approved Brand DNA. Add it as a fact, or write this one yourself."
+            ? "There's no line about what you offer, because this offer isn't in the Brand DNA this message was written from. Add it as a fact, or write this one yourself."
             : `The checks removed too much of this message to send it${why ? `: ${why}` : "."} Use another channel, or write it yourself from the card above.`}
         </Box>
         <RemovedList removed={draft.removed} />
