@@ -183,7 +183,11 @@ export type ProgressStep = {
   state: ProgressStepState;
   problem: { message: string | null; next: "retrying" | "skipped" | "stopped"; attempt: number; attempts: number } | null;
 };
-export type PauseLimit = "daily_cap" | "monthly_cap" | "campaign_daily" | "offline" | "lifted" | "other";
+// What a paused search waits for, the same answer Resume search acts on:
+// google_off, this server can't call Google; google_back, it paused because
+// Google was off and now it is on; a cap until its reset; other, a cap pause
+// from before pause kinds were stored.
+export type PauseLimit = "google_off" | "google_back" | "campaign_daily" | "daily_cap" | "monthly_cap" | "google_quota" | "other";
 export type CampaignProgressResponse = {
   status: CampaignStatus;
   steps: ProgressStep[];
@@ -202,7 +206,9 @@ export type CampaignProgressResponse = {
     searches: { campaign: number; budget: number | null; today: number; dailyCap: number; month: number; monthlyCap: number };
   };
   // Set while paused; autoResume is false in development (an owner resumes).
-  pause: { limit: PauseLimit; resumeAt: string | null; reason: string | null; autoResume: boolean } | null;
+  // resumeAt: a cap's reset (never moved by a refused Resume); lifted: it
+  // has passed; canResume: Resume search would start it now.
+  pause: { limit: PauseLimit; resumeAt: string | null; lifted: boolean; canResume: boolean; reason: string | null; autoResume: boolean } | null;
 };
 
 // POST .../campaigns/:campaignId/start (owner), 202.
