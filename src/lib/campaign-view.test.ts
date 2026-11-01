@@ -16,6 +16,7 @@ const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; c
     buyer: score === null ? null : { score, topReason: "", reasons: [] },
     promoted: false,
     researched: false,
+    ready: [],
     ...rest,
     contacts: { phone: null, whatsapp: null, email: null, website: null, person: null, socials: [], ...contacts },
   };

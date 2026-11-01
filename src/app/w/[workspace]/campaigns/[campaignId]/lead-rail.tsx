@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Mail, MessageCircle, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -20,7 +20,7 @@ const TABS: { key: Tab; label: string; chip: string }[] = [
   { key: "outreach", label: "Contacted", chip: "Contacted" },
 ];
 
-// The campaign's leads, best fit first, as a list to pick from
+// The campaign's leads, ready to message first, then best fit, as a list to pick from
 // (Main.dc.html; MobileLeads.dc.html on a phone). The open lead is
 // highlighted. Opening one that isn't researched yet starts its paid
 // deep-dive, so nothing is opened for the user.
@@ -161,6 +161,23 @@ function Empty({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+const READY_NAMES = { whatsapp: "WhatsApp", email: "email" } as const;
+
+// The channels a lead can be messaged on now, as icons and a word, so a
+// checked contact stands out without opening the lead.
+function ReadyBadge({ ready }: { ready: Lead["ready"] }) {
+  if (ready.length === 0) return null;
+  const label = `Ready on ${ready.map((c) => READY_NAMES[c]).join(" and ")}`;
+  return (
+    <span title={label} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-positive-soft px-1.5 text-xs/[18px] font-medium text-positive-ink">
+      {ready.includes("whatsapp") && <MessageCircle className="size-3" aria-hidden />}
+      {ready.includes("email") && <Mail className="size-3" aria-hidden />}
+      <span className="sr-only">{label}</span>
+      <span aria-hidden>Ready</span>
+    </span>
+  );
+}
+
 function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stage: Stage; active: boolean }) {
   const fit = fitOf(lead);
   const meta = `${leadMeta(lead)}${lead.researched ? ". Researched" : ""}`;
@@ -182,7 +199,10 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="truncate font-semibold">{lead.name}</span>
           <span className="shrink-0 lg:hidden">{right}</span>
         </span>
-        <span className="truncate text-xs text-muted">{meta}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <ReadyBadge ready={lead.ready} />
+          <span className="truncate text-xs text-muted">{meta}</span>
+        </span>
       </span>
       <span className="hidden w-28 shrink-0 flex-col items-end gap-1.5 lg:flex">
         {right}

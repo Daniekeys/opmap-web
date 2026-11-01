@@ -215,7 +215,8 @@ export type ContactSource = { type: string; url: string };
 export type Contact = { value: string; label: string; sources: ContactSource[] };
 export type SocialContact = Contact & { kind: string };
 
-// GET .../campaigns/:campaignId/leads, best fit first.
+// GET .../campaigns/:campaignId/leads: those that can be messaged now first,
+// then best fit first.
 export type Lead = {
   leadId: string;
   businessId: string;
@@ -231,6 +232,9 @@ export type Lead = {
   promoted: boolean;
   // The deep-dive has run: opening the lead costs nothing.
   researched: boolean;
+  // Channels it can be messaged on now: WhatsApp or email with a checked
+  // contact point; none when the business asked not to be contacted.
+  ready: ("whatsapp" | "email")[];
   contacts: {
     phone: Contact | null;
     whatsapp: Contact | null;

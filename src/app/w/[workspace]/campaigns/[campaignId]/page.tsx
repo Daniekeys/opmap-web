@@ -93,7 +93,7 @@ function PickHint({ count }: { count: number }) {
       <TileMark className="size-8" />
       <h2 className="text-section font-semibold">Pick a business to see its opportunity</h2>
       <p className="max-w-lg text-muted">
-        {count} {count === 1 ? "business" : "businesses"} on the left, best fit first. Opening one for the first time researches it, which takes about a minute
+        {count} {count === 1 ? "business" : "businesses"} on the left: ready to message first, then best fit. Opening one for the first time researches it, which takes about a minute
         and a few cents. After that it opens for free, with messages you can send on WhatsApp, email or a call.
       </p>
     </div>
