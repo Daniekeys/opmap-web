@@ -47,6 +47,7 @@ import {
   whatsappSendHref,
 } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
+import { OfferGone, type Rerun } from "./brand-dna-notice";
 
 type CardOutreach = LeadOutreachResponse["cards"][number];
 type ReadDates = Map<string, string | null>;
@@ -76,6 +77,8 @@ type Ask = { state: "idle" } | { state: "asking" } | { state: "limit"; reason: s
 // "Write messages" on a card, its progress, then the composer for the four
 // drafts (Composer.dc.html; MobileComposer.dc.html on a phone). Drafts are
 // written only when asked, once; opening the page again shows the saved ones.
+// A card whose offer isn't in the approved Brand DNA any more writes nothing,
+// and its drafts can be read but not sent: the warning offers a re-run.
 export function CardDrafts({
   base,
   workspaceId,
@@ -84,6 +87,7 @@ export function CardDrafts({
   finishedAt,
   outreach,
   onChange,
+  rerun,
 }: {
   base: string;
   workspaceId: string;
@@ -93,11 +97,14 @@ export function CardDrafts({
   finishedAt: string | null;
   outreach: LeadOutreachResponse;
   onChange: () => Promise<void>;
+  // Absent on /messages: the re-run is on the lead page.
+  rerun?: Rerun;
 }) {
   const card = outreach.cards.find((c) => c.opportunityId === opportunity.id);
   const [ask, setAsk] = useState<Ask>({ state: "idle" });
   const [runId, setRunId] = useState<string | null>(null);
   const offer = <OfferLine text={opportunity.offer?.text ?? "Opportunity"} />;
+  const offerInBrandDna = card?.offerInBrandDna ?? opportunity.offerInBrandDna;
 
   async function write() {
     setAsk({ state: "asking" });
@@ -109,6 +116,8 @@ export function CardDrafts({
       if (result.state === "limit") return setAsk({ state: "limit", reason: result.reason });
       if (result.state === "blocked") return setAsk({ state: "blocked", reason: result.reason });
       setAsk({ state: "idle" });
+      // The Brand DNA changed since the page loaded: the reload shows the warning.
+      if (result.state === "offer_not_in_brand_dna") return await onChange();
       if ((result.state === "started" || result.state === "running") && result.runId) setRunId(result.runId);
       else await onChange();
     } catch {
@@ -118,6 +127,7 @@ export function CardDrafts({
 
   const following = runId ?? (card?.run?.status === "running" ? card.run.runId : null);
   const drafts = card?.drafts ?? [];
+  const offerGone = !offerInBrandDna || drafts.some((d) => !d.offerInBrandDna);
 
   if (outreach.suppressed) {
     return (
@@ -132,6 +142,7 @@ export function CardDrafts({
 
   return (
     <div className="flex flex-col gap-3">
+      {offerGone && !following && <OfferGone slug={slug} rerun={rerun} />}
       {following ? (
         <div className="flex flex-col gap-3">
           {offer}
@@ -153,7 +164,7 @@ export function CardDrafts({
       ) : (
         <>
           {offer}
-          <Start blocked={outreach.blocked} slug={slug} card={card} ask={ask} onWrite={() => void write()} />
+          {offerInBrandDna && <Start blocked={outreach.blocked} slug={slug} card={card} ask={ask} onWrite={() => void write()} />}
         </>
       )}
       {ask.state === "limit" && (
@@ -276,13 +287,29 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
   const outcome = useOutcomeTap(base, onChange);
   const target = outreach.targets[draft.channel];
 
+  // Written from an offer the approved Brand DNA no longer holds: the text
+  // stays readable, with nothing to open, copy or mark as sent. The warning
+  // above it offers the re-run.
+  if (!draft.offerInBrandDna) {
+    return (
+      <article aria-label={`${TAB_NAMES[draft.channel]} message, not ready`} className="flex min-w-0 flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 text-muted sm:px-6 sm:py-5">
+        {draft.subject && (
+          <p className="border-y border-rule py-1 text-sm">
+            <span className="text-xs">Subject</span> <span className="font-semibold">{draft.subject}</span>
+          </p>
+        )}
+        <Lines lines={draft.lines} dates={dates} call={draft.channel === "call"} />
+      </article>
+    );
+  }
+
   if (draft.status !== "ready") {
     const why = draft.removed.find((r) => r.text === "(whole draft)")?.reason.replace(/^not ready: /, "");
     return (
       <div className="flex flex-col gap-2">
         <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Draft not ready">
           {why === "no what you offer passed the checks"
-            ? "There's no line about what you offer, because this offer isn't in the Brand DNA this message was written from. Add it as a fact, or write this one yourself."
+            ? "We couldn't write a line about what you offer, because this card's offer isn't in your approved Brand DNA."
             : `The checks removed too much of this message to send it${why ? `: ${why}` : "."} Use another channel, or write it yourself from the card above.`}
         </Box>
         <RemovedList removed={draft.removed} />

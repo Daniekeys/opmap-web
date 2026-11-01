@@ -25,6 +25,9 @@ export type OpportunityCard = {
   gap: Claim | null;
   why: Claim[];
   angle: Claim | null;
+  // False when no fact the offer cites is in the approved Brand DNA any more:
+  // no drafts are written or sent from this card.
+  offerInBrandDna: boolean;
 };
 
 export type RemovedClaim = { card: number; field: ClaimField; text: string; reason: string; by: "code" | "check" };
@@ -63,13 +66,19 @@ export type LeadResearchResponse = {
     notEnough: string | null;
     removed: RemovedClaim[];
     read: { pages: number; socials: number; sources: number } | null;
+    // The Brand DNA version the cards were written from (null before versions
+    // were recorded), and whether they may be rewritten with the current one.
+    brandDnaVersion: number | null;
+    brandDnaRerun: boolean;
     cards: OpportunityCard[];
   } | null;
   signals: { kind: string; label: string; text: string; sourceUrl: string; sourceType: string }[];
 };
 
 // POST /api/w/:workspaceId/campaigns/:campaignId/leads/:leadId/deep-dive
-export type OpenLeadBody = { refresh?: boolean };
+// brandDna: new cards from the current Brand DNA, reusing what was read about
+// the business (allowed when result.brandDnaRerun; "fresh" otherwise).
+export type OpenLeadBody = { refresh?: boolean; brandDna?: boolean };
 
 export type OpenLeadResponse =
   | { state: "started"; runId: string }

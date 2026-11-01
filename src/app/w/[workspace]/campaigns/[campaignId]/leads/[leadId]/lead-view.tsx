@@ -9,7 +9,7 @@ import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/api-types/leads";
 import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
-import type { Claim, DatedCite, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import type { Claim, DatedCite, LeadResearchResponse, OpenLeadBody, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
 import { citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
@@ -17,6 +17,7 @@ import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/l
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
+import { OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
 import { CardDrafts, LikelyOnWhatsapp, OutcomePanel } from "./outreach-panel";
 
 type Props = {
@@ -75,10 +76,12 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
     setOutreach(await res.json());
   }
 
-  async function open(refresh: boolean) {
+  // First view ({}), a refresh after 90 days, or new cards from the current
+  // Brand DNA.
+  async function open(body: OpenLeadBody) {
     setAsk({ state: "asking" });
     try {
-      const res = await fetch(`${base}/deep-dive`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(refresh ? { refresh } : {}) });
+      const res = await fetch(`${base}/deep-dive`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 401) return goToLogin();
       if (!res.ok) throw new Error(String(res.status));
       const result: OpenLeadResponse = await res.json();
@@ -91,7 +94,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
         // Someone else's run, claimed a moment ago: its id is set right after.
         // Stay "asking" while we wait, so the progress section doesn't flicker.
         waits.current += 1;
-        if (alive.current) retry.current = setTimeout(() => void open(false), 1_500);
+        if (alive.current) retry.current = setTimeout(() => void open({}), 1_500);
       } else {
         // Done, or still no id after the waits: show what the API has.
         waits.current = 0;
@@ -120,7 +123,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   useEffect(() => {
     if (opened.current || initial.run !== null) return;
     opened.current = true;
-    void open(false);
+    void open({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,6 +135,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   const draftCount = outreach.cards.reduce((n, c) => n + c.drafts.length, 0);
   const suppressed = outreach.suppressed;
   const chosenWritten = chosenCard ? (outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.drafts.length ?? 0) > 0 : false;
+  const rerun: Rerun = { allowed: data.result?.brandDnaRerun ?? false, busy: researching, onRerun: () => void open({ brandDna: true }) };
 
   function writeFor(id: string) {
     setCardId(id);
@@ -191,7 +195,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
           {ask.state === "error" && (
             <Notice tone="error" title="We couldn't start the research">
               Check your connection and try again.
-              <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)}>
+              <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open({})}>
                 <RotateCw aria-hidden /> Try again
               </Button>
             </Notice>
@@ -214,7 +218,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
             <Notice tone="error" title="The research didn't finish">
               {failureText(data.run?.errorCode ?? null, data.run?.error ?? null, slug)}
               {data.run?.errorCode !== "brand_not_usable" && (
-                <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)} disabled={ask.state === "asking"}>
+                <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open({})} disabled={ask.state === "asking"}>
                   <RotateCw aria-hidden /> Try again
                 </Button>
               )}
@@ -227,8 +231,10 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                 result={data.result}
                 chosen={chosenCard}
                 onChoose={setCardId}
-                onRefresh={() => open(true)}
+                onRefresh={() => open({ refresh: true })}
                 refreshing={researching}
+                slug={slug}
+                rerun={rerun}
                 failedRefresh={failed}
                 listLead={listLead}
               />
@@ -269,6 +275,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                   finishedAt={data.result?.finishedAt ?? null}
                   outreach={outreach}
                   onChange={reloadOutreach}
+                  rerun={rerun}
                 />
               </section>
             ) : (
@@ -408,6 +415,8 @@ function Result({
   onChoose,
   onRefresh,
   refreshing,
+  slug,
+  rerun,
   failedRefresh,
   listLead,
 }: {
@@ -416,10 +425,15 @@ function Result({
   onChoose: (id: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  slug: string;
+  rerun: Rerun;
   failedRefresh: boolean;
   listLead: Lead | null;
 }) {
   const others = result.cards.filter((c) => c.id !== chosen?.id);
+  // The warning when this card's offer is gone; a quiet action when every
+  // card still stands but the Brand DNA changed (or there is no card).
+  const quiet = rerun.allowed && result.cards.every((c) => c.offerInBrandDna);
   return (
     <section aria-label="Opportunities" className="flex flex-col gap-4">
       {result.stale && (
@@ -431,6 +445,9 @@ function Result({
         </div>
       )}
       {failedRefresh && <p className="text-sm text-negative-ink">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
+      {chosen && !chosen.offerInBrandDna && <OfferGone slug={slug} rerun={rerun} />}
+      {/* With cards, a re-run is only offered when the version changed. */}
+      {quiet && <RefreshCards changed={result.cards.length > 0} rerun={rerun} />}
 
       {chosen ? (
         <article className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">

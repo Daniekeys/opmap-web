@@ -37,6 +37,7 @@ function emailDraft(body: string): Draft {
     id: "d1",
     channel: "email",
     status: "ready",
+    offerInBrandDna: true,
     subject: "A question",
     body,
     lines: [line("greeting", "Hello A Bakes,"), line("claim", "You take cake orders.", [site]), line("claim", "88 people reviewed you.", [listing]), line("claim", "We build order pages.", [fact])],
@@ -107,6 +108,7 @@ describe("source dates for a draft's claims", () => {
       gap: { id: "g", field: "gap", text: "No order page", cites: [{ ...listing, fetchedAt: null }] },
       why: [],
       angle: null,
+      offerInBrandDna: true,
     } satisfies OpportunityCard;
     expect(sourceReadDates(card, "2026-10-29T09:00:00Z")).toEqual(new Map([["s1", "2026-10-28T10:00:00Z"], ["s2", "2026-10-29T09:00:00Z"]]));
   });

@@ -18,6 +18,9 @@ export type Draft = {
   id: string;
   channel: Channel;
   status: "ready" | "not_ready";
+  // False when what it offers isn't in the approved Brand DNA any more: shown
+  // as not ready, never sent.
+  offerInBrandDna: boolean;
   subject: string | null;
   body: string;
   lines: DraftLine[];
@@ -43,6 +46,8 @@ export type LeadOutreachResponse = {
   contacts: ContactRow[];
   cards: {
     opportunityId: string;
+    // The card's offerInBrandDna: false, and no drafts can be written from it.
+    offerInBrandDna: boolean;
     run: {
       draftSetId: string;
       status: "running" | "done" | "failed";
@@ -62,7 +67,10 @@ export type StartDraftsResponse =
   | { state: "running"; runId: string | null }
   | { state: "done" }
   | { state: "limit"; reason: string }
-  | { state: "blocked"; reason: string };
+  | { state: "blocked"; reason: string }
+  // The card's offer isn't in the approved Brand DNA any more: nothing was
+  // written and nothing was spent.
+  | { state: "offer_not_in_brand_dna" };
 
 // POST .../leads/:leadId/drafts/:draftId/send  { via }
 export type SendVia = "copy" | "whatsapp" | "gmail" | "outlook" | "linkedin" | "call";
