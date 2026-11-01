@@ -50,6 +50,14 @@ describe("progress words", () => {
     expect(pauseText(pause, progress({ status: "paused" }), null, now).body).toContain("and only 2 are left today, fewer than the next map tile needs.");
   });
 
+  it("says a search that reached a server without Google didn't run, and how to resume it", () => {
+    const offline = pauseText({ limit: "offline", resumeAt: "2026-10-30T12:00:00Z", reason: null, autoResume: false }, progress({ status: "paused" }), null);
+    expect(offline.title).toBe("Paused: this server can't call Google");
+    expect(offline.body).toBe(
+      "The search didn't run: the API it reached can't call Google. Start the API with ALLOW_REAL_GOOGLE=true, then tap Resume search. Nothing was charged, and nothing tries again by itself.",
+    );
+  });
+
   it("shows Claude credit in dollars, with a sliver as under a cent", () => {
     expect(usd(0.4123)).toBe("$0.41");
     expect(usd(0.0021)).toBe("under $0.01");

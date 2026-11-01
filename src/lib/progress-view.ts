@@ -55,7 +55,7 @@ const PAUSE_TITLES: Record<PauseLimit, string> = {
   daily_cap: "Paused: today's Google searches are used up",
   monthly_cap: "Paused: this month's Google searches are used up",
   campaign_daily: "Paused: this campaign's searches for today are done",
-  offline: "Waiting for a worker that can call Google",
+  offline: "Paused: this server can't call Google",
   lifted: "Paused: the limit has lifted",
   other: "Paused",
 };
@@ -79,7 +79,7 @@ export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, da
       case "campaign_daily":
         return `This campaign is set to ${dailyCalls ?? "a few"} Google searches a day. ${resumes}${byHand} ${notCharged}`;
       case "offline":
-        return `This worker can't call Google, so the search is handed back to one that can. ${resumes} Nothing was charged.`;
+        return "The search didn't run: the API it reached can't call Google. Start the API with ALLOW_REAL_GOOGLE=true, then tap Resume search. Nothing was charged, and nothing tries again by itself.";
       case "lifted":
         return pause.autoResume ? "The limit has lifted. The search picks up again in a moment." : "The limit has lifted. An owner can resume the search now.";
       case "other":
