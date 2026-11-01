@@ -118,7 +118,7 @@ export function LeadRail({
           >
             Has phone
           </button>
-          <span className="text-xs text-muted">Best fit first</span>
+          <span className="text-xs text-muted">Ready first</span>
         </div>
       </div>
 
