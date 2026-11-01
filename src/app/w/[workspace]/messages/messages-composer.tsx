@@ -26,6 +26,7 @@ export function MessagesComposer({
   leadHref,
   card,
   written,
+  cardCount,
   finishedAt,
   brandDnaRerun,
   initialOutreach,
@@ -36,9 +37,11 @@ export function MessagesComposer({
   row: MessageRow;
   leadHref: string;
   card: OpportunityCard | null;
-  // Whether any card of this lead has drafts (card is null when they belong
-  // to a card the newest research replaced).
+  // Whether this lead has drafts on any card, now or from earlier research
+  // (card is null when they belong to a card the newest research replaced).
   written: boolean;
+  // Cards in the newest research: none when a re-run found no opportunity.
+  cardCount: number;
   finishedAt: string | null;
   // The research result's brandDnaRerun: the cards may be rewritten.
   brandDnaRerun: boolean;
@@ -101,9 +104,11 @@ export function MessagesComposer({
       ) : (
         <>
           <p className="text-sm text-muted">
-            {written
-              ? "These messages were written from a card the newest research replaced. Open the lead to write new ones from its current cards."
-              : "No messages were written for this lead. Answer them in the channel they replied on, then log what happened below."}
+            {!written
+              ? "No messages were written for this lead. Answer them in the channel they replied on, then log what happened below."
+              : cardCount === 0
+                ? "This lead's messages were written from an earlier card. The newest research found no opportunity to write from, so there's nothing new to send here. Open the lead to see why."
+                : "These messages were written from a card the newest research replaced. Open the lead to write new ones from its current cards."}
           </p>
           <OutcomePanel base={base} outreach={outreach} onChange={reload} />
         </>

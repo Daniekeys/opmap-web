@@ -121,7 +121,10 @@ async function Pane({ workspaceId, slug, row, leadHref }: { workspaceId: string;
       row={row}
       leadHref={leadHref}
       card={card}
-      written={outreach.cards.some((c) => c.drafts.length > 0)}
+      // The row's offer is the card its newest finished drafts came from, which
+      // a re-run of the research may have replaced.
+      written={outreach.cards.some((c) => c.drafts.length > 0) || row.offer !== null}
+      cardCount={cards.length}
       finishedAt={research.result?.finishedAt ?? null}
       brandDnaRerun={research.result?.brandDnaRerun ?? false}
       initialOutreach={outreach}
