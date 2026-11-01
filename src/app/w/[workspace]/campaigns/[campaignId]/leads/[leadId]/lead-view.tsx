@@ -347,6 +347,8 @@ function failureText(code: string | null, error: string | null, slug: string) {
       </>
     );
   if (code === "limit_reached") return error ?? "The spending limit was reached.";
+  // Not retried by itself: one more paid try is the user's call.
+  if (code === "deepdive_unusable") return "Claude's answer couldn't be used this time (it declined, or came back in the wrong shape), so it wasn't tried again.";
   return error ?? "Something went wrong while researching this business.";
 }
 
