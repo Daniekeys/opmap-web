@@ -3,26 +3,45 @@
 import { AlertTriangle, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // A new deep-dive that rewrites the cards from the current Brand DNA, reusing
 // what was read about the business. `allowed` is the API's brandDnaRerun.
 export type Rerun = { allowed: boolean; busy: boolean; onRerun: () => void };
 
+// The warning's id: the lead page's "Offer missing, fix it" scrolls to it.
+export const OFFER_GONE_ID = "offer-gone";
+
+const brandLinkClass = "inline-flex min-h-11 shrink-0 items-center font-medium underline-offset-4 hover:underline";
+
 // On the card and in the composer when the card's offer isn't in the approved
-// Brand DNA any more: nothing can be written or sent from it.
-export function OfferGone({ slug, rerun }: { slug: string; rerun?: Rerun }) {
+// Brand DNA any more: nothing can be written or sent from it. The re-run is the
+// main action; `brandLink` adds "Go to Brand DNA" beside it (on /messages).
+export function OfferGone({ slug, rerun, brandLink = false }: { slug: string; rerun: Rerun; brandLink?: boolean }) {
   return (
-    <div role="status" className="flex flex-col gap-3 rounded-card bg-warning-soft px-4 py-3 text-sm text-warning-ink sm:flex-row sm:items-center sm:justify-between">
+    // With the Brand DNA link the actions need a row of their own, under the text.
+    <div
+      id={OFFER_GONE_ID}
+      role="status"
+      className={cn("flex flex-col gap-3 rounded-card bg-warning-soft px-4 py-3 text-sm text-warning-ink", !brandLink && "sm:flex-row sm:items-center sm:justify-between")}
+    >
       <p className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>This offer isn&apos;t in your approved Brand DNA anymore.</span>
       </p>
-      {rerun?.allowed ? (
-        <Button type="button" variant="outline" className="h-auto min-h-11 w-full shrink-0 py-2 whitespace-normal sm:min-h-9 sm:w-auto sm:py-1.5" onClick={rerun.onRerun} disabled={rerun.busy}>
-          <RotateCw aria-hidden /> <span className="text-balance">Re-run deep-dive with current Brand DNA</span>
-        </Button>
+      {rerun.allowed ? (
+        <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+          <Button type="button" variant="outline" className="h-auto min-h-11 w-full py-2 whitespace-normal sm:min-h-9 sm:w-auto sm:py-1.5" onClick={rerun.onRerun} disabled={rerun.busy}>
+            <RotateCw aria-hidden /> <span className="text-balance">Re-run deep-dive with current Brand DNA</span>
+          </Button>
+          {brandLink && (
+            <Link href={`/w/${slug}/brand`} className={cn(brandLinkClass, "self-center sm:self-auto")}>
+              Go to Brand DNA
+            </Link>
+          )}
+        </div>
       ) : (
-        <Link href={`/w/${slug}/brand`} className="inline-flex min-h-11 shrink-0 items-center font-medium underline-offset-4 hover:underline">
+        <Link href={`/w/${slug}/brand`} className={brandLinkClass}>
           Go to Brand DNA
         </Link>
       )}

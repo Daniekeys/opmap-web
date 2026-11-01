@@ -112,8 +112,9 @@ async function Pane({ workspaceId, slug, row, leadHref }: { workspaceId: string;
   const written = outreach.cards.find((c) => c.drafts.length > 0 && cards.some((k) => k.id === c.opportunityId));
   const card = cards.find((k) => k.id === written?.opportunityId) ?? null;
   return (
+    // Keyed on the research too: a re-run from the pane remounts it with the new cards.
     <MessagesComposer
-      key={row.leadId}
+      key={`${row.leadId}:${research.result?.deepDiveId ?? ""}`}
       workspaceId={workspaceId}
       slug={slug}
       campaignId={row.campaignId}
@@ -122,6 +123,7 @@ async function Pane({ workspaceId, slug, row, leadHref }: { workspaceId: string;
       card={card}
       written={outreach.cards.some((c) => c.drafts.length > 0)}
       finishedAt={research.result?.finishedAt ?? null}
+      brandDnaRerun={research.result?.brandDnaRerun ?? false}
       initialOutreach={outreach}
     />
   );

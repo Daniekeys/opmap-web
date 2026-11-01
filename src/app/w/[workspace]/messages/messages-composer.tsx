@@ -1,16 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Rerun } from "@/app/w/[workspace]/campaigns/[campaignId]/leads/[leadId]/brand-dna-notice";
 import { CardDrafts, OutcomePanel } from "@/app/w/[workspace]/campaigns/[campaignId]/leads/[leadId]/outreach-panel";
 import { Avatar } from "@/components/avatar";
+import { ProgressPanel } from "@/components/progress-panel";
 import type { LeadOutreachResponse, MessageRow } from "@/lib/api-types/outreach";
-import type { OpportunityCard } from "@/lib/api-types/research";
+import type { OpenLeadBody, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
 import { goToLogin } from "@/lib/go-to-login";
+
+type Ask = { state: "idle" } | { state: "asking" } | { state: "limit"; reason: string } | { state: "error" };
 
 // The composer pane of /messages: the lead page's composer and outcome
 // buttons for one queued lead. The queue itself refreshes on the next visit,
-// so a send doesn't swap the lead out from under the user.
+// so a send doesn't swap the lead out from under the user. A card whose offer
+// left the approved Brand DNA can be re-run here, the same deep-dive request
+// as the lead page's button; the pane reloads when it finishes.
 export function MessagesComposer({
   workspaceId,
   slug,
@@ -20,6 +27,7 @@ export function MessagesComposer({
   card,
   written,
   finishedAt,
+  brandDnaRerun,
   initialOutreach,
 }: {
   workspaceId: string;
@@ -32,9 +40,14 @@ export function MessagesComposer({
   // to a card the newest research replaced).
   written: boolean;
   finishedAt: string | null;
+  // The research result's brandDnaRerun: the cards may be rewritten.
+  brandDnaRerun: boolean;
   initialOutreach: LeadOutreachResponse;
 }) {
+  const router = useRouter();
   const [outreach, setOutreach] = useState(initialOutreach);
+  const [ask, setAsk] = useState<Ask>({ state: "idle" });
+  const [runId, setRunId] = useState<string | null>(null);
   const base = `/api/w/${workspaceId}/campaigns/${campaignId}/leads/${row.leadId}`;
 
   async function reload() {
@@ -43,6 +56,26 @@ export function MessagesComposer({
     if (!res.ok) throw new Error(String(res.status));
     setOutreach(await res.json());
   }
+
+  async function rerunCards() {
+    setAsk({ state: "asking" });
+    try {
+      const body: OpenLeadBody = { brandDna: true };
+      const res = await fetch(`${base}/deep-dive`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (res.status === 401) return goToLogin();
+      if (!res.ok) throw new Error(String(res.status));
+      const result: OpenLeadResponse = await res.json();
+      if (result.state === "limit") return setAsk({ state: "limit", reason: result.reason });
+      setAsk({ state: "idle" });
+      if ((result.state === "started" || result.state === "running") && result.runId) setRunId(result.runId);
+      // Nothing to follow: show what the API has now.
+      else router.refresh();
+    } catch {
+      setAsk({ state: "error" });
+    }
+  }
+
+  const rerun: Rerun = { allowed: brandDnaRerun, busy: ask.state === "asking" || runId !== null, onRerun: () => void rerunCards() };
 
   return (
     <section aria-label={`Messages for ${row.name}`} className="flex flex-col gap-5 rounded-card border border-border bg-surface p-5">
@@ -55,9 +88,16 @@ export function MessagesComposer({
           </Link>
         </div>
       </div>
-      {/* The composer has its own outcome buttons; without one, the lead page's. */}
-      {card ? (
-        <CardDrafts base={base} workspaceId={workspaceId} slug={slug} card={card} finishedAt={finishedAt} outreach={outreach} onChange={reload} />
+      {runId ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted" role="status">
+            Writing new opportunity cards from your current Brand DNA, from what was already read about this business. About a minute.
+          </p>
+          <ProgressPanel workspaceId={workspaceId} runId={runId} title="Research" onFinished={() => router.refresh()} />
+        </div>
+      ) : card ? (
+        /* The composer has its own outcome buttons; without one, the lead page's. */
+        <CardDrafts base={base} workspaceId={workspaceId} slug={slug} card={card} finishedAt={finishedAt} outreach={outreach} onChange={reload} rerun={rerun} brandLink />
       ) : (
         <>
           <p className="text-sm text-muted">
@@ -68,6 +108,12 @@ export function MessagesComposer({
           <OutcomePanel base={base} outreach={outreach} onChange={reload} />
         </>
       )}
+      {ask.state === "limit" && (
+        <p className="text-sm text-warning-ink">
+          {ask.reason} The cards can be rewritten once there is budget again.
+        </p>
+      )}
+      {ask.state === "error" && <p className="text-sm text-negative-ink">Couldn&apos;t start the research. Check your connection and try again.</p>}
     </section>
   );
 }

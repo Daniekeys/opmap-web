@@ -88,6 +88,7 @@ export function CardDrafts({
   outreach,
   onChange,
   rerun,
+  brandLink = false,
 }: {
   base: string;
   workspaceId: string;
@@ -97,8 +98,9 @@ export function CardDrafts({
   finishedAt: string | null;
   outreach: LeadOutreachResponse;
   onChange: () => Promise<void>;
-  // Absent on /messages: the re-run is on the lead page.
-  rerun?: Rerun;
+  rerun: Rerun;
+  // On /messages: "Go to Brand DNA" beside the re-run in the warning.
+  brandLink?: boolean;
 }) {
   const card = outreach.cards.find((c) => c.opportunityId === opportunity.id);
   const [ask, setAsk] = useState<Ask>({ state: "idle" });
@@ -142,7 +144,7 @@ export function CardDrafts({
 
   return (
     <div className="flex flex-col gap-3">
-      {offerGone && !following && <OfferGone slug={slug} rerun={rerun} />}
+      {offerGone && !following && <OfferGone slug={slug} rerun={rerun} brandLink={brandLink} />}
       {following ? (
         <div className="flex flex-col gap-3">
           {offer}

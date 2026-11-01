@@ -17,7 +17,7 @@ import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/l
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
-import { OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
+import { OFFER_GONE_ID, OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
 import { CardDrafts, LikelyOnWhatsapp, OutcomePanel } from "./outreach-panel";
 
 type Props = {
@@ -149,14 +149,35 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
     { key: "details", label: "Details" },
   ];
 
+  // The chosen card's offer isn't in the approved Brand DNA: the primary
+  // action takes the user to the warning and its re-run button instead.
+  const chosenOfferGone = chosenCard ? !(outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.offerInBrandDna ?? chosenCard.offerInBrandDna) : false;
+
+  function fixOffer() {
+    setTab("opportunity");
+    requestAnimationFrame(() => {
+      const warning = document.getElementById(OFFER_GONE_ID);
+      warning?.scrollIntoView({ behavior: "smooth", block: "center" });
+      warning?.querySelector<HTMLElement>("button, a")?.focus({ preventScroll: true });
+    });
+  }
+
   // The one primary action, in the header on wide screens and in the bottom
   // bar on a phone. Never shown for a business on the opt-out list.
-  const primary = !suppressed && chosenCard && (
-    <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={() => writeFor(chosenCard.id)}>
-      <MessageCircle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
-      {chosenWritten ? "Open messages" : "Write messages"}
-    </Button>
-  );
+  const primary =
+    !suppressed &&
+    chosenCard &&
+    (chosenOfferGone ? (
+      <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={fixOffer}>
+        <AlertTriangle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+        Offer missing, fix it
+      </Button>
+    ) : (
+      <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={() => writeFor(chosenCard.id)}>
+        <MessageCircle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+        {chosenWritten ? "Open messages" : "Write messages"}
+      </Button>
+    ));
 
   return (
     <div className="flex flex-col gap-4 pb-28 sm:pb-0">
