@@ -21,6 +21,13 @@ describe("progress words", () => {
     expect(progressSentence(progress())).toBe("18 Google searches and 214 listings so far. You can close this page: the search carries on without it.");
   });
 
+  it("says a finished search found its leads wanted, or how many of them when the idea ran out", () => {
+    const done = progress({ status: "done" });
+    expect(progressSentence(done, { leadsWanted: 20, leadCount: 20 })).toBe("Found 20 leads that fit, as wanted, with 18 Google searches.");
+    expect(progressSentence(done, { leadsWanted: 20, leadCount: 12 })).toBe("Found 12 of the 20 leads wanted with 18 Google searches: this idea ran out of good fits in these places.");
+    expect(progressSentence(done)).toBe("The search covered every place in this campaign: 18 Google searches, 214 listings.");
+  });
+
   it("gives a failure's plain reason and what happens next, never the raw error", () => {
     expect(problemText({ message: null, next: "retrying", attempt: 1, attempts: 3 })).toEqual({
       reason: "Something went wrong on our side.",

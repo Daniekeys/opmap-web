@@ -1,11 +1,12 @@
 "use client";
 
 import { inputClass } from "@/components/input-class";
-import type { SettingsDraft } from "@/lib/leads";
+import { LEADS_WANTED, type SettingsDraft } from "@/lib/leads";
 
-// An owner's search settings: a budget and a pace that can only lower what
-// the search spends (the shared Google limit always holds), and how deep it
-// searches each tile and city. Empty limits mean no limit.
+// An owner's search settings: the leads wanted, which ends the search as done;
+// a budget and a pace that can only lower what the search spends (the shared
+// Google limit always holds); and how deep it searches each tile and city.
+// Empty limits mean no limit.
 export function SearchSettingsFields({
   value,
   onChange,
@@ -22,6 +23,22 @@ export function SearchSettingsFields({
     <fieldset disabled={disabled} className="flex flex-col gap-3 disabled:opacity-70">
       <legend className="mb-1 text-sm font-medium">Search settings</legend>
       <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-sm">
+          Leads wanted
+          <input
+            type="number"
+            inputMode="numeric"
+            min={LEADS_WANTED.min}
+            max={LEADS_WANTED.max}
+            value={value.leadsWanted}
+            onChange={set("leadsWanted")}
+            placeholder="Every place"
+            className={inputClass}
+          />
+          <span className="text-muted">
+            {LEADS_WANTED.min} to {LEADS_WANTED.max}. The search finishes once this many businesses pass the fit check, usually after a few searches.
+          </span>
+        </label>
         <label className="flex flex-col gap-1.5 text-sm">
           Search budget
           <input

@@ -108,6 +108,7 @@ function SearchSummary({ campaign }: { campaign: Campaign }) {
     ["Searching for", campaign.queries.join(", ") || "Not set"],
     ["Places", campaign.locations.map((l) => l.name).join(", ") || "Not set"],
     ...(kind ? ([["Kind", kind.label]] as [string, string][]) : []),
+    ["Leads wanted", campaign.settings.leadsWanted === null ? "Every place searched" : String(campaign.settings.leadsWanted)],
     ["Google searches", `${campaign.callsUsed}${budget !== null ? ` of ${budget}` : ""} used`],
   ];
   return (

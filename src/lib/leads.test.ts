@@ -84,11 +84,11 @@ describe("campaign status", () => {
 });
 
 describe("search settings form", () => {
-  const saved = { maxCalls: null, dailyCalls: 5, pagesPerTile: 3, extrasPerCity: 3 };
+  const saved = { leadsWanted: 20, maxCalls: null, dailyCalls: 5, pagesPerTile: 3, extrasPerCity: 3 };
 
   it("round-trips settings, with an empty box for no limit", () => {
     const draft = settingsDraft(saved);
-    expect(draft).toEqual({ maxCalls: "", dailyCalls: "5", pagesPerTile: "3", extrasPerCity: "3" });
+    expect(draft).toEqual({ leadsWanted: "20", maxCalls: "", dailyCalls: "5", pagesPerTile: "3", extrasPerCity: "3" });
     expect(readSettings(draft, 20)).toEqual({ settings: saved });
     expect(readSettings({ ...draft, maxCalls: " 150 " }, 20)).toEqual({ settings: { ...saved, maxCalls: 150 } });
   });
@@ -102,10 +102,20 @@ describe("search settings form", () => {
     expect(readSettings({ ...draft, dailyCalls: "21" })).toEqual({ settings: { ...saved, dailyCalls: 21 } });
   });
 
+  it("keeps leads wanted to 20 to 30, and empty only for a campaign made before it", () => {
+    const draft = settingsDraft(saved);
+    expect(readSettings({ ...draft, leadsWanted: "30" })).toEqual({ settings: { ...saved, leadsWanted: 30 } });
+    expect(readSettings({ ...draft, leadsWanted: "19" })).toEqual({ error: "Leads wanted must be a whole number from 20 to 30." });
+    expect(readSettings({ ...draft, leadsWanted: "31" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, leadsWanted: "" })).toEqual({ settings: { ...saved, leadsWanted: null } });
+  });
+
   it("compares settings and builds the estimate preview query", () => {
     expect(sameSettings(saved, { ...saved })).toBe(true);
     expect(sameSettings(saved, { ...saved, pagesPerTile: 1 })).toBe(false);
-    expect(previewQuery(saved)).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3");
+    expect(sameSettings(saved, { ...saved, leadsWanted: 25 })).toBe(false);
+    expect(previewQuery(saved)).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3&leadsWanted=20");
+    expect(previewQuery({ ...saved, leadsWanted: null })).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3");
   });
 
   it("names a stopped campaign", () => {

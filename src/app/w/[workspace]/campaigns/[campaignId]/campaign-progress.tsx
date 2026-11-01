@@ -38,7 +38,7 @@ export function CampaignProgress({
         <h2 id="progress-heading" className="text-section font-semibold">
           {HEADINGS[campaign.status] ?? "Search"}
         </h2>
-        <p className="text-sm text-muted sm:text-body">{progressSentence(progress)}</p>
+        <p className="text-sm text-muted sm:text-body">{progressSentence(progress, { leadsWanted: campaign.settings.leadsWanted, leadCount })}</p>
       </div>
 
       {pause && progress.pause && (

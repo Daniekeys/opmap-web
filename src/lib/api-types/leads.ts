@@ -92,6 +92,8 @@ export type CreateCampaignBody = {
   locations: string[];
   suggested?: { kind: TargetKind; promptVersion: string };
   buyerSegment?: CampaignSegment;
+  // 20 to 30; the API starts a campaign at 20 without it.
+  leadsWanted?: number;
 };
 
 export type Campaign = {
@@ -121,8 +123,10 @@ export type Campaign = {
 
 // A campaign's search settings: the most Google searches it may use (null: no
 // budget), pages per map tile (1 to 3), neighbourhood searches per city (0 to
-// 3), and its own searches a day (null: the shared cap alone, which always holds).
-export type SearchSettings = { maxCalls: number | null; pagesPerTile: number; extrasPerCity: number; dailyCalls: number | null };
+// 3), its own searches a day (null: the shared cap alone, which always holds),
+// and the leads wanted before the search ends as done (20 to 30; null on
+// campaigns made before it, which search everything).
+export type SearchSettings = { maxCalls: number | null; pagesPerTile: number; extrasPerCity: number; dailyCalls: number | null; leadsWanted: number | null };
 
 // PATCH .../campaigns/:campaignId (owner): search terms, places and search
 // settings, while it is a draft, paused, stopped or failed. A field left out
@@ -141,7 +145,10 @@ export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number
 type Range = { min: number; max: number };
 
 // GET .../campaigns/:campaignId/estimate, optionally with settings to preview
-// (?maxCalls=100&pagesPerTile=2; maxCalls=none or dailyCalls=none for no limit).
+// (?maxCalls=100&pagesPerTile=2&leadsWanted=25; maxCalls=none or
+// dailyCalls=none for no limit). The calls are for covering every area; with
+// leads wanted the search usually ends after a few, so they are the most it
+// could use, and `warning` stays null.
 export type EstimateResponse = {
   areas: { name: string; tiles: number; queries: number; freshPairs: number; extras: number }[];
   tileSearches: number;

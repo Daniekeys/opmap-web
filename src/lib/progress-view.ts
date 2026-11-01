@@ -93,10 +93,17 @@ export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, da
 export const usd = (n: number) => (n === 0 ? "$0.00" : n < 0.01 ? "under $0.01" : `$${n.toFixed(2)}`);
 
 // The headline sentence: how far it has got, and that the page can be closed.
-export function progressSentence(p: Progress): string {
+// A search with leads wanted ends once it has them, or says how many it found
+// when the idea ran out of good fits first.
+export function progressSentence(p: Progress, found: { leadsWanted: number | null; leadCount: number } = { leadsWanted: null, leadCount: 0 }): string {
   const searched = plural(p.cost.searches.campaign, "Google search", "Google searches");
   if (p.status === "running") return `${searched} and ${plural(p.listings, "listing", "listings")} so far. You can close this page: the search carries on without it.`;
   if (p.status === "paused") return `${searched} and ${plural(p.listings, "listing", "listings")} so far. The leads found are in the list.`;
+  if (p.status === "done" && found.leadsWanted !== null) {
+    return found.leadCount >= found.leadsWanted
+      ? `Found ${plural(found.leadCount, "lead", "leads")} that fit, as wanted, with ${searched}.`
+      : `Found ${found.leadCount} of the ${found.leadsWanted} leads wanted with ${searched}: this idea ran out of good fits in these places.`;
+  }
   if (p.status === "done") return `The search covered every place in this campaign: ${searched}, ${plural(p.listings, "listing", "listings")}.`;
   return `${searched} and ${plural(p.listings, "listing", "listings")} before it ended.`;
 }

@@ -122,11 +122,15 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt">, now 
   }
 }
 
-// A campaign's search settings as the form holds them: the two limits as
-// typed (empty: no limit), the two choices as select values.
-export type SettingsDraft = { maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string };
+// A campaign's search settings as the form holds them: the leads wanted and
+// the two limits as typed (empty: no limit), the two choices as select values.
+export type SettingsDraft = { leadsWanted: string; maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string };
+
+// Leads wanted: the search ends as done once this many pass the fit check.
+export const LEADS_WANTED = { min: 20, max: 30, default: 20 };
 
 export const settingsDraft = (s: SearchSettings): SettingsDraft => ({
+  leadsWanted: s.leadsWanted === null ? "" : String(s.leadsWanted),
   maxCalls: s.maxCalls === null ? "" : String(s.maxCalls),
   dailyCalls: s.dailyCalls === null ? "" : String(s.dailyCalls),
   pagesPerTile: String(s.pagesPerTile),
@@ -148,11 +152,20 @@ export function readSettings(d: SettingsDraft, dailyCap?: number): { settings: S
   if (dailyCalls === undefined) {
     return { error: `Searches a day must be a whole number${dailyCap ? ` from 1 to ${dailyCap}, the shared Google limit` : " from 1"}, or empty.` };
   }
-  return { settings: { maxCalls, dailyCalls, pagesPerTile: Number(d.pagesPerTile), extrasPerCity: Number(d.extrasPerCity) } };
+  // Empty only on a campaign made before leads wanted, which searches everything.
+  const wanted = d.leadsWanted.trim() === "" ? null : Number(d.leadsWanted);
+  if (wanted !== null && !(Number.isInteger(wanted) && wanted >= LEADS_WANTED.min && wanted <= LEADS_WANTED.max)) {
+    return { error: `Leads wanted must be a whole number from ${LEADS_WANTED.min} to ${LEADS_WANTED.max}.` };
+  }
+  return { settings: { leadsWanted: wanted, maxCalls, dailyCalls, pagesPerTile: Number(d.pagesPerTile), extrasPerCity: Number(d.extrasPerCity) } };
 }
 
 export const sameSettings = (a: SearchSettings, b: SearchSettings) =>
-  a.maxCalls === b.maxCalls && a.dailyCalls === b.dailyCalls && a.pagesPerTile === b.pagesPerTile && a.extrasPerCity === b.extrasPerCity;
+  a.leadsWanted === b.leadsWanted &&
+  a.maxCalls === b.maxCalls &&
+  a.dailyCalls === b.dailyCalls &&
+  a.pagesPerTile === b.pagesPerTile &&
+  a.extrasPerCity === b.extrasPerCity;
 
 // The estimate route's preview query for these settings.
 export const previewQuery = (s: SearchSettings) =>
@@ -161,6 +174,7 @@ export const previewQuery = (s: SearchSettings) =>
     dailyCalls: s.dailyCalls === null ? "none" : String(s.dailyCalls),
     pagesPerTile: String(s.pagesPerTile),
     extrasPerCity: String(s.extrasPerCity),
+    ...(s.leadsWanted === null ? {} : { leadsWanted: String(s.leadsWanted) }),
   }).toString();
 
 export function formatUsd(n: number) {
