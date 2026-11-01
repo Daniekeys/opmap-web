@@ -7,8 +7,8 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import { goToLogin } from "@/lib/go-to-login";
 
 // Resume search: restarts a campaign a Google cap paused, once the cap has
-// lifted. In development this is the only way it restarts; in production the
-// resume job usually gets there first. The API checks the time again.
+// lifted. This is the only way it restarts: nothing resumes a search by
+// itself. The API checks the time again.
 export function ResumeButton({ workspaceId, campaignId }: { workspaceId: string; campaignId: string }) {
   const router = useRouter();
   const [resuming, setResuming] = useState(false);

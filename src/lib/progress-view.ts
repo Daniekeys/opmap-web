@@ -65,7 +65,7 @@ const PAUSE_TITLES: Record<PauseLimit, string> = {
 export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, now = new Date()) {
   const { searches } = p.cost;
   const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, now)} (Lagos time).` : "";
-  const byHand = pause.autoResume ? "" : " In development the search doesn't restart on its own: an owner resumes it here once the limit has lifted.";
+  const byHand = pause.autoResume ? "" : " The search doesn't restart on its own: an owner resumes it here once the limit has lifted.";
   const notCharged = "Google is never called past a limit, so nothing was charged past it.";
   // A search pauses once fewer are left than the next map tile needs.
   const left = (cap: number, used: number, period: string) =>

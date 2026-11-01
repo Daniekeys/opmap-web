@@ -231,10 +231,10 @@ export function ConfirmPanel({
         )}
         <p className="text-sm text-muted">
           {shown.callsLeft.today} searches left today and{" "}
-          {shown.callsLeft.month} this month, shared by every workspace. When
-          today&apos;s run out, the campaign pauses until tomorrow, then carries
-          on by itself (in development, when an owner taps Resume search). You
-          can stop it at any time.
+          {shown.callsLeft.month} this month, shared by every workspace. If
+          today&apos;s run out, the campaign pauses; it carries on only when an
+          owner taps Resume search after the limit resets. You can stop it at
+          any time.
         </p>
         {budgetLeft === 0 && (
           <p

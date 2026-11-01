@@ -202,7 +202,7 @@ export type CampaignProgressResponse = {
     // the API's config) with what all workspaces used today and this month.
     searches: { campaign: number; budget: number | null; today: number; dailyCap: number; month: number; monthlyCap: number };
   };
-  // Set while paused; autoResume is false in development (an owner resumes).
+  // Set while paused; autoResume is false (an owner resumes, in every environment).
   pause: { limit: PauseLimit; resumeAt: string | null; reason: string | null; autoResume: boolean } | null;
 };
 
