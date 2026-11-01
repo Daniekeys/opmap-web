@@ -161,7 +161,7 @@ export type EstimateResponse = {
   // Days at perDay searches a day: the campaign's own pace, at most the cap.
   daysAtDailyCap: Range;
   perDay: number;
-  // Google searches a day the shared caps allow (20 in production).
+  // Google searches a day the shared caps allow (50 in production).
   dailyCap: number;
   // The settings this estimate is for (saved, or previewed).
   settings: SearchSettings;
