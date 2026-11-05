@@ -10,7 +10,7 @@ import { Logo } from "./logo";
 // the left edge; below that, a 56px top bar opens the menu as a full-screen
 // sheet. Panes cap their own content; only screens not yet redone for the v2
 // design are held to the reading width here.
-export function AppShell({ sidebar, menu, children }: { sidebar: ReactNode; menu: ReactNode; children: ReactNode }) {
+export function AppShell({ sidebar, menu, banner, children }: { sidebar: ReactNode; menu: ReactNode; banner?: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const openButton = useRef<HTMLButtonElement>(null);
@@ -78,7 +78,10 @@ export function AppShell({ sidebar, menu, children }: { sidebar: ReactNode; menu
           <Logo />
         </header>
         <main className="flex w-full flex-1 flex-col gap-6 px-4 pt-2 pb-6 lg:px-6 lg:pt-8">
-          <div className={cn("flex w-full flex-col gap-6", !wide && "max-w-read")}>{children}</div>
+          <div className={cn("flex w-full flex-col gap-6", !wide && "max-w-read")}>
+            {banner}
+            {children}
+          </div>
         </main>
       </div>
     </div>

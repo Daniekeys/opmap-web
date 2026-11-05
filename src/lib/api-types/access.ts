@@ -4,7 +4,11 @@ export type Role = "owner" | "member";
 
 export type AuthedUser = { id: string; name: string; email: string };
 
-export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role };
+// claudeAlert: set for owners on a day (UTC) the workspace passed the Claude
+// daily alert; null otherwise and for members.
+export type ClaudeAlert = { spentUsd: number; thresholdUsd: number };
+
+export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role; claudeAlert: ClaudeAlert | null };
 
 // GET /api/me
 export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[] };

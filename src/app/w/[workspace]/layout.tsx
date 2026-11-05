@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
+import { ClaudeAlertBanner } from "@/components/claude-alert-banner";
 import { Logo } from "@/components/logo";
 import { MenuNav, type NavData, SidebarNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
@@ -37,6 +38,11 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[w
               <Nav params={params} size="menu" />
             </Suspense>
           </>
+        }
+        banner={
+          <Suspense fallback={null}>
+            <ClaudeAlert params={params} />
+          </Suspense>
         }
       >
         {children}
@@ -77,6 +83,12 @@ async function Switcher({ params, size }: { params: Params; size: "sidebar" | "m
   const { workspace } = await params;
   const { workspaces } = await getMe();
   return <WorkspaceSwitcher workspaces={workspaces} current={workspace} size={size} />;
+}
+
+// Owners only: the API sends claudeAlert to owners, for the rest of the UTC day.
+async function ClaudeAlert({ params }: { params: Params }) {
+  const { claudeAlert } = await getWorkspace((await params).workspace);
+  return claudeAlert ? <ClaudeAlertBanner alert={claudeAlert} /> : null;
 }
 
 async function Nav({ params, size }: { params: Params; size: "sidebar" | "menu" }) {
