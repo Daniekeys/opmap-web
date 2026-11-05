@@ -52,7 +52,7 @@ Nine rules keep the codebase simple today and open for new scope later. Put them
 4. **Every outside service sits behind an adapter.** `LlmProvider`, `DecisionProvider`, `PlacesProvider`, `GeoProvider`, `CrawlerProvider`, `EnrichmentProvider`, and later `MailProvider`. The rest of the code never imports a vendor SDK. Swapping a vendor means writing one new adapter and changing config.
 5. **Pipelines are steps.** Each pipeline is a chain of small jobs. Every step saves its input, output, cost and errors to `step_runs`, can retry safely, and can be added or swapped without touching the others.
 6. **Prompts are versioned files with typed outputs.** Each prompt lives in its own file with a Zod schema for its output. Every saved AI result records its prompt version, so changes can be compared.
-7. **Limits are checked in one place.** One function, `checkLimit(workspace, action)`, reads the workspace's plan and the usage ledger. The Internal plan is unlimited: it is never blocked and its users never see a limit, but a workspace on it that passes $5 of Claude in a UTC day (`CLAUDE_DAILY_ALERT_USD`) raises an alert for the platform owner (a warning in the API log and a `billing.claude_daily_alert` event), once a day. Turning on paid tiers later changes data, not code.
+7. **Limits are checked in one place.** One function, `checkLimit(workspace, action)`, reads the workspace's plan and the usage ledger. The Internal plan is unlimited: it is never blocked and its users never see a limit, but a workspace on it that passes $5 of Claude in a UTC day (`CLAUDE_DAILY_ALERT_USD`) raises an alert (a warning in the API log and a `billing.claude_daily_alert` event), once a day, and its owners see a banner on every workspace page until midnight UTC (`claudeAlert` on `GET /api/me`). Nothing is blocked, and there is no email or push yet. Turning on paid tiers later changes data, not code.
 8. **Everything important becomes an event.** An append-only `events` table records analyses, copies and outcomes. That table is the future learning loop and data index, collected for free from day one.
 9. **Mobile-first UI.** Build every screen for a 380px width first, then widen. Tables become stacked cards on phones. Copy and outcome buttons must be easy to tap.
 
@@ -331,7 +331,7 @@ These are built into v1, not added later, because they're what make the tool tru
 
 **Cost**
 
-- Google Places daily and monthly caps in config, per environment (production 50 a day and 650 a month, development 10 a day and 300 a month; `PLACES_DAILY_CAP` and `PLACES_MONTHLY_CAP` override them within bounds), plus the quota cap in Google Cloud (at least 60 a day) that the two share
+- Google Places daily and monthly caps in config, per environment (production 50 a day and 650 a month, development 10 a day and 300 a month; these are ceilings: `PLACES_DAILY_CAP` and `PLACES_MONTHLY_CAP` can lower them, and a value above one stops the API at start), plus the quota cap in Google Cloud (at least 60 a day) that the two share
 - Every paid call writes its real cost to `usage_ledger`
 - Research on a business is reused across workspaces and only refreshed when it's stale
 - Claude Haiku filters cheaply before the expensive LLM calls run
