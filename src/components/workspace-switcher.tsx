@@ -5,10 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 import type { WorkspaceSummary } from "@/lib/api-types/access";
 import { cn } from "@/lib/utils";
+import { switchTarget } from "@/lib/workspace-switch";
 import { initials, toneOf } from "./avatar";
 
 // The active workspace is the slug in the URL, so switching is a navigation:
-// the same screen under the other workspace, re-rendered with its data.
+// the same screen under the other workspace, re-rendered with its data, or a
+// section's list when the screen showed one of the old workspace's items
+// (switchTarget). The new slug remounts everything under /w/[workspace], so no
+// timer or state from the old workspace's pages survives the switch.
 // A native select sits invisibly over the card, so phones get their own
 // full-size picker and keyboards get the usual select behaviour.
 export function WorkspaceSwitcher({
@@ -28,11 +32,9 @@ export function WorkspaceSwitcher({
   const others = workspaces.filter((w) => w.slug !== active?.slug);
 
   function switchTo(slug: string) {
-    // /w/<slug>/<rest> keeps <rest>; the query string (a run id) is dropped.
-    const rest = pathname.split("/").slice(3);
     startTransition(() => {
       setSelected(slug);
-      router.push(`/${["w", slug, ...rest].join("/")}`);
+      router.push(switchTarget(pathname, slug));
     });
   }
 
