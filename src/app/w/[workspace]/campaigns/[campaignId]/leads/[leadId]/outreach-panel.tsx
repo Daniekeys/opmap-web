@@ -28,8 +28,8 @@ import { ProgressPanel } from "@/components/progress-panel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
-import type { Channel, ContactRow, Draft, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
-import type { Cite, OpportunityCard } from "@/lib/api-types/research";
+import type { Channel, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
+import type { OpportunityCard } from "@/lib/api-types/research";
 import { citeName, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
@@ -672,12 +672,13 @@ function ClaimMark({ line, dates }: { line: DraftLine; dates: ReadDates }) {
 
 // Each quote or fact behind a claim: what it says, where and when it was
 // read, and a link to the page.
-function Sources({ cites, dates }: { cites: Cite[]; dates: ReadDates }) {
+function Sources({ cites, dates }: { cites: DraftCite[]; dates: ReadDates }) {
   return (
     <ul className="flex flex-col gap-3">
       {cites.map((c) => (
         <li key={c.ref} className="flex flex-col gap-1">
-          <span className="font-medium">{c.kind === "source" ? `“${c.quote}”` : c.text}</span>
+          {/* A source with no quote of its own for this line shows just where it is. */}
+          {c.kind === "source" ? c.quote && <span className="font-medium">{`“${c.quote}”`}</span> : <span className="font-medium">{c.text}</span>}
           <span className="text-small text-muted">{c.kind === "fact" ? "Your approved fact" : `${citeName(c)}, ${readOn(dates.get(c.sourceId) ?? null)}`}</span>
           {c.kind !== "fact" && (
             <a href={c.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex min-h-8 items-center gap-1 self-start text-small font-medium")}>

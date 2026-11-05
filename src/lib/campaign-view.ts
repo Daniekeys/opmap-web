@@ -1,6 +1,7 @@
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
 import type { CampaignStatus, Lead } from "./api-types/leads";
+import type { DraftCite } from "./api-types/outreach";
 import type { Stage } from "./api-types/outcomes";
 import type { Cite, DatedCite } from "./api-types/research";
 import { formatDay } from "./format";
@@ -78,7 +79,7 @@ const SOCIAL_HOSTS: [RegExp, string][] = [
 ];
 
 // The page, listing or bio a piece of evidence came from.
-export function citeName(cite: Cite) {
+export function citeName(cite: Cite | DraftCite) {
   if (cite.kind === "fact") return "Your approved fact";
   if (cite.kind === "signal") return "Our check";
   if (cite.sourceType === "places") return "Google Maps listing";

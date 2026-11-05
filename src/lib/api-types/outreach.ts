@@ -5,10 +5,14 @@ import type { Cite } from "./research";
 
 export type Channel = "whatsapp" | "email" | "linkedin" | "call";
 
+// A draft line's cite. A source's quote is the card's words this line rests
+// on, or null when no one card claim's quote can be told apart.
+export type DraftCite = Exclude<Cite, { kind: "source" }> | (Omit<Extract<Cite, { kind: "source" }>, "quote"> & { quote: string | null });
+
 export type DraftLine = {
   kind: "greeting" | "intro" | "claim" | "ask" | "signoff" | "optout";
   text: string;
-  cites: Cite[];
+  cites: DraftCite[];
   span: string | null;
 };
 
