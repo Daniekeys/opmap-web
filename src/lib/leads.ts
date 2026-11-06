@@ -2,6 +2,19 @@
 // accuracy), phone numbers, categories and campaign states.
 import type { Campaign, Lead, SearchSettings, TargetKind } from "./api-types/leads";
 
+// The lead list's badges for the channels a lead can be messaged on now, in
+// this order: WhatsApp (confirmed) and email in green, likely WhatsApp in grey,
+// so a guess never looks checked. None for a suppressed business (the API
+// sends none).
+const READY_BADGES = {
+  whatsapp_confirmed: { word: "WhatsApp", title: "WhatsApp confirmed: they published a wa.me link", checked: true },
+  whatsapp_likely: { word: "Likely WhatsApp", title: "Likely on WhatsApp: a mobile number, not checked", checked: false },
+  email: { word: "Email", title: "Email found on their own site", checked: true },
+} as const;
+
+export const readyBadges = (ready: Lead["ready"]) =>
+  (["whatsapp_confirmed", "whatsapp_likely", "email"] as const).filter((c) => ready.includes(c)).map((c) => ({ channel: c, ...READY_BADGES[c] }));
+
 export type ContactKindGroup = "phone" | "whatsapp" | "email" | "website" | "person" | "social";
 
 type LabelText = { word: string; tip: string; tone: "good" | "fair" | "weak" };

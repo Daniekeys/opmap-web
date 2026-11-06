@@ -7,6 +7,7 @@ import {
   labelText,
   pausedUntil,
   previewQuery,
+  readyBadges,
   readSettings,
   resumeDue,
   sameSettings,
@@ -121,5 +122,16 @@ describe("search settings form", () => {
 
   it("names a stopped campaign", () => {
     expect(statusText({ status: "stopped", resumeAt: null })).toBe("Stopped");
+  });
+});
+
+describe("ready badges", () => {
+  it("show confirmed and likely WhatsApp apart, likely in grey, in a fixed order", () => {
+    expect(readyBadges(["email", "whatsapp_confirmed"]).map((b) => [b.word, b.checked])).toEqual([
+      ["WhatsApp", true],
+      ["Email", true],
+    ]);
+    expect(readyBadges(["whatsapp_likely"]).map((b) => [b.word, b.checked])).toEqual([["Likely WhatsApp", false]]);
+    expect(readyBadges([])).toEqual([]);
   });
 });

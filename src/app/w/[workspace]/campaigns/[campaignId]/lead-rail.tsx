@@ -8,7 +8,7 @@ import { Avatar } from "@/components/avatar";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
 import { fitOf, leadMeta } from "@/lib/campaign-view";
-import { hasPhoneOrWhatsapp } from "@/lib/leads";
+import { hasPhoneOrWhatsapp, readyBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 
@@ -161,21 +161,22 @@ function Empty({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-const READY_NAMES = { whatsapp: "WhatsApp", email: "email" } as const;
-
-// The channels a lead can be messaged on now, as icons and a word, so a
-// checked contact stands out without opening the lead.
+// The channels a lead can be messaged on now, one badge each, so a checked
+// contact stands out without opening the lead (readyBadges).
 function ReadyBadge({ ready }: { ready: Lead["ready"] }) {
-  if (ready.length === 0) return null;
-  const label = `Ready on ${ready.map((c) => READY_NAMES[c]).join(" and ")}`;
-  return (
-    <span title={label} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-positive-soft px-1.5 text-xs/[18px] font-medium text-positive-ink">
-      {ready.includes("whatsapp") && <MessageCircle className="size-3" aria-hidden />}
-      {ready.includes("email") && <Mail className="size-3" aria-hidden />}
-      <span className="sr-only">{label}</span>
-      <span aria-hidden>Ready</span>
+  return readyBadges(ready).map((b) => (
+    <span
+      key={b.channel}
+      title={b.title}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 text-xs/[18px] font-medium",
+        b.checked ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
+      )}
+    >
+      {b.channel === "email" ? <Mail className="size-3" aria-hidden /> : <MessageCircle className="size-3" aria-hidden />}
+      {b.word}
     </span>
-  );
+  ));
 }
 
 function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stage: Stage; active: boolean }) {

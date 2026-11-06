@@ -234,7 +234,8 @@ export type Lead = {
   researched: boolean;
   // Channels it can be messaged on now: WhatsApp or email with a checked
   // contact point; none when the business asked not to be contacted.
-  ready: ("whatsapp" | "email")[];
+  // Confirmed and likely WhatsApp apart; confirmed sorts first.
+  ready: ("whatsapp_confirmed" | "whatsapp_likely" | "email")[];
   contacts: {
     phone: Contact | null;
     whatsapp: Contact | null;
