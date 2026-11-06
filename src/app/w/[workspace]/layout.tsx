@@ -84,8 +84,12 @@ async function HomeLink({ params }: { params: Params }) {
 
 // Every page and client component prints times in the workspace's zone.
 async function WithTimeZone({ params, children }: { params: Params; children: ReactNode }) {
-  const { timeZone } = await getWorkspace((await params).workspace);
-  return <TimeZoneProvider timeZone={timeZone}>{children}</TimeZoneProvider>;
+  const { timeZone, country } = await getWorkspace((await params).workspace);
+  return (
+    <TimeZoneProvider timeZone={timeZone} country={country}>
+      {children}
+    </TimeZoneProvider>
+  );
 }
 
 async function Switcher({ params, size }: { params: Params; size: "sidebar" | "menu" }) {

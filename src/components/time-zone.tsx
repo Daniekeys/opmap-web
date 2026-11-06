@@ -1,17 +1,23 @@
 "use client";
-// The workspace's time zone for client components (WorkspaceSummary.timeZone:
-// saved by an owner, else from the Brand DNA, else UTC; never the browser's).
-// Server components read it from getWorkspace instead.
+// The workspace's time zone and country for client components
+// (WorkspaceSummary: the zone saved by an owner, else from the Brand DNA,
+// else UTC, never the browser's; the country is the saved zone's, else the
+// Brand DNA's). Server components read them from getWorkspace instead.
 import { createContext, type ReactNode, useContext } from "react";
 
-const TimeZoneContext = createContext<string | null>(null);
+const WorkspaceLocaleContext = createContext<{ timeZone: string; country: string | null } | null>(null);
 
-export function TimeZoneProvider({ timeZone, children }: { timeZone: string; children: ReactNode }) {
-  return <TimeZoneContext.Provider value={timeZone}>{children}</TimeZoneContext.Provider>;
+export function TimeZoneProvider({ timeZone, country, children }: { timeZone: string; country: string | null; children: ReactNode }) {
+  return <WorkspaceLocaleContext.Provider value={{ timeZone, country }}>{children}</WorkspaceLocaleContext.Provider>;
 }
 
-export function useTimeZone() {
-  const timeZone = useContext(TimeZoneContext);
-  if (!timeZone) throw new Error("useTimeZone is only available inside a workspace.");
-  return timeZone;
+function useLocale() {
+  const locale = useContext(WorkspaceLocaleContext);
+  if (!locale) throw new Error("The workspace's time zone is only available inside a workspace.");
+  return locale;
 }
+
+export const useTimeZone = () => useLocale().timeZone;
+
+// The workspace's own country (ISO code), or null.
+export const useWorkspaceCountry = () => useLocale().country;

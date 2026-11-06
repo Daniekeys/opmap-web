@@ -15,7 +15,7 @@ import { citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { categoryText, labelText, telHref, whatsappHref } from "@/lib/leads";
-import { formatPhone } from "@/lib/phone";
+import { useFormatPhone } from "@/components/phone-text";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
@@ -384,6 +384,7 @@ function LeadHeader({
   suppressed: boolean;
   primary: React.ReactNode;
 }) {
+  const formatPhone = useFormatPhone();
   const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
   // The same send targets as the composer, so the two never disagree.
   const { whatsapp, call } = targets;
@@ -650,6 +651,7 @@ const PILL = { good: "bg-positive-soft text-positive-ink", fair: "bg-neutral-sof
 
 // WhatsApp, email and website at a glance, each with how sure we are.
 function ContactWell({ lead }: { lead: Lead }) {
+  const formatPhone = useFormatPhone();
   const { whatsapp, phone, email, website } = lead.contacts;
   const rows: { key: string; label: string; value: string; pill: { word: string; tone: string } }[] = [];
   const pill = (group: Parameters<typeof labelText>[0], label: string) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { suggestionText } from "@/app/w/[workspace]/settings/time-zone-form";
+import { suggestionText, zoneDescription, zoneGroups } from "@/app/w/[workspace]/settings/time-zone-form";
 import { dayKey, formatDateTime, formatDay, zoneName } from "./format";
 import { pausedUntil, statusText } from "./leads";
 import { dayText } from "./pipeline";
@@ -30,10 +30,33 @@ describe("workspace time zone", () => {
     expect(zoneName("UTC")).toBe("UTC");
   });
 
+  const NG = { code: "NG", name: "Nigeria", timeZones: ["Africa/Lagos"] };
+  const GB = { code: "GB", name: "United Kingdom", timeZones: ["Europe/London"] };
+  const suggested = { timeZone: "Africa/Lagos", from: "Based in Nigeria" };
+
   it("says where the suggestion came from, or that there is none", () => {
-    expect(suggestionText({ timeZone: "Africa/Lagos", saved: null, suggested: { timeZone: "Africa/Lagos", from: "Based in Nigeria" } })).toBe(
-      'From your Brand DNA ("Based in Nigeria"): Africa/Lagos.',
-    );
-    expect(suggestionText({ timeZone: "UTC", saved: null, suggested: null })).toMatch(/UTC until you pick a zone/);
+    expect(suggestionText({ timeZone: "Africa/Lagos", saved: null, suggested, country: NG })).toBe('From your Brand DNA ("Based in Nigeria"): Africa/Lagos.');
+    expect(suggestionText({ timeZone: "UTC", saved: null, suggested: null, country: null })).toMatch(/UTC until you pick a zone/);
+  });
+
+  it("describes the zone in use: the saved one after a save, not the suggestion", () => {
+    expect(zoneDescription({ timeZone: "Africa/Lagos", saved: null, suggested, country: NG })).toContain("shows in Africa/Lagos. From your Brand DNA");
+    const london = zoneDescription({ timeZone: "Europe/London", saved: "Europe/London", suggested, country: GB });
+    expect(london).toBe('Every time in this workspace (searches, pauses, replies) shows in Europe/London. An owner chose it. Pick "From Brand DNA" to go back to Africa/Lagos.');
+  });
+
+  it("lists the workspace country's zones first, then every other zone once", () => {
+    const all = ["Africa/Accra", "Africa/Lagos", "America/Chicago", "Europe/London", "UTC"];
+    expect(zoneGroups({ timeZone: "Africa/Lagos", saved: null, suggested, country: NG }, all)).toEqual([
+      { label: "In Nigeria", zones: ["Africa/Lagos"] },
+      { label: "All other time zones", zones: ["Africa/Accra", "America/Chicago", "Europe/London", "UTC"] },
+    ]);
+    // A saved zone of no one country stays at the top.
+    expect(zoneGroups({ timeZone: "UTC", saved: "UTC", suggested, country: NG }, all).map((g) => [g.label, g.zones.length])).toEqual([
+      ["Saved", 1],
+      ["In Nigeria", 1],
+      ["All other time zones", 3],
+    ]);
+    expect(zoneGroups({ timeZone: "UTC", saved: null, suggested: null, country: null }, all)).toEqual([{ label: "All time zones", zones: all }]);
   });
 });

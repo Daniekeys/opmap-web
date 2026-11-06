@@ -35,7 +35,7 @@ import { citeName, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { labelText, telHref } from "@/lib/leads";
-import { formatPhone } from "@/lib/phone";
+import { useFormatPhone } from "@/components/phone-text";
 import {
   canMarkSent,
   type Check as DraftCheck,
@@ -63,7 +63,11 @@ const bigTap = "h-12 w-full justify-center gap-2 text-sm";
 const post = (url: string, body: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true });
 
-const showValue = (kind: string, value: string) => (kind === "phone" || kind === "whatsapp" ? formatPhone(value) : value);
+// A contact's value as shown: phones in the workspace's reading of them.
+function useShowValue() {
+  const formatPhone = useFormatPhone();
+  return (kind: string, value: string) => (kind === "phone" || kind === "whatsapp" ? formatPhone(value) : value);
+}
 
 // Below the sm breakpoint a claim's source opens as a bottom sheet, not a popover.
 const PHONE = "(max-width: 639px)";
@@ -288,6 +292,7 @@ function DraftTabs({
 }
 
 function DraftView({ base, draft, dates, outreach, onChange }: { base: string; draft: Draft; dates: ReadDates; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
+  const showValue = useShowValue();
   const [copied, setCopied] = useState<"body" | "subject" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   // Set at the tap, so "Mark as sent" goes before the reload shows the Sent
@@ -404,6 +409,18 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       {statusRow}
       <div className="flex flex-wrap items-start gap-6">
         <article aria-label={`${TAB_NAMES[draft.channel]} message`} className="flex min-w-0 flex-[3_1_400px] flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 sm:px-6 sm:py-5">
+          {/* The country's notes first, above the message, at every width: on a
+              phone the send bar is pinned, so a note below could be missed. */}
+          {outreach.country.draftNote && (
+            <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+              {outreach.country.draftNote}
+            </p>
+          )}
+          {draft.channel === "email" && outreach.country.emailNote && (
+            <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+              {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
+            </p>
+          )}
           <div className="flex justify-between gap-3 text-small text-muted">
             <span className="min-w-0 truncate" title={label?.tip}>
               {target ? `To ${showValue(target.kind, target.value)}, ${label!.word.toLowerCase()}` : "No checked contact"}
@@ -443,14 +460,6 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
         </aside>
       </div>
 
-      {outreach.country.draftNote && (
-        <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">{outreach.country.draftNote}</p>
-      )}
-      {draft.channel === "email" && outreach.country.emailNote && (
-        <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
-          {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
-        </p>
-      )}
       {problem && <p className="text-sm text-negative-ink">{problem}</p>}
       <RemovedList removed={draft.removed} />
 
@@ -522,9 +531,14 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
   }
   return (
     <a href={telHref(target.value)} className={sendClass} onClick={() => onSend("call")}>
-      <Phone className="size-4" aria-hidden /> Call {formatPhone(target.value)}
+      <Phone className="size-4" aria-hidden /> Call <CallNumber value={target.value} />
     </a>
   );
+}
+
+// The number on the call button, as the workspace reads it (the link is E.164).
+function CallNumber({ value }: { value: string }) {
+  return <>{useFormatPhone()(value)}</>;
 }
 
 // A mobile number with no WhatsApp link from them: probably on WhatsApp, not
@@ -595,6 +609,7 @@ function AfterSend({
   markable: boolean;
   onMarkSent: () => void;
 }) {
+  const showValue = useShowValue();
   const shown = target && target.kind !== "linkedin" ? outreach.contacts.find((c) => c.kind === target.kind && c.value === target.value) : undefined;
   const feedback = shown ? FEEDBACK[shown.kind] : [];
   const text = "inline-flex h-11 items-center text-sm text-negative-ink hover:underline underline-offset-4 disabled:opacity-50 sm:h-7";
@@ -809,6 +824,7 @@ type OutcomeTap = ReturnType<typeof useOutcomeTap>;
 // One outcome tap: logged as an outcome and an event, never on anyone's
 // behalf. Feedback and opt-outs ask first. Resolves true once it is logged.
 function useOutcomeTap(base: string, onChange: () => Promise<void>) {
+  const showValue = useShowValue();
   const [busy, setBusy] = useState<string | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -868,6 +884,7 @@ function OutcomeStatus({ outcome, idle }: { outcome: OutcomeTap; idle: string })
 // on the shared record, so it asks first.
 export function OutcomePanel({ base, outreach, onChange }: { base: string; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
   const timeZone = useTimeZone();
+  const showValue = useShowValue();
   const outcome = useOutcomeTap(base, onChange);
   const { busy, tap } = outcome;
 

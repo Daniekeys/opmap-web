@@ -13,6 +13,7 @@ import {
   sameSettings,
   settingsDraft,
   statusText,
+  telHref,
   whatsappHref,
 } from "./leads";
 
@@ -48,17 +49,27 @@ describe("contact labels in plain words", () => {
 });
 
 describe("phones", () => {
-  it("writes each number the way its own country does, and links WhatsApp by digits", () => {
-    expect(formatPhone("+2348033718771")).toBe("0803 371 8771");
-    expect(formatPhone("+233244123456")).toBe("024 412 3456");
-    expect(formatPhone("+254712345678")).toBe("0712 345678");
-    expect(formatPhone("+447911123456")).toBe("07911 123456");
+  it("writes a number from the workspace's country the national way, and any other number internationally", () => {
+    // A Nigerian workspace reads Nigerian numbers as people there write them.
+    expect(formatPhone("+2348033718771", "NG")).toBe("0803 371 8771");
+    expect(formatPhone("+233244123456", "GH")).toBe("024 412 3456");
+    expect(formatPhone("+254712345678", "KE")).toBe("0712 345678");
+    expect(formatPhone("+447400123456", "GB")).toBe("07400 123456");
+    // Same calling code, same dialling: a Guernsey mobile reads 07911 in the UK.
+    expect(formatPhone("+447911123456", "GB")).toBe("07911 123456");
+    // From elsewhere, or with no workspace country: international.
+    expect(formatPhone("+2348062148513", "GB")).toBe("+234 806 214 8513");
+    expect(formatPhone("+447400123456", "NG")).toBe("+44 7400 123456");
+    expect(formatPhone("+2348062148513", "ZZ")).toBe("+234 806 214 8513");
+    expect(formatPhone("+2348062148513", null)).toBe("+234 806 214 8513");
     // Not a valid number (a reserved UK drama range): shown as stored.
-    expect(formatPhone("+447700900123")).toBe("+447700900123");
+    expect(formatPhone("+447700900123", "GB")).toBe("+447700900123");
+    // Links always use E.164, whatever the text says.
+    expect(telHref("+2348062148513")).toBe("tel:+2348062148513");
     expect(whatsappHref("+2348033718771")).toBe("https://wa.me/2348033718771");
     // A wa.me/message link has no number: linked as it is.
     expect(whatsappHref("https://wa.me/message/EO2NVG7LHIROG1")).toBe("https://wa.me/message/EO2NVG7LHIROG1");
-    expect(formatPhone("https://wa.me/message/EO2NVG7LHIROG1")).toBe("WhatsApp link");
+    expect(formatPhone("https://wa.me/message/EO2NVG7LHIROG1", "NG")).toBe("WhatsApp link");
   });
 
   it("filters leads with a phone or WhatsApp, and spots leads with no contact at all", () => {

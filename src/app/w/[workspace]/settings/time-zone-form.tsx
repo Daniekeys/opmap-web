@@ -21,12 +21,36 @@ export function suggestionText(settings: WorkspaceSettingsResponse) {
     : "Your Brand DNA doesn't name a country yet, so times show in UTC until you pick a zone.";
 }
 
+// The line under the heading, for the zone in use: chosen by an owner, or the
+// Brand DNA's suggestion.
+export function zoneDescription(settings: WorkspaceSettingsResponse) {
+  const inUse = `Every time in this workspace (searches, pauses, replies) shows in ${settings.timeZone}.`;
+  if (!settings.saved) return `${inUse} ${suggestionText(settings)}`;
+  const back = settings.suggested ? ` Pick "From Brand DNA" to go back to ${settings.suggested.timeZone}.` : "";
+  return `${inUse} An owner chose it.${back}`;
+}
+
+// The picker's groups, so a phone user doesn't scroll 400 zones: the
+// workspace country's zones (and the saved zone) first, then every other zone.
+export function zoneGroups(settings: WorkspaceSettingsResponse, all: string[]) {
+  const inCountry = settings.country?.timeZones ?? [];
+  const groups: { label: string; zones: string[] }[] = [];
+  // A saved zone outside the country (UTC, say) stays findable at the top.
+  if (settings.saved && !inCountry.includes(settings.saved)) groups.push({ label: "Saved", zones: [settings.saved] });
+  if (settings.country && inCountry.length) groups.push({ label: `In ${settings.country.name}`, zones: inCountry });
+  const shown = groups.flatMap((g) => g.zones);
+  groups.push({ label: shown.length ? "All other time zones" : "All time zones", zones: all.filter((z) => !shown.includes(z)) });
+  return groups;
+}
+
 export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: string; settings: WorkspaceSettingsResponse; canEdit: boolean }) {
   const router = useRouter();
+  // The settings as last saved here, so the text follows a save at once.
+  const [current, setCurrent] = useState(settings);
   const [value, setValue] = useState(settings.saved ?? SUGGESTED);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const zones = settings.saved && !ZONES.includes(settings.saved) ? [settings.saved, ...ZONES] : ZONES;
+  const groups = zoneGroups(current, ZONES);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,6 +68,7 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
       }
       if (res.ok) {
         const saved: WorkspaceSettingsResponse = await res.json();
+        setCurrent(saved);
         setMessage({ ok: true, text: `Saved. Times now show in ${saved.timeZone} (${zoneName(saved.timeZone)}).` });
         router.refresh();
       } else {
@@ -60,7 +85,7 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
       <div className="flex flex-col gap-1">
         <h2 className="font-medium">Time zone</h2>
         <p className="text-sm text-muted wrap-break-word">
-          Every time in this workspace (searches, pauses, replies) shows in {settings.timeZone}. {suggestionText(settings)}
+          {zoneDescription(current)}
         </p>
       </div>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
@@ -73,11 +98,15 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
             onChange={(e) => setValue(e.target.value)}
             className={cn(inputClass, "appearance-none pr-9")}
           >
-            <option value={SUGGESTED}>{settings.suggested ? `From Brand DNA (${settings.suggested.timeZone})` : "UTC (no Brand DNA country yet)"}</option>
-            {zones.map((z) => (
-              <option key={z} value={z}>
-                {z.replaceAll("_", " ")}
-              </option>
+            <option value={SUGGESTED}>{current.suggested ? `From Brand DNA (${current.suggested.timeZone})` : "UTC (no Brand DNA country yet)"}</option>
+            {groups.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.zones.map((z) => (
+                  <option key={z} value={z}>
+                    {z.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <ChevronsUpDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted" aria-hidden />

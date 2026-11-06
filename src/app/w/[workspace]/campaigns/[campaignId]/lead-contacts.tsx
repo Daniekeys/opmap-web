@@ -4,7 +4,7 @@ import { AtSign, Globe, Mail, MessageCircle, Phone, UserRound } from "lucide-rea
 import type { ReactNode } from "react";
 import type { Lead } from "@/lib/api-types/leads";
 import { hasAnyContact, socialName, telHref, whatsappHref } from "@/lib/leads";
-import { formatPhone } from "@/lib/phone";
+import { useFormatPhone } from "@/components/phone-text";
 import { cn } from "@/lib/utils";
 import { LabelChip } from "./label-chip";
 
@@ -41,6 +41,7 @@ function Row({ icon, label, children, chip }: { icon: ReactNode; label: string; 
 // `linked` is false for a business on the opt-out list: values show as text,
 // with no WhatsApp, call or mail links.
 export function LeadContacts({ lead, linked = true }: { lead: Lead; linked?: boolean }) {
+  const formatPhone = useFormatPhone();
   const { phone, whatsapp, email, website, person, socials } = lead.contacts;
   if (!hasAnyContact(lead) && !person) {
     return <p className="rounded-lg bg-raised px-3 py-3 text-sm text-muted">No contact found for this business.</p>;
