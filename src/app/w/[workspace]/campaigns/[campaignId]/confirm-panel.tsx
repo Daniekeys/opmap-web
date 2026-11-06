@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { EditCampaignBody, EstimateResponse } from "@/lib/api-types/leads";
+import { thinMapsNote } from "@/lib/campaign-view";
 import { goToLogin } from "@/lib/go-to-login";
 import { formatUsd, googleCost, previewQuery, readSettings, sameSettings, settingsDraft } from "@/lib/leads";
 import { SearchSettingsFields } from "./search-settings";
@@ -169,6 +170,11 @@ export function ConfirmPanel({
         {shown.warning && (
           <p role="alert" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
             {shown.warning}
+          </p>
+        )}
+        {thinMapsNote(shown.thinMaps) && (
+          <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-sm text-warning-ink">
+            {thinMapsNote(shown.thinMaps)}
           </p>
         )}
         {shown.unmapped.length > 0 && (

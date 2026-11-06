@@ -36,8 +36,30 @@ export function leadMeta(lead: Lead) {
 }
 
 // The one sentence under the title: the most useful thing to do next.
+export const LITTLE_DATA = "Google Maps has little data for this area";
+
+// Before a search: the countries among its places where Google Maps has
+// little data, or null.
+export function thinMapsNote(countries: string[]) {
+  if (countries.length === 0) return null;
+  const names = countries.length === 1 ? countries[0] : `${countries.slice(0, -1).join(", ")} and ${countries.at(-1)}`;
+  return `${LITTLE_DATA} (${names}): expect few or no businesses.`;
+}
+
 // `contacted`: the leads that ever had a stage outcome (contactedLeads).
-export function findingSentence({ leads, contacted, status }: { leads: Lead[]; contacted: ReadonlySet<string>; status: CampaignStatus }) {
+// `fewResults`: the finished search found fewer than 3 businesses (the API's).
+export function findingSentence({
+  leads,
+  contacted,
+  status,
+  fewResults = false,
+}: {
+  leads: Lead[];
+  contacted: ReadonlySet<string>;
+  status: CampaignStatus;
+  fewResults?: boolean;
+}) {
+  if (fewResults) return `${LITTLE_DATA}: the search found fewer than 3 businesses here.`;
   if (leads.length === 0) {
     if (status === "draft") return "Not searched yet. Confirm the search to find businesses that fit.";
     if (status === "running") return "Searching. Businesses that fit show up here as they are checked.";

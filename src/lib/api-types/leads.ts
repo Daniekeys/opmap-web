@@ -159,7 +159,9 @@ export type CampaignResponse = { campaign: Campaign };
 export type CampaignsResponse = { campaigns: Campaign[] };
 
 // GET .../campaigns/:campaignId
-export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number };
+// fewResults: the search finished with fewer than 3 businesses across all its
+// tiles: the page says Google Maps has little data for this area.
+export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number; fewResults: boolean };
 
 type Range = { min: number; max: number };
 
@@ -188,6 +190,8 @@ export type EstimateResponse = {
   // Google searches left under the shared caps (all workspaces).
   callsLeft: { today: number; month: number };
   unmapped: string[];
+  // Countries among its places where Google Maps has little data.
+  thinMaps: string[];
   warning: string | null;
   notes: string[];
 };

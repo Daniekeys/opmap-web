@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
-import { fitOf, leadMeta } from "@/lib/campaign-view";
+import { fitOf, LITTLE_DATA, leadMeta } from "@/lib/campaign-view";
 import { hasPhoneOrWhatsapp, leadBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { moreToRight } from "@/lib/scroll-hint";
@@ -30,6 +30,7 @@ export function LeadRail({
   leads,
   stages,
   contacted,
+  fewResults,
   searched,
 }: {
   base: string;
@@ -37,6 +38,8 @@ export function LeadRail({
   stages: Record<string, Stage>;
   // Leads with any stage outcome (lib/pipeline.ts, contactedLeads).
   contacted: string[];
+  // The finished search found fewer than 3 businesses.
+  fewResults: boolean;
   searched: boolean;
 }) {
   const pathname = usePathname();
@@ -146,9 +149,13 @@ export function LeadRail({
       </div>
 
       {leads.length === 0 ? (
-        <Empty title={searched ? "No businesses yet" : "Not searched yet"}>
-          {searched ? "Businesses that fit show up here as the search finds and checks them." : "Confirm the search to find businesses that fit."}
-        </Empty>
+        fewResults ? (
+          <Empty title={LITTLE_DATA}>The search found fewer than 3 businesses here. Try a bigger town nearby, or another kind of business.</Empty>
+        ) : (
+          <Empty title={searched ? "No businesses yet" : "Not searched yet"}>
+            {searched ? "Businesses that fit show up here as the search finds and checks them." : "Confirm the search to find businesses that fit."}
+          </Empty>
+        )
       ) : shown.length === 0 ? (
         <Empty title="Nothing matches">
           {tab === "outreach" && !q && !phoneOnly ? "Nobody contacted yet. Open a business, write its messages and send one." : "Try another word, or clear the filters."}

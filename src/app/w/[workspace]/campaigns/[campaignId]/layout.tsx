@@ -25,7 +25,7 @@ export default function CampaignLayout({ params, children }: Props) {
 async function Workspace({ params, children }: { params: Props["params"]; children: React.ReactNode }) {
   const { workspace: slug, campaignId } = await params;
   const workspace = await getWorkspace(slug);
-  const [{ campaign, possibleCount }, { leads }, pipeline] = await Promise.all([
+  const [{ campaign, possibleCount, fewResults }, { leads }, pipeline] = await Promise.all([
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
     getPipeline(workspace.id, campaignId),
@@ -43,7 +43,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] wrap-break-word sm:text-title sm:tracking-[-0.02em]">{campaign.name}</h1>
           <CampaignStatusBadge campaign={campaign} />
         </div>
-        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, contacted, status: campaign.status })}</p>
+        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, contacted, status: campaign.status, fewResults })}</p>
       </div>
       {leads.length > 0 && (
         <Link
@@ -76,7 +76,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
       base={base}
       header={header}
       stats={stats}
-      rail={<LeadRail base={base} leads={leads} stages={stages} contacted={[...contacted]} searched={campaign.status !== "draft" && campaign.status !== "failed"} />}
+      rail={<LeadRail base={base} leads={leads} stages={stages} contacted={[...contacted]} fewResults={fewResults} searched={campaign.status !== "draft" && campaign.status !== "failed"} />}
       paneFirst={campaign.status === "running" || campaign.status === "paused"}
     >
       {children}

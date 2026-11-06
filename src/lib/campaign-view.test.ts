@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
 import type { OpportunityCard } from "./api-types/research";
-import { cardTitle, citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import { cardTitle, citeReadAt, thinMapsNote, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -110,5 +110,20 @@ describe("cardTitle", () => {
     expect(cardTitle(card({ offer: { id: "C1", field: "offer", text: "Website development", cites: [] } as unknown as OpportunityCard["offer"] }))).toBe("Website development");
     expect(cardTitle(card({}))).toBe("Opportunity");
     expect(cardTitle(card({ mismatch: true }))).toBe("This doesn't match this business");
+  });
+});
+
+describe("little Google Maps data", () => {
+  it("says so after a search that found fewer than 3 businesses, instead of an empty list", () => {
+    expect(findingSentence({ leads: [], contacted: new Set(), status: "done", fewResults: true })).toBe(
+      "Google Maps has little data for this area: the search found fewer than 3 businesses here.",
+    );
+    expect(findingSentence({ leads: [], contacted: new Set(), status: "done" })).toBe("The search found no businesses that fit.");
+  });
+
+  it("warns before a search in a country where Google Maps has little data", () => {
+    expect(thinMapsNote(["China"])).toBe("Google Maps has little data for this area (China): expect few or no businesses.");
+    expect(thinMapsNote(["China", "North Korea"])).toBe("Google Maps has little data for this area (China and North Korea): expect few or no businesses.");
+    expect(thinMapsNote([])).toBeNull();
   });
 });
