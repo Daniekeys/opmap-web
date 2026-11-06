@@ -22,6 +22,7 @@ describe("outcome words", () => {
   it("names the channel or the contact point an outcome was about", () => {
     expect(outcomeText({ type: "sent", channel: "whatsapp" })).toBe("Sent · WhatsApp");
     expect(outcomeText({ type: "wrong_number", channel: null, contactValue: "+2348030001111" }, () => "0803 000 1111")).toBe("Wrong number: 0803 000 1111");
+    expect(outcomeText({ type: "not_on_whatsapp", channel: null, contactValue: "+2348030001111" }, () => "0803 000 1111")).toBe("Not on WhatsApp: 0803 000 1111");
     expect(outcomeText({ type: "opted_out", channel: null })).toBe("Asked not to be contacted");
   });
 });

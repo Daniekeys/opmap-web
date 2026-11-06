@@ -27,7 +27,7 @@ import { Fragment, useState, useSyncExternalStore } from "react";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
-import type { OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
+import type { FeedbackOutcome, OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
 import type { Channel, ChannelStatus, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
 import type { OpportunityCard } from "@/lib/api-types/research";
 import { citeName, readOn } from "@/lib/campaign-view";
@@ -766,12 +766,15 @@ const STAGE_BUTTONS: { type: "sent" | "replied" | "meeting" | "won" | "lost"; la
   { type: "lost", label: "Lost", icon: <X className="size-4" aria-hidden /> },
 ];
 
-const FEEDBACK: Record<ContactRow["kind"], { type: "wrong_number" | "bounced" | "not_owner"; label: string }[]> = {
+// "Not on WhatsApp" lowers only that number's WhatsApp; the phone and its
+// call opener stay. "Wrong number" lowers both.
+const FEEDBACK: Record<ContactRow["kind"], { type: FeedbackOutcome; label: string }[]> = {
   phone: [
     { type: "wrong_number", label: "Wrong number" },
     { type: "not_owner", label: "Not the owner" },
   ],
   whatsapp: [
+    { type: "not_on_whatsapp", label: "Not on WhatsApp" },
     { type: "wrong_number", label: "Wrong number" },
     { type: "not_owner", label: "Not the owner" },
   ],

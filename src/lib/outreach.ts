@@ -43,6 +43,7 @@ const OUTCOME_NAMES: Record<string, string> = {
   wrong_number: "Wrong number",
   bounced: "Bounced",
   not_owner: "Not the owner",
+  not_on_whatsapp: "Not on WhatsApp",
   opted_out: "Asked not to be contacted",
 };
 

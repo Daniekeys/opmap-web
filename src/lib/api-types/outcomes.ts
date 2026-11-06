@@ -5,7 +5,7 @@ export const STAGES = ["new", "sent", "replied", "meeting", "won", "lost"] as co
 export type Stage = (typeof STAGES)[number];
 
 export type StageOutcome = "sent" | "replied" | "meeting" | "won" | "lost";
-export type FeedbackOutcome = "wrong_number" | "bounced" | "not_owner";
+export type FeedbackOutcome = "wrong_number" | "bounced" | "not_owner" | "not_on_whatsapp";
 
 // POST /api/w/:workspaceId/campaigns/:campaignId/leads/:leadId/outcomes
 export type OutcomeBody =
