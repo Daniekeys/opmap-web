@@ -23,6 +23,10 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Any country, D2 follow-ups and D3 2026-11-06 on `any-country`: an unknown country code gets the default profile, never Nigeria's; phone display loads its library only on the lead and messages pages; `/campaigns/new` starts from the Brand DNA's places.
 - Next: the user's manual check of drafts for 10 real leads, then contacting 10 real leads with the tool (more deep-dives are needed: 6 of 19 local leads with cards have a send target).
 
+## Known flaky tests
+
+- `test/pipeline.test.ts` > "runs an interactive run (a deep-dive, drafts) while a background run still holds its lane": failed once in the full API suite under load on 2026-11-06 (after 23 s); its file passed alone (14 of 14). Timing, not a lane bug; rerun the file before looking further.
+
 ## Parked
 
 - UK, for when we run a UK campaign (no Companies House key yet, so D6 runs without it: no lookup, every UK lead gets the call opener only until a member says "I checked: limited company"): set `COMPANIES_HOUSE_API_KEY` and make the one real lookup with `npm run registry:try` (estimate and yes first); then the candidate list, Companies House entries close to the lead for a member to pick from when no automatic match is found.
