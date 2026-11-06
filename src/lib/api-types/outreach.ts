@@ -25,6 +25,8 @@ export type Draft = {
   // False when what it offers isn't in the approved Brand DNA any more: shown
   // as not ready, never sent.
   offerInBrandDna: boolean;
+  // Cites another business's pages (or its card does): empty, never sent.
+  mismatch: boolean;
   subject: string | null;
   body: string;
   lines: DraftLine[];

@@ -31,7 +31,7 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { FeedbackOutcome, OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
 import type { Channel, ChannelStatus, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
 import type { OpportunityCard } from "@/lib/api-types/research";
-import { citeName, readOn } from "@/lib/campaign-view";
+import { citeName, NOT_THIS_BUSINESS, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { labelText, telHref } from "@/lib/leads";
@@ -137,7 +137,10 @@ export function CardDrafts({
 
   const following = runId ?? (card?.run?.status === "running" ? card.run.runId : null);
   const drafts = card?.drafts ?? [];
-  const offerGone = !offerInBrandDna || drafts.some((d) => !d.offerInBrandDna);
+  const offerGone = !offerInBrandDna || drafts.some((d) => !d.offerInBrandDna && !d.mismatch);
+
+  // About another business (the card or its messages cite their pages).
+  if (opportunity.mismatch || drafts.some((d) => d.mismatch)) return <NotThisBusiness what="messages" />;
 
   if (outreach.suppressed) {
     return (
@@ -327,6 +330,8 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
     </div>
   );
+
+  if (draft.mismatch) return <NotThisBusiness what="messages" />;
 
   // Written from an offer the approved Brand DNA no longer holds: the text
   // stays readable, with nothing to open, copy or mark as sent. The warning
@@ -539,6 +544,23 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
 // The number on the call button, as the workspace reads it (the link is E.164).
 function CallNumber({ value }: { value: string }) {
   return <>{useFormatPhone()(value)}</>;
+}
+
+// A card or its messages citing another business's pages: none of it is
+// shown or sent (the API logs it once).
+export function NotThisBusiness({ what = "card" }: { what?: "card" | "messages" }) {
+  return (
+    <div role="note" className="flex flex-col gap-1 rounded-card bg-negative-soft px-4 py-3 text-sm">
+      <p className="flex items-center gap-2 font-semibold text-negative-ink">
+        <ShieldAlert className="size-4" aria-hidden /> {NOT_THIS_BUSINESS}
+      </p>
+      <p className="text-muted">
+        {what === "card"
+          ? "This opportunity cites pages about another business, so it isn't shown. Refresh the research to get cards about this one."
+          : "These messages cite pages about another business, so they aren't shown and can't be sent."}
+      </p>
+    </div>
+  );
 }
 
 // A mobile number with no WhatsApp link from them: probably on WhatsApp, not

@@ -1,3 +1,4 @@
+import type { OpportunityCard } from "./api-types/research";
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
 import type { CampaignStatus, Lead } from "./api-types/leads";
@@ -92,4 +93,13 @@ export function citeName(cite: Cite | DraftCite) {
     // Not a URL: fall through to the plain name.
   }
   return "Their website";
+}
+
+export const NOT_THIS_BUSINESS = "This doesn't match this business";
+
+// A card's name in lists and headings: its offer, or that it is about
+// another business (it cites their pages, so nothing of it is shown).
+export function cardTitle(card: OpportunityCard) {
+  if (card.mismatch) return NOT_THIS_BUSINESS;
+  return card.offer?.text ?? "Opportunity";
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import type { OpportunityCard } from "./api-types/research";
+import { cardTitle, citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -98,5 +99,15 @@ describe("readOn", () => {
     expect(citeReadAt({ ...quote, fetchedAt: "2026-10-28T09:00:00Z" }, "2026-10-30T09:00:00Z")).toBe("2026-10-28T09:00:00Z");
     expect(citeReadAt({ ...quote, fetchedAt: null }, "2026-10-30T09:00:00Z")).toBe("2026-10-30T09:00:00Z");
     expect(citeReadAt({ kind: "fact", ref: "F1", factId: "f", text: "Builds websites", url: null }, "2026-10-30T09:00:00Z")).toBeNull();
+  });
+});
+
+describe("cardTitle", () => {
+  const card = (over: Partial<OpportunityCard>) =>
+    ({ id: "c", rank: 1, confidence: "high", confidenceReason: null, offer: null, gap: null, why: [], angle: null, offerInBrandDna: true, mismatch: false, ...over }) as OpportunityCard;
+  it("names the offer, and never shows a card about another business", () => {
+    expect(cardTitle(card({ offer: { id: "C1", field: "offer", text: "Website development", cites: [] } as unknown as OpportunityCard["offer"] }))).toBe("Website development");
+    expect(cardTitle(card({}))).toBe("Opportunity");
+    expect(cardTitle(card({ mismatch: true }))).toBe("This doesn't match this business");
   });
 });
