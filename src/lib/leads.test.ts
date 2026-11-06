@@ -7,6 +7,7 @@ import {
   labelText,
   pausedUntil,
   previewQuery,
+  googleCost,
   leadBadges,
   readyBadges,
   readSettings,
@@ -158,5 +159,12 @@ describe("a lead row's badges", () => {
     const ready = { ...lead({}), ready: ["whatsapp_confirmed"] as Lead["ready"] };
     expect(leadBadges(ready).map((b) => b.word)).toEqual(["WhatsApp"]);
     expect(leadBadges({ ...ready, optedOut: true }).map((b) => [b.word, b.kind])).toEqual([["Opted out", "opted_out"]]);
+  });
+});
+
+describe("a Google cost on screen", () => {
+  it("is $0 inside the free tier, with the list price beside it, and says list price outside it", () => {
+    expect(googleCost("$0.70", true)).toEqual({ line: "Inside the free tier: $0 to you ($0.70 at list price).", button: "" });
+    expect(googleCost("$0.35 to $0.70", false)).toEqual({ line: "More than the free tier left this month: $0.35 to $0.70 at list price.", button: ", $0.35 to $0.70 at list price" });
   });
 });

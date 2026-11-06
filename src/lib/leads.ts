@@ -188,6 +188,15 @@ export const previewQuery = (s: SearchSettings) =>
     ...(s.leadsWanted === null ? {} : { leadsWanted: String(s.leadsWanted) }),
   }).toString();
 
+// A Google cost on screen. The ledger records list price on every call, but
+// inside Google's free tier the bill is $0, so a list price is never shown
+// bare, as if it were cash spent. `listPrice` is already formatted.
+export function googleCost(listPrice: string, inFreeTier: boolean) {
+  return inFreeTier
+    ? { line: `Inside the free tier: $0 to you (${listPrice} at list price).`, button: "" }
+    : { line: `More than the free tier left this month: ${listPrice} at list price.`, button: `, ${listPrice} at list price` };
+}
+
 export function formatUsd(n: number) {
   return n < 0.01 && n > 0 ? "under 1 cent" : `$${n.toFixed(2)}`;
 }

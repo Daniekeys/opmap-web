@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { EditCampaignBody, EstimateResponse } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
-import { formatUsd, previewQuery, readSettings, sameSettings, settingsDraft } from "@/lib/leads";
+import { formatUsd, googleCost, previewQuery, readSettings, sameSettings, settingsDraft } from "@/lib/leads";
 import { SearchSettingsFields } from "./search-settings";
 
 const span = (r: { min: number; max: number }, format = (n: number) => String(n)) =>
@@ -79,6 +79,7 @@ export function ConfirmPanel({
   const cost = span(shown.costUsd, formatUsd);
   const days = span(shown.daysAtDailyCap);
   const inFreeTier = shown.calls.max <= shown.callsLeft.month;
+  const google = googleCost(cost, inFreeTier);
   const tiles = shown.areas.reduce((n, a) => n + a.tiles, 0);
   const queries = shown.areas[0]?.queries ?? 1;
   const pages = shown.pagesPerTile.max === 1 ? "1 page each" : `1 to ${shown.pagesPerTile.max} pages each`;
@@ -140,8 +141,7 @@ export function ConfirmPanel({
         {wanted !== null ? (
           <p className="text-sm">
             Finishes once <strong>{wanted} leads</strong> pass the fit check, usually after a few Google searches. If this idea has few good fits here, it could
-            use up to about {calls} searches ({tiles} map tiles x {queries} {queries === 1 ? "search term" : "search terms"}), {cost} at list price
-            {inFreeTier ? ", inside the free tier" : ", more than the free tier left this month"}.
+            use up to about {calls} searches ({tiles} map tiles x {queries} {queries === 1 ? "search term" : "search terms"}). {google.line}
           </p>
         ) : (
           <p className="text-sm">
@@ -153,7 +153,7 @@ export function ConfirmPanel({
                 {shown.callsUsed > 0 ? ` (${shown.callsUsed} used already)` : ""}.{" "}
               </>
             )}
-            {inFreeTier ? "Inside the free tier" : "More than the free tier left this month"}; {cost} at list price. At {shown.perDay} a day that takes{" "}
+            {google.line} At {shown.perDay} a day that takes{" "}
             {days} {shown.daysAtDailyCap.max === 1 ? "day" : "days"}.
           </p>
         )}
@@ -190,7 +190,7 @@ export function ConfirmPanel({
           onClick={start}
           disabled={starting || previewing || previewFailed || invalid !== null || budgetLeft === 0}
         >
-          {starting ? "Starting" : wanted !== null ? `${action}: find ${wanted} leads` : `${action}: about ${calls} searches, ${cost}`}
+          {starting ? "Starting" : wanted !== null ? `${action}: find ${wanted} leads` : `${action}: about ${calls} searches${google.button}`}
         </Button>
       ) : (
         <p className="text-sm text-muted">Only an owner can start a campaign or change its settings, because it uses the Google searches both teams share.</p>
