@@ -34,7 +34,8 @@ import type { OpportunityCard } from "@/lib/api-types/research";
 import { citeName, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { formatPhone, labelText, telHref } from "@/lib/leads";
+import { labelText, telHref } from "@/lib/leads";
+import { formatPhone } from "@/lib/phone";
 import {
   canMarkSent,
   type Check as DraftCheck,

@@ -1,7 +1,6 @@
 // Plain words for the lead finder's data: contact labels (spec, Data
 // accuracy), phone numbers, categories and campaign states.
 import type { Campaign, Lead, SearchSettings, TargetKind } from "./api-types/leads";
-import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 import { dayKey, formatDateTime, formatter } from "./format";
 
 // The lead list's badges for the channels a lead can be messaged on now, in
@@ -54,16 +53,6 @@ const LABELS: Record<ContactKindGroup, Record<string, LabelText>> = {
 
 export function labelText(group: ContactKindGroup, label: string): LabelText {
   return LABELS[group][label] ?? { word: label.replaceAll("_", " "), tip: "", tone: "fair" };
-}
-
-// A number as people in its own country write it: "+2348033718771" is
-// "0803 371 8771", "+447911123456" is "07911 123456". The country comes from
-// the number itself. An invalid number is shown as stored.
-// A WhatsApp value can be a link with no number (wa.me/message/...).
-export function formatPhone(e164: string) {
-  if (/^https?:/.test(e164)) return "WhatsApp link";
-  const parsed = parsePhoneNumberFromString(e164);
-  return parsed?.isValid() ? parsed.formatNational() : e164;
 }
 
 export const telHref = (e164: string) => `tel:${e164}`;

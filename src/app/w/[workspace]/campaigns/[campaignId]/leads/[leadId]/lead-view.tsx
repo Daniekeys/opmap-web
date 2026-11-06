@@ -14,7 +14,8 @@ import type { Claim, DatedCite, LeadResearchResponse, OpenLeadBody, OpenLeadResp
 import { citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { categoryText, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { formatPhone } from "@/lib/phone";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";

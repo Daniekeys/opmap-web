@@ -3,7 +3,8 @@
 import { AtSign, Globe, Mail, MessageCircle, Phone, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Lead } from "@/lib/api-types/leads";
-import { formatPhone, hasAnyContact, socialName, telHref, whatsappHref } from "@/lib/leads";
+import { hasAnyContact, socialName, telHref, whatsappHref } from "@/lib/leads";
+import { formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import { LabelChip } from "./label-chip";
 

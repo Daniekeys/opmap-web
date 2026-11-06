@@ -1,7 +1,7 @@
+import { formatPhone } from "./phone";
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
 import {
-  formatPhone,
   hasAnyContact,
   hasPhoneOrWhatsapp,
   labelText,
