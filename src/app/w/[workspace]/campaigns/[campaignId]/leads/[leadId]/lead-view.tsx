@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
 import { OFFER_GONE_ID, OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
 import { CardDrafts, LikelyOnWhatsapp, OutcomePanel, NotThisBusiness } from "./outreach-panel";
+import { LegalFormBox } from "./legal-form-box";
 
 type Props = {
   workspaceId: string;
@@ -264,6 +265,8 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
             ) : (
               !researching && !failed && <Waiting />
             ))}
+
+          {tab === "messages" && outreach.legalForm && !suppressed && <LegalFormBox base={base} view={outreach.legalForm} onChange={reloadOutreach} />}
 
           {tab === "messages" &&
             (chosenCard ? (

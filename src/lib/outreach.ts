@@ -61,8 +61,9 @@ export function outcomeText(o: { type: string; channel: string | null; contactVa
 
 // A channel with no send target shows its chip and reason first, with "Show
 // draft anyway" opening the saved draft for copying only. A suppressed
-// business never shows a draft, so it gets no link.
-export const showAnywayAllowed = (status: ChannelStatus) => !status.available && status.code !== "suppressed";
+// business never shows a draft, so it gets no link; nor does one that must
+// agree to hear from you first (UK rules), whose draft isn't sent to the page.
+export const showAnywayAllowed = (status: ChannelStatus) => !status.available && status.code !== "suppressed" && status.code !== "consent";
 
 // The tab a lead's drafts open on: the first channel that can be sent to,
 // else the first draft.

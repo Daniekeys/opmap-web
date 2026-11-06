@@ -126,6 +126,8 @@ describe("channels with no send target", () => {
     expect(showAnywayAllowed({ available: false, code: "none", chip: "No email", reason: "No email found on their own site." })).toBe(true);
     expect(showAnywayAllowed({ available: false, code: "suppressed", chip: "Not to be contacted", reason: "They asked not to be contacted." })).toBe(false);
     expect(showAnywayAllowed(on("WhatsApp confirmed"))).toBe(false);
+    // UK rules: the draft isn't there to show until they agree.
+    expect(showAnywayAllowed({ available: false, code: "consent", chip: "Consent needed", reason: "Consent needed for this business under UK rules." })).toBe(false);
   });
 
   it("open on the first channel that can be sent to", () => {

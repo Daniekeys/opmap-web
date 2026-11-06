@@ -288,6 +288,12 @@ function DraftTabs({
           ))}
         </div>
       </div>
+      {/* The call tab always says to check the do-not-call lists (the UK). */}
+      {draft.channel === "call" && outreach.country.callNote && (
+        <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+          {outreach.country.callNote}
+        </p>
+      )}
       <DraftView key={draft.id} base={base} draft={draft} dates={dates} outreach={outreach} onChange={onChange} />
     </div>
   );
