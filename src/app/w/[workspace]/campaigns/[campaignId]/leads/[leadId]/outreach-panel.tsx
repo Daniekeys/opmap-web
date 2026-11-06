@@ -1,4 +1,5 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
 import { Dialog } from "@base-ui/react/dialog";
 import { Popover } from "@base-ui/react/popover";
@@ -194,7 +195,7 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
   if (blocked === "no_target") {
     return (
       <Box icon={<Phone className="size-4" aria-hidden />} title="No checked contact to send to">
-        WhatsApp needs a WhatsApp link they published or a Nigerian mobile number, email must be on their own site, and a call needs a phone number. Check their details first.
+        WhatsApp needs a WhatsApp link they published (or, in some countries, a mobile number), email must be on their own site, and a call needs a phone number. Check their details first.
       </Box>
     );
   }
@@ -441,6 +442,9 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
         </aside>
       </div>
 
+      {outreach.country.draftNote && (
+        <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">{outreach.country.draftNote}</p>
+      )}
       {draft.channel === "email" && outreach.country.emailNote && (
         <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
           {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
@@ -523,7 +527,7 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
 }
 
 // A mobile number with no WhatsApp link from them: probably on WhatsApp, not
-// checked (Nigerian numbers only, until the country profiles).
+// checked (only in countries whose profile allows it: Nigeria, Ghana, Kenya).
 export function LikelyOnWhatsapp({ className }: { className?: string }) {
   return (
     <span className={cn("text-xs text-muted", className)} title="A mobile number, but no WhatsApp link from them">
@@ -716,13 +720,14 @@ function ClaimMark({ line, dates }: { line: DraftLine; dates: ReadDates }) {
 // Each quote or fact behind a claim: what it says, where and when it was
 // read, and a link to the page.
 function Sources({ cites, dates }: { cites: DraftCite[]; dates: ReadDates }) {
+  const timeZone = useTimeZone();
   return (
     <ul className="flex flex-col gap-3">
       {cites.map((c) => (
         <li key={c.ref} className="flex flex-col gap-1">
           {/* A source with no quote of its own for this line shows just where it is. */}
           {c.kind === "source" ? c.quote && <span className="font-medium">{`“${c.quote}”`}</span> : <span className="font-medium">{c.text}</span>}
-          <span className="text-small text-muted">{c.kind === "fact" ? "Your approved fact" : `${citeName(c)}, ${readOn(dates.get(c.sourceId) ?? null)}`}</span>
+          <span className="text-small text-muted">{c.kind === "fact" ? "Your approved fact" : `${citeName(c)}, ${readOn(dates.get(c.sourceId) ?? null, timeZone)}`}</span>
           {c.kind !== "fact" && (
             <a href={c.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex min-h-8 items-center gap-1 self-start text-small font-medium")}>
               Open the source <ExternalLink className="size-3" aria-hidden />
@@ -861,6 +866,7 @@ function OutcomeStatus({ outcome, idle }: { outcome: OutcomeTap; idle: string })
 // point, the history). Data feedback lowers that contact point's confidence
 // on the shared record, so it asks first.
 export function OutcomePanel({ base, outreach, onChange }: { base: string; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
+  const timeZone = useTimeZone();
   const outcome = useOutcomeTap(base, onChange);
   const { busy, tap } = outcome;
 
@@ -953,7 +959,7 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
             {outreach.outcomes.slice(0, 10).map((o) => (
               <li key={o.id} className="flex flex-wrap justify-between gap-x-3">
                 <span>{outcomeText(o, (v) => showValue(o.contactKind ?? "", v))}</span>
-                <span className="text-xs text-muted">{formatDateTime(o.createdAt)}</span>
+                <span className="text-xs text-muted">{formatDateTime(o.createdAt, timeZone)}</span>
               </li>
             ))}
           </ul>

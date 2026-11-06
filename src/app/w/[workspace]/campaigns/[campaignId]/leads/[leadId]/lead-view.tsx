@@ -1,4 +1,5 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
 import { AlertTriangle, ChevronDown, ExternalLink, MessageCircle, Phone, RotateCw } from "lucide-react";
 import Link from "next/link";
@@ -453,6 +454,7 @@ function Result({
   failedRefresh: boolean;
   listLead: Lead | null;
 }) {
+  const timeZone = useTimeZone();
   const others = result.cards.filter((c) => c.id !== chosen?.id);
   // The warning when this card's offer is gone; a quiet action when every
   // card still stands but the Brand DNA changed (or there is no card).
@@ -517,7 +519,7 @@ function Result({
       )}
 
       {result.removed.length > 0 && <Removed removed={result.removed} />}
-      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt)}</p>}
+      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt, timeZone)}</p>}
     </section>
   );
 }
@@ -583,11 +585,12 @@ function ClaimBlock({ claim, readAt, lead, muted }: { claim: Claim; readAt: stri
 // opening to the quotes themselves. Sources read on the same day share one
 // date; approved facts have none.
 function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null }) {
+  const timeZone = useTimeZone();
   const [open, setOpen] = useState(false);
   if (claim.cites.length === 0) return null;
   const byDay = new Map<string, string[]>();
   for (const c of claim.cites) {
-    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt));
+    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt), timeZone);
     const names = byDay.get(day) ?? [];
     if (!names.includes(citeName(c))) names.push(citeName(c));
     byDay.set(day, names);
@@ -619,6 +622,7 @@ function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null })
 }
 
 function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) {
+  const timeZone = useTimeZone();
   if (cite.kind === "fact") {
     return (
       <>
@@ -632,7 +636,7 @@ function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) 
     <>
       <span>{text}</span>
       <span className="text-xs text-muted">
-        {citeName(cite)}, {readOn(citeReadAt(cite, readAt))} ·{" "}
+        {citeName(cite)}, {readOn(citeReadAt(cite, readAt), timeZone)} ·{" "}
         <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 font-normal")}>
           {(cite.kind === "source" && cite.sourceType === "places") || /google\./.test(cite.url) ? "Open the listing" : hostOf(cite.url)} <ExternalLink className="size-3" aria-hidden />
         </a>

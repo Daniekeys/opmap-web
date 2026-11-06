@@ -8,7 +8,16 @@ export type AuthedUser = { id: string; name: string; email: string };
 // daily alert; null otherwise and for members.
 export type ClaudeAlert = { spentUsd: number; thresholdUsd: number };
 
-export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role; claudeAlert: ClaudeAlert | null };
+// timeZone: the IANA zone every time in this workspace is shown in (saved by
+// an owner, else suggested from the approved Brand DNA, else UTC).
+export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role; claudeAlert: ClaudeAlert | null; timeZone: string };
+
+// GET /api/w/:workspaceId/settings; PATCH (owner) with { timeZone: string | null }.
+export type WorkspaceSettingsResponse = {
+  timeZone: string;
+  saved: string | null;
+  suggested: { timeZone: string; from: string } | null;
+};
 
 // GET /api/me
 export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[] };

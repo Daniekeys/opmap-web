@@ -39,7 +39,7 @@ async function Profile({ params }: { params: Props["params"] }) {
         Version {profile.version} <VersionBadge status={profile.status} />
       </h1>
       <p className="text-sm text-muted wrap-break-word sm:text-body">
-        Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt)}
+        Read from {sourceLabel(profile)} on {formatDateTime(profile.createdAt, workspace.timeZone)}
         {profile.source === "website" && `, ${detail.pages.length} ${detail.pages.length === 1 ? "page" : "pages"}`}.
       </p>
     </div>
@@ -68,7 +68,7 @@ async function Profile({ params }: { params: Props["params"] }) {
       {header}
       <p className="max-w-read rounded-control bg-raised px-3.5 py-3 text-sm">
         {profile.status === "approved"
-          ? `Approved ${formatDateTime(profile.approvedAt!)}. This is the profile messages to leads use.`
+          ? `Approved ${formatDateTime(profile.approvedAt!, workspace.timeZone)}. This is the profile messages to leads use.`
           : profile.status === "retired"
             ? `Retired: ${profile.retiredReason ?? "its source isn't this workspace's"}. Kept for history; it is never used.`
             : "Archived: replaced by a newer version. Shown as it was decided."}{" "}

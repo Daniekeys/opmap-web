@@ -53,7 +53,7 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
       <div className="-mt-4 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">Replies and deals</h1>
-          <p className="text-sm text-muted wrap-break-word sm:text-body">{pipelineFinding(pipeline.funnel, pipeline.stages)}</p>
+          <p className="text-sm text-muted wrap-break-word sm:text-body">{pipelineFinding(pipeline.funnel, pipeline.stages, workspace.timeZone)}</p>
         </div>
         {reply && (
           <Link href={`${leadHref(reply.leadId)}?tab=messages`} className={buttonVariants({ className: "h-11 w-full px-4 text-base sm:h-9 sm:w-auto sm:px-3.5 sm:text-sm" })}>
@@ -87,7 +87,7 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
                     <h2 className="text-body font-semibold">{COLUMN_NAMES[c.stage]}</h2>
                     <span className="text-xs text-muted tabular-nums">{c.count}</span>
                   </div>
-                  <Cards column={c} leadHref={leadHref} />
+                  <Cards column={c} leadHref={leadHref} timeZone={workspace.timeZone} />
                 </section>
               ))}
             </div>
@@ -111,7 +111,7 @@ async function PipelineView({ params, searchParams }: { params: Props["params"];
                 </Link>
               ))}
             </nav>
-            <Cards column={columns.find((c) => c.stage === chosen)!} leadHref={leadHref} />
+            <Cards column={columns.find((c) => c.stage === chosen)!} leadHref={leadHref} timeZone={workspace.timeZone} />
           </div>
         </>
       )}
@@ -144,13 +144,13 @@ function Funnel({ funnel }: { funnel: PipelineFunnel }) {
   );
 }
 
-function Cards({ column, leadHref }: { column: Column; leadHref: (id: string) => string }) {
+function Cards({ column, leadHref, timeZone }: { column: Column; leadHref: (id: string) => string; timeZone: string }) {
   if (column.count === 0) return <p className="rounded-card border border-dashed border-border px-3.5 py-3 text-sm text-muted">None yet.</p>;
   return (
     <ul className="flex flex-col gap-2">
       {column.leads.slice(0, SHOWN).map((l) => (
         <li key={l.leadId}>
-          <LeadCard lead={l} href={leadHref(l.leadId)} />
+          <LeadCard lead={l} href={leadHref(l.leadId)} timeZone={timeZone} />
         </li>
       ))}
       {column.count > SHOWN && <li className="px-1 text-xs text-muted">and {column.count - SHOWN} more</li>}
@@ -160,8 +160,8 @@ function Cards({ column, leadHref }: { column: Column; leadHref: (id: string) =>
 
 const WHEN_TONES = { muted: "text-muted", accent: "text-accent-ink", positive: "text-positive" };
 
-function LeadCard({ lead, href }: { lead: PipelineLead; href: string }) {
-  const when = whenLine(lead);
+function LeadCard({ lead, href, timeZone }: { lead: PipelineLead; href: string; timeZone: string }) {
+  const when = whenLine(lead, timeZone);
   return (
     <Link href={href} className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3.5 hover:border-control">
       <span className="flex items-center gap-2.5">

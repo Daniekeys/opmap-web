@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ClaudeAlertBanner } from "@/components/claude-alert-banner";
 import { Logo } from "@/components/logo";
+import { TimeZoneProvider } from "@/components/time-zone";
 import { MenuNav, type NavData, SidebarNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { getBrand, getMe, getMessages, getWorkspace, listCampaigns } from "@/lib/api";
@@ -45,7 +46,9 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[w
           </Suspense>
         }
       >
-        {children}
+        <Suspense fallback={null}>
+          <WithTimeZone params={params}>{children}</WithTimeZone>
+        </Suspense>
       </AppShell>
     </Suspense>
   );
@@ -77,6 +80,12 @@ async function HomeLink({ params }: { params: Params }) {
       <Logo />
     </Link>
   );
+}
+
+// Every page and client component prints times in the workspace's zone.
+async function WithTimeZone({ params, children }: { params: Params; children: ReactNode }) {
+  const { timeZone } = await getWorkspace((await params).workspace);
+  return <TimeZoneProvider timeZone={timeZone}>{children}</TimeZoneProvider>;
 }
 
 async function Switcher({ params, size }: { params: Params; size: "sidebar" | "menu" }) {

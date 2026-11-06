@@ -23,15 +23,17 @@ export function CampaignProgress({
   leadCount,
   workspaceId,
   isOwner,
+  timeZone,
 }: {
   progress: CampaignProgressResponse;
   campaign: Campaign;
   leadCount: number;
   workspaceId: string;
   isOwner: boolean;
+  timeZone: string;
 }) {
   const stoppable = isOwner && (campaign.status === "running" || campaign.status === "paused");
-  const pause = progress.pause && pauseText(progress.pause, progress, campaign.settings.dailyCalls);
+  const pause = progress.pause && pauseText(progress.pause, progress, campaign.settings.dailyCalls, timeZone);
   // Nothing left to wait for: the limit has lifted, or the server couldn't call Google.
   const waitsForOwner = progress.pause?.limit === "lifted" || progress.pause?.limit === "offline";
   return (

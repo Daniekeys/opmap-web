@@ -87,8 +87,8 @@ export function pageName(url: string) {
 const SHOWN_PAGES = 6;
 
 // "9 pages on 28 Oct: home, about, services, portfolio, contact, team and 3 more."
-export function pagesRead(pages: Pick<CrawledPage, "url">[], readAt: string) {
-  const on = formatDay(readAt);
+export function pagesRead(pages: Pick<CrawledPage, "url">[], readAt: string, timeZone: string) {
+  const on = formatDay(readAt, timeZone);
   if (pages.length === 0) return `On ${on}.`;
   const names = [...new Set(pages.map((p) => pageName(p.url)))];
   const shown = names.slice(0, SHOWN_PAGES);

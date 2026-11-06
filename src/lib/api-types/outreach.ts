@@ -47,7 +47,10 @@ export type LeadOutreachResponse = {
   suppressed: boolean;
   blocked: Blocked | null;
   // optOut: the line every email draft ends with, for this country.
-  country: { code: string; law: string; optOut: string; emailNote: string | null };
+  // name: the country in words. draftNote: shown on every draft when no rules
+  // are on file for the country. channelOrder: the draft tab order, from the
+  // lead's country profile (drafts arrive in this order).
+  country: { code: string; name: string; law: string; optOut: string; emailNote: string | null; draftNote: string | null; channelOrder: Channel[] };
   // Who drafts sign as, or null when Brand DNA isn't usable.
   sender: { name: string } | null;
   targets: Record<Channel, Target | null>;

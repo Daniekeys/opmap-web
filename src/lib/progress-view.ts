@@ -2,6 +2,7 @@
 // each step's title and what it is doing, what a failure means, why the
 // search is paused, and what it has cost.
 import type { CampaignProgressResponse, PauseLimit, ProgressStep, ProgressStepKey, ProgressStepState } from "./api-types/leads";
+import { zoneName } from "./format";
 import { pausedUntil } from "./leads";
 
 type Progress = CampaignProgressResponse;
@@ -62,9 +63,9 @@ const PAUSE_TITLES: Record<PauseLimit, string> = {
 
 // The cap-reached state: which limit, when it resets, and that nothing was
 // charged past it.
-export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, now = new Date()) {
+export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, timeZone: string, now = new Date()) {
   const { searches } = p.cost;
-  const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, now)} (Lagos time).` : "";
+  const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, timeZone, now)} (${zoneName(timeZone)}).` : "";
   const byHand = pause.autoResume ? "" : " The search doesn't restart on its own: an owner resumes it here once the limit has lifted.";
   const notCharged = "Google is never called past a limit, so nothing was charged past it.";
   // A search pauses once fewer are left than the next map tile needs.

@@ -89,8 +89,8 @@ describe("findingSentence", () => {
 
 describe("readOn", () => {
   it("is the day a source was read, in Lagos", () => {
-    expect(readOn("2026-10-26T20:06:00Z")).toBe("read 26 Oct");
-    expect(readOn(null)).toBe("date not recorded");
+    expect(readOn("2026-10-26T20:06:00Z", "Africa/Lagos")).toBe("read 26 Oct");
+    expect(readOn(null, "Africa/Lagos")).toBe("date not recorded");
   });
 
   it("dates a quote by its own page's read, else the research's finish time", () => {

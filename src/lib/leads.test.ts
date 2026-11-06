@@ -48,8 +48,12 @@ describe("contact labels in plain words", () => {
 });
 
 describe("phones", () => {
-  it("writes Nigerian numbers the local way and links WhatsApp by digits", () => {
+  it("writes each number the way its own country does, and links WhatsApp by digits", () => {
     expect(formatPhone("+2348033718771")).toBe("0803 371 8771");
+    expect(formatPhone("+233244123456")).toBe("024 412 3456");
+    expect(formatPhone("+254712345678")).toBe("0712 345678");
+    expect(formatPhone("+447911123456")).toBe("07911 123456");
+    // Not a valid number (a reserved UK drama range): shown as stored.
     expect(formatPhone("+447700900123")).toBe("+447700900123");
     expect(whatsappHref("+2348033718771")).toBe("https://wa.me/2348033718771");
     // A wa.me/message link has no number: linked as it is.
@@ -71,9 +75,9 @@ describe("campaign status", () => {
 
   it("shows a cap pause as paused until tomorrow, in Lagos time", () => {
     // Pacific midnight is 08:00 in Lagos.
-    expect(pausedUntil("2026-10-26T07:00:00Z", now)).toBe("tomorrow, 08:00");
-    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z" }, now)).toBe("Paused until tomorrow, 08:00");
-    expect(statusText({ status: "done", resumeAt: null }, now)).toBe("Complete");
+    expect(pausedUntil("2026-10-26T07:00:00Z", "Africa/Lagos", now)).toBe("tomorrow, 08:00");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z" }, "Africa/Lagos", now)).toBe("Paused until tomorrow, 08:00");
+    expect(statusText({ status: "done", resumeAt: null }, "Africa/Lagos", now)).toBe("Complete");
   });
 
   it("offers Resume search only once the resume time has passed", () => {
@@ -81,7 +85,7 @@ describe("campaign status", () => {
     expect(resumeDue("2026-10-25T15:00:00Z", now)).toBe(true);
     expect(resumeDue("2026-10-26T07:00:00Z", now)).toBe(false);
     expect(resumeDue(null, now)).toBe(false);
-    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, now)).toBe("Paused, limit lifted");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, "Africa/Lagos", now)).toBe("Paused, limit lifted");
   });
 });
 
@@ -121,7 +125,7 @@ describe("search settings form", () => {
   });
 
   it("names a stopped campaign", () => {
-    expect(statusText({ status: "stopped", resumeAt: null })).toBe("Stopped");
+    expect(statusText({ status: "stopped", resumeAt: null }, "Africa/Lagos")).toBe("Stopped");
   });
 });
 

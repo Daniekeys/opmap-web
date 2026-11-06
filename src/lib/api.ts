@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
+import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse, WorkspaceSettingsResponse } from "./api-types/access";
 import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
 import type { ApiErrorResponse } from "./api-types/errors";
 import type { CampaignDetailResponse, CampaignProgressResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
@@ -38,6 +38,8 @@ export async function getWorkspace(slug: string) {
   if (!workspace) notFound();
   return workspace;
 }
+
+export const getWorkspaceSettings = (workspaceId: string) => apiGet<WorkspaceSettingsResponse>(`/api/w/${workspaceId}/settings`);
 
 export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/api/w/${workspaceId}/members`);
 

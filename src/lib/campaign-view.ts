@@ -64,7 +64,7 @@ function whereClause(leads: Lead[]) {
 }
 
 // When a source was read ("read 26 Oct").
-export const readOn = (iso: string | null) => (iso ? `read ${formatDay(iso)}` : "date not recorded");
+export const readOn = (iso: string | null, timeZone: string) => (iso ? `read ${formatDay(iso, timeZone)}` : "date not recorded");
 
 // When a cite's page was read: its own read, or the research's finish time
 // when the page has been read again since. Approved facts carry no date.

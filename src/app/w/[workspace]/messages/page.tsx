@@ -35,7 +35,7 @@ async function MessagesView({ params, searchParams }: { params: Props["params"];
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-[20px] leading-[26px] font-bold tracking-[-0.01em] sm:text-title sm:tracking-[-0.02em]">Messages to send</h1>
-        <p className="text-sm text-muted wrap-break-word sm:text-body">{messagesFinding(messages)}</p>
+        <p className="text-sm text-muted wrap-break-word sm:text-body">{messagesFinding(messages, workspace.timeZone)}</p>
       </div>
 
       {!chosen ? (
@@ -57,8 +57,8 @@ async function MessagesView({ params, searchParams }: { params: Props["params"];
               {messages.queue.map((r) => (
                 <li key={r.leadId} className="border-b border-rule last:border-b-0">
                   {/* Phones open the lead's Messages tab; wide screens pick the row. */}
-                  <QueueRow row={r} href={`${leadHref(r)}?tab=messages`} className="lg:hidden" />
-                  <QueueRow row={r} href={`?lead=${r.leadId}`} selected={r.leadId === chosen.leadId} className="hidden lg:flex" />
+                  <QueueRow row={r} href={`${leadHref(r)}?tab=messages`} timeZone={workspace.timeZone} className="lg:hidden" />
+                  <QueueRow row={r} href={`?lead=${r.leadId}`} timeZone={workspace.timeZone} selected={r.leadId === chosen.leadId} className="hidden lg:flex" />
                 </li>
               ))}
             </ul>
@@ -78,7 +78,7 @@ async function MessagesView({ params, searchParams }: { params: Props["params"];
   );
 }
 
-function QueueRow({ row, href, selected = false, className }: { row: MessageRow; href: string; selected?: boolean; className?: string }) {
+function QueueRow({ row, href, timeZone, selected = false, className }: { row: MessageRow; href: string; timeZone: string; selected?: boolean; className?: string }) {
   return (
     <Link
       href={href}
@@ -89,7 +89,7 @@ function QueueRow({ row, href, selected = false, className }: { row: MessageRow;
       <Avatar name={row.name} seed={row.businessId} size="sm" />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-semibold">{row.name}</span>
-        <span className="truncate text-xs text-muted">{rowLine(row)}</span>
+        <span className="truncate text-xs text-muted">{rowLine(row, timeZone)}</span>
       </span>
       <span
         className={cn(

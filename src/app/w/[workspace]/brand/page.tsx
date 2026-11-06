@@ -64,7 +64,7 @@ async function Brand({ params }: { params: Props["params"] }) {
         ) : (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-muted">
-              Approved {formatDateTime(approved.profile.approvedAt!)} from {sourceLabel(approved.profile)}.{" "}
+              Approved {formatDateTime(approved.profile.approvedAt!, workspace.timeZone)} from {sourceLabel(approved.profile)}.{" "}
               {approved.profile.facts.approved} facts.
             </p>
             <AddFactButton workspaceId={workspace.id} brandHref={base} hasDraft={brand.draft !== null} />
@@ -106,7 +106,7 @@ async function Brand({ params }: { params: Props["params"] }) {
                       Version {version.version} <VersionBadge status={version.status} />
                     </p>
                     <p className="text-sm text-muted">
-                      {formatDateTime(version.createdAt)}, {version.facts.approved} of {version.facts.total} facts approved,{" "}
+                      {formatDateTime(version.createdAt, workspace.timeZone)}, {version.facts.approved} of {version.facts.total} facts approved,{" "}
                       {version.changes.total} {version.changes.total === 1 ? "change" : "changes"}
                     </p>
                   </div>

@@ -40,18 +40,18 @@ describe("progress words", () => {
   it("says which cap paused the search, when it resets, and that nothing was charged past it", () => {
     const now = new Date("2026-10-30T12:00:00Z");
     const pause = { limit: "daily_cap" as const, resumeAt: "2026-10-31T07:00:00Z", reason: null, autoResume: true };
-    const text = pauseText(pause, progress({ status: "paused", cost: { claudeUsd: 0, searches: { campaign: 20, budget: null, today: 20, dailyCap: 20, month: 46, monthlyCap: 650 } } }), null, now);
+    const text = pauseText(pause, progress({ status: "paused", cost: { claudeUsd: 0, searches: { campaign: 20, budget: null, today: 20, dailyCap: 20, month: 46, monthlyCap: 650 } } }), null, "Africa/Lagos", now);
     expect(text.title).toBe("Paused: today's Google searches are used up");
     expect(text.body).toBe(
       "All campaigns together may make 20 Google searches a day, and today's are all used. Searching starts again tomorrow, 08:00 (Lagos time). Google is never called past a limit, so nothing was charged past it.",
     );
-    expect(pauseText({ ...pause, autoResume: false }, progress(), null, now).body).toContain("an owner resumes it here once the limit has lifted");
+    expect(pauseText({ ...pause, autoResume: false }, progress(), null, "Africa/Lagos", now).body).toContain("an owner resumes it here once the limit has lifted");
     // 18 of 20 used: paused because the next map tile needs more than 2.
-    expect(pauseText(pause, progress({ status: "paused" }), null, now).body).toContain("and only 2 are left today, fewer than the next map tile needs.");
+    expect(pauseText(pause, progress({ status: "paused" }), null, "Africa/Lagos", now).body).toContain("and only 2 are left today, fewer than the next map tile needs.");
   });
 
   it("says a search that reached a server without Google didn't run, and how to resume it", () => {
-    const offline = pauseText({ limit: "offline", resumeAt: "2026-10-30T12:00:00Z", reason: null, autoResume: false }, progress({ status: "paused" }), null);
+    const offline = pauseText({ limit: "offline", resumeAt: "2026-10-30T12:00:00Z", reason: null, autoResume: false }, progress({ status: "paused" }), null, "Africa/Lagos");
     expect(offline.title).toBe("Paused: this server can't call Google");
     expect(offline.body).toBe(
       "The search didn't run: the API it reached can't call Google. Start the API with ALLOW_REAL_GOOGLE=true, then tap Resume search. Nothing was charged, and nothing tries again by itself.",
