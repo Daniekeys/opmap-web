@@ -26,7 +26,7 @@ V1 builds six user-facing features and the full foundation underneath. Everythin
 
 | Area | In v1 | Later |
 | --- | --- | --- |
-| Access | Invite-only login, workspaces, roles (owner, member) | Public signup, access code redemption screen |
+| Access | Invite-only login, workspaces, roles (owner, member). The platform owner (`PLATFORM_OWNER_EMAIL`) creates workspaces ("New workspace" in the switcher: a name, then Brand DNA onboarding) | Public signup, access code redemption screen |
 | Brand DNA | Crawl website or a written description, extract profile, edit, approve facts | File uploads (portfolio, price list) |
 | Lead finder | Buyer segment suggestions from Brand DNA, leads ranked by buyer signals, Google Places search by business type and city, dedupe, quick fit filter | Signal triggers, people-data APIs for B2B, more countries |
 | Deep-dive | Website crawl, signals, opportunity cards with evidence and confidence | Review text analysis, Instagram signals, website audit |
@@ -84,7 +84,7 @@ Thirty tables, plus Better Auth's own (user, session, account, verification) cov
 
 | Table | Module | Key columns | Why it exists |
 | --- | --- | --- | --- |
-| `workspaces` | access | name, slug, plan_id, settings, archived | One per company: Daniekeys, Afriment, future clients. An archived workspace is left out of the switcher; its rows and events are kept and its URL still works |
+| `workspaces` | access | name, slug, plan_id, settings, archived | One per company: Daniekeys, Afriment, future clients. Only the platform owner creates one (on the Internal plan, as its owner; the slug comes from the name). An archived workspace is left out of the switcher; its rows and events are kept and its URL still works |
 | `memberships` | access | user_id, workspace_id, role | Who belongs where, owner or member |
 | `invites` | access | workspace_id, email, role, token_hash, expires_at, accepted_at | Invite-only access. Owners create a link and hand it over until MailProvider exists |
 | `plans` | billing | name, limits (json) | Seeded with Internal, Free, Pro |
