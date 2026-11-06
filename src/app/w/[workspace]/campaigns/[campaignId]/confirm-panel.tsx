@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
-import type { EditCampaignBody, EstimateResponse } from "@/lib/api-types/leads";
-import { thinMapsNote } from "@/lib/campaign-view";
+import type { EditCampaignBody, EstimateResponse, LargeArea } from "@/lib/api-types/leads";
+import { largeAreaNote, swapLocation, thinMapsNote } from "@/lib/campaign-view";
 import { goToLogin } from "@/lib/go-to-login";
 import { formatUsd, googleCost, previewQuery, readSettings, sameSettings, settingsDraft } from "@/lib/leads";
 import { SearchSettingsFields } from "./search-settings";
@@ -26,6 +26,7 @@ export function ConfirmPanel({
   estimate,
   supported,
   continuing,
+  locations,
 }: {
   workspaceId: string;
   campaignId: string;
@@ -33,6 +34,8 @@ export function ConfirmPanel({
   estimate: EstimateResponse;
   supported: boolean;
   continuing: boolean;
+  // The campaign's place ids, for swapping a big place for a borough.
+  locations: string[];
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => settingsDraft(estimate.settings));
@@ -167,6 +170,33 @@ export function ConfirmPanel({
             The search budget is used up ({shown.callsUsed} searches). Raise it, or clear it for no limit, to search further.
           </p>
         )}
+        {shown.largeAreas.map((area) => (
+          <LargeAreaNote
+            key={area.areaId}
+            area={area}
+            canSwap={isOwner && !starting}
+            onSwap={async (to) => {
+              const res = await fetch(`/api/w/${workspaceId}/campaigns/${campaignId}`, {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ locations: swapLocation(locations, area.areaId, to) } satisfies EditCampaignBody),
+              });
+              if (res.status === 401) return goToLogin();
+              if (!res.ok) {
+                const { error: e }: ApiErrorResponse = await res.json().catch(() => NO_ERROR);
+                setError(e.message || "The place could not be changed. Please try again.");
+                return;
+              }
+              setError(null);
+              router.refresh();
+            }}
+          />
+        ))}
+        {shown.overMonth && (
+          <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
+            {shown.overMonth}
+          </p>
+        )}
         {shown.warning && (
           <p role="alert" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
             {shown.warning}
@@ -194,7 +224,7 @@ export function ConfirmPanel({
         <Button
           className="h-auto min-h-11 py-2 text-base whitespace-normal sm:self-start sm:px-5"
           onClick={start}
-          disabled={starting || previewing || previewFailed || invalid !== null || budgetLeft === 0}
+          disabled={starting || previewing || previewFailed || invalid !== null || budgetLeft === 0 || shown.overMonth !== null}
         >
           {starting ? "Starting" : wanted !== null ? `${action}: find ${wanted} leads` : `${action}: about ${calls} searches${google.button}`}
         </Button>
@@ -202,5 +232,50 @@ export function ConfirmPanel({
         <p className="text-sm text-muted">Only an owner can start a campaign or change its settings, because it uses the Google searches both teams share.</p>
       )}
     </section>
+  );
+}
+
+// A place past 40 tiles: how big it is, and (for an owner) one of the places
+// under it to search instead, such as one of London's boroughs.
+function LargeAreaNote({ area, canSwap, onSwap }: { area: LargeArea; canSwap: boolean; onSwap: (to: string) => Promise<void> }) {
+  const [to, setTo] = useState(area.smaller[0]?.id ?? "");
+  const [swapping, setSwapping] = useState(false);
+  const chosen = area.smaller.find((s) => s.id === to);
+  return (
+    <div role="note" className="flex flex-col gap-2 rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning-ink">
+      <p>{largeAreaNote(area)}</p>
+      {canSwap && area.smaller.length > 0 && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs">Search instead of {area.name}</span>
+            <select
+              className="h-11 min-w-0 rounded-md border border-border bg-surface px-2 text-sm text-foreground sm:h-9"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              disabled={swapping}
+            >
+              {area.smaller.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 whitespace-normal sm:h-9"
+            disabled={swapping || !chosen}
+            onClick={async () => {
+              setSwapping(true);
+              await onSwap(to);
+              setSwapping(false);
+            }}
+          >
+            {swapping ? "Changing…" : `Use ${chosen?.name ?? "it"} instead`}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

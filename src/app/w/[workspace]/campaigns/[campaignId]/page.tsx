@@ -64,6 +64,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
             estimate={estimate}
             supported={kind?.supported ?? true}
             continuing={campaign.status === "stopped"}
+            locations={campaign.locations.map((l) => l.id)}
           />
         )}
 

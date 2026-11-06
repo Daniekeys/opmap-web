@@ -193,8 +193,16 @@ export type EstimateResponse = {
   // Countries among its places where Google Maps has little data.
   thinMaps: string[];
   warning: string | null;
+  // The campaign's places past 40 tiles, and the places under each (London's
+  // boroughs) to start with instead.
+  largeAreas: LargeArea[];
+  // Set when even one page a tile needs more Google searches than this month
+  // has left: the confirm button refuses with this message.
+  overMonth: string | null;
   notes: string[];
 };
+
+export type LargeArea = { areaId: string; name: string; tiles: number; smaller: { id: string; name: string }[] };
 
 // GET .../campaigns/:campaignId/progress: the search's steps (from
 // step_runs), what it has cost, and which limit paused it. A failed step's

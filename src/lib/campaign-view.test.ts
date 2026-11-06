@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
 import type { OpportunityCard } from "./api-types/research";
-import { cardTitle, citeReadAt, thinMapsNote, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import { cardTitle, citeReadAt, thinMapsNote, contactNote, findingSentence, fitOf, largeAreaNote, leadMeta, readOn, swapLocation } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -125,5 +125,22 @@ describe("little Google Maps data", () => {
     expect(thinMapsNote(["China"])).toBe("Google Maps has little data for this area (China): expect few or no businesses.");
     expect(thinMapsNote(["China", "North Korea"])).toBe("Google Maps has little data for this area (China and North Korea): expect few or no businesses.");
     expect(thinMapsNote([])).toBeNull();
+  });
+});
+
+describe("big places before a search", () => {
+  it("says how many tiles a place covers and to start with a borough when it has some", () => {
+    const london = { areaId: "l", name: "London", tiles: 242, smaller: [{ id: "c", name: "Camden" }] };
+    expect(largeAreaNote(london)).toBe(
+      "London covers 242 map tiles, so searching all of it uses a lot of Google searches. Start with one borough or district of it, and add more later.",
+    );
+    expect(largeAreaNote({ ...london, name: "Lagos", smaller: [] })).toBe(
+      "Lagos covers 242 map tiles, so searching all of it uses a lot of Google searches. Start with a smaller place inside it, and add more later.",
+    );
+  });
+
+  it("swaps the big place for the borough where it stood, without doubling a place", () => {
+    expect(swapLocation(["a", "london", "b"], "london", "camden")).toEqual(["a", "camden", "b"]);
+    expect(swapLocation(["camden", "london"], "london", "camden")).toEqual(["camden"]);
   });
 });

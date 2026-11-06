@@ -1,3 +1,4 @@
+import type { LargeArea } from "./api-types/leads";
 import type { OpportunityCard } from "./api-types/research";
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
@@ -44,6 +45,19 @@ export function thinMapsNote(countries: string[]) {
   if (countries.length === 0) return null;
   const names = countries.length === 1 ? countries[0] : `${countries.slice(0, -1).join(", ")} and ${countries.at(-1)}`;
   return `${LITTLE_DATA} (${names}): expect few or no businesses.`;
+}
+
+// Before a search: a place past 40 tiles, and what to start with instead.
+export function largeAreaNote(area: LargeArea) {
+  const start =
+    area.smaller.length > 0 ? "Start with one borough or district of it, and add more later." : "Start with a smaller place inside it, and add more later.";
+  return `${area.name} covers ${area.tiles} map tiles, so searching all of it uses a lot of Google searches. ${start}`;
+}
+
+// The campaign's places with `from` swapped for `to` where it stood.
+export function swapLocation(locations: string[], from: string, to: string) {
+  const swapped = locations.map((id) => (id === from ? to : id));
+  return [...new Set(swapped)];
 }
 
 // `contacted`: the leads that ever had a stage outcome (contactedLeads).
