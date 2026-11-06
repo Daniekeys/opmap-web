@@ -59,6 +59,7 @@ export function CampaignForm({
   slug,
   start,
   ownName = "",
+  brandProfileVersion,
   onBack,
 }: {
   workspaceId: string;
@@ -66,6 +67,8 @@ export function CampaignForm({
   start: FormStart;
   // The buyer typed on the picker, when there is no suggestion.
   ownName?: string;
+  // The Brand DNA version the campaign will use (the approved one when unset).
+  brandProfileVersion?: number;
   onBack: () => void;
 }) {
   const router = useRouter();
@@ -135,6 +138,7 @@ export function CampaignForm({
       targetKind: kind,
       locations: chosen.map((a) => a.id),
       buyerSegment,
+      ...(brandProfileVersion !== undefined ? { brandProfileVersion } : {}),
       ...(suggestion.state === "done" ? { suggested: { kind: suggestion.answer.kind, promptVersion: suggestion.answer.promptVersion } } : {}),
     };
     setSaving(true);

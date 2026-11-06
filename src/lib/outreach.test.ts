@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Draft, DraftLine } from "./api-types/outreach";
 import type { OpportunityCard } from "./api-types/research";
-import { canMarkSent, draftChecks, gmailHref, outcomeText, outlookHref, sourceReadDates, whatsappSendHref } from "./outreach";
+import { canMarkSent, draftChecks, gmailHref, offerBlock, outcomeText, outlookHref, sourceReadDates, whatsappSendHref } from "./outreach";
 
 describe("send links", () => {
   it("fills WhatsApp with the draft, digits only in the number", () => {
@@ -109,5 +109,14 @@ describe("source dates for a draft's claims", () => {
       angle: null,
     } satisfies OpportunityCard;
     expect(sourceReadDates(card, "2026-10-29T09:00:00Z")).toEqual(new Map([["s1", "2026-10-28T10:00:00Z"], ["s2", "2026-10-29T09:00:00Z"]]));
+  });
+});
+
+describe("offerBlock", () => {
+  it("says an offer is no longer approved, or was never in the campaign's version", () => {
+    expect(offerBlock("This offer is no longer in your approved Brand DNA.").heading).toBe("This offer is no longer in your approved Brand DNA");
+    expect(offerBlock("This offer is no longer in your approved Brand DNA.").help).toContain("Approve it again on Brand DNA");
+    expect(offerBlock("This offer isn't in the Brand DNA this campaign uses.").heading).toBe("This offer isn't in the Brand DNA this campaign uses");
+    expect(offerBlock(null).help).toContain("switch the campaign to the new version");
   });
 });

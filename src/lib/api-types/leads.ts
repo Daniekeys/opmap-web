@@ -59,15 +59,25 @@ export type BuyerSegment = {
   rankReason: string;
 };
 
-// GET /api/w/:workspaceId/buyer-segments; POST starts the run (202).
+// A Brand DNA version a campaign may be made with or switched to.
+export type CampaignBrandVersion = { version: number; current: boolean; source: "website" | "description"; website: string | null; approvedAt: string | null };
+
+// GET /api/w/:workspaceId/buyer-segments[?version=N]; POST starts the run for
+// the approved version (202). not_suggested: an earlier version with no
+// segments (none are made for it). versions: what a new campaign may use.
 export type SegmentsResponse = {
-  state: "not_approved" | "none" | "running" | "failed" | "ready";
+  state: "not_approved" | "none" | "running" | "failed" | "ready" | "not_suggested";
   brandProfileVersion: number | null;
   run: PipelineRun | null;
   error: string | null;
   setId: string | null;
   segments: BuyerSegment[];
+  versions: CampaignBrandVersion[];
 };
+
+// POST .../campaigns/:campaignId/brand-version (owner): logged as an event.
+export type SwitchBrandVersionBody = { version: number };
+export type SwitchBrandVersionResponse = { from: number | null; to: number };
 export type StartSegmentsBody = { retry?: boolean };
 
 // The segment a campaign is created from: a suggestion, maybe edited (setId
@@ -92,6 +102,8 @@ export type CreateCampaignBody = {
   locations: string[];
   suggested?: { kind: TargetKind; promptVersion: string };
   buyerSegment?: CampaignSegment;
+  // Any approved Brand DNA version; the current one when left out.
+  brandProfileVersion?: number;
 };
 
 export type Campaign = {

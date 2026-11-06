@@ -7,6 +7,7 @@ import { campaignContext, findingSentence } from "@/lib/campaign-view";
 import { cn } from "@/lib/utils";
 import { CampaignFrame } from "./campaign-frame";
 import { LeadRail } from "./lead-rail";
+import { SwitchBrandVersion } from "./switch-brand-version";
 
 type Props = LayoutProps<"/w/[workspace]/campaigns/[campaignId]">;
 
@@ -59,7 +60,15 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           )}
           {context.started && ` · ${context.started}`}
         </p>
-        {context.newer && <p className="text-sm text-warning-ink">{context.newer}</p>}
+        {context.newer && (
+          <SwitchBrandVersion
+            workspaceId={workspace.id}
+            campaignId={campaign.id}
+            version={context.newer.version}
+            question={context.newer.question}
+            isOwner={workspace.role === "owner"}
+          />
+        )}
         <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status, callsUsed: campaign.callsUsed })}</p>
       </div>
       {leads.length > 0 && (

@@ -125,9 +125,9 @@ describe("campaignContext", () => {
     expect(campaignContext({ ...campaign, buyerSegment: null }, brand).who).toBe("Your own: Fast food restaurants");
   });
 
-  it("says in one line when a newer Brand DNA has been approved since", () => {
+  it("asks whether to switch when a newer Brand DNA has been approved since", () => {
     const later = campaignContext(campaign, { approved: { version: 5 }, versions: [{ id: "p5", version: 5 }, ...brand.versions] });
-    expect(later.newer).toBe("Brand DNA v5 has been approved since. This campaign still uses v4.");
+    expect(later.newer).toEqual({ version: 5, question: "A newer Brand DNA (v5) was approved. Switch this campaign to v5?" });
     expect(later.brand).toEqual({ label: "Brand DNA v4", profileId: "p4" });
     expect(campaignContext({ ...campaign, brandProfileVersion: null }, brand)).toMatchObject({ brand: null, newer: null });
   });

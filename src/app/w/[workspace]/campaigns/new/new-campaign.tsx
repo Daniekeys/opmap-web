@@ -8,19 +8,26 @@ import { SegmentPicker } from "./segment-picker";
 // describing your own buyer) opens the form, where it can be edited and
 // places chosen.
 export function NewCampaign({ workspaceId, slug }: { workspaceId: string; slug: string }) {
-  const [step, setStep] = useState<{ form: false } | { form: true; start: FormStart; own: string }>({ form: false });
+  const [step, setStep] = useState<{ form: false } | { form: true; start: FormStart; own: string; version: number | undefined }>({ form: false });
 
   if (step.form) {
     return (
-      <CampaignForm workspaceId={workspaceId} slug={slug} start={step.start} ownName={step.own} onBack={() => setStep({ form: false })} />
+      <CampaignForm
+        workspaceId={workspaceId}
+        slug={slug}
+        start={step.start}
+        ownName={step.own}
+        brandProfileVersion={step.version}
+        onBack={() => setStep({ form: false })}
+      />
     );
   }
   return (
     <SegmentPicker
       workspaceId={workspaceId}
       slug={slug}
-      onPick={(segment, setId) => setStep({ form: true, start: { segment, setId }, own: "" })}
-      onOwn={(own) => setStep({ form: true, start: null, own })}
+      onPick={(segment, setId, version) => setStep({ form: true, start: { segment, setId }, own: "", version })}
+      onOwn={(own, version) => setStep({ form: true, start: null, own, version })}
     />
   );
 }

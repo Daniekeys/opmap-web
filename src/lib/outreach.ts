@@ -123,3 +123,19 @@ export function draftChecks(draft: Draft, rules: { optOut: string; sender: strin
   if (removed > 0) checks.push({ text: `${removed} ${removed === 1 ? "sentence" : "sentences"} removed: ${removed === 1 ? "its source didn't" : "their sources didn't"} back ${removed === 1 ? "it" : "them"}`, state: "info" });
   return checks;
 }
+
+// A card whose offer can't be written (the API's offerNote): the heading, and
+// what to do about it.
+export const NO_LONGER_APPROVED = "This offer is no longer in your approved Brand DNA.";
+export function offerBlock(note: string | null) {
+  if (note === NO_LONGER_APPROVED) {
+    return {
+      heading: "This offer is no longer in your approved Brand DNA",
+      help: "It was removed or rejected in your approved Brand DNA, so new messages can't say it, even on a campaign using an older version. Approve it again on Brand DNA, or write this one yourself.",
+    };
+  }
+  return {
+    heading: "This offer isn't in the Brand DNA this campaign uses",
+    help: "Messages only say what that version says you offer. Add this offer as a fact on Brand DNA and switch the campaign to the new version, or write this one yourself.",
+  };
+}

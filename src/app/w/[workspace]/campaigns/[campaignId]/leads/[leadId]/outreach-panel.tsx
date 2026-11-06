@@ -39,6 +39,7 @@ import {
   type Check as DraftCheck,
   draftChecks,
   gmailHref,
+  offerBlock,
   outcomeText,
   outlookHref,
   sourceReadDates,
@@ -191,6 +192,30 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
           Approve your Brand DNA
         </Link>
       </Box>
+    );
+  }
+  // The card's offer isn't a fact of the campaign's Brand DNA version that the
+  // approved one still holds: a run would have nothing true to say about it,
+  // so none is started (no cost).
+  if (card && !card.offerInBrandDna) {
+    const block = offerBlock(card.offerNote);
+    return (
+      <div className="flex flex-col items-start gap-3 rounded-card border border-border bg-surface p-4 sm:p-5">
+        <p className="flex items-center gap-2 font-semibold text-warning-ink">
+          <ShieldAlert className="size-4 shrink-0" aria-hidden />
+          {block.heading}
+        </p>
+        <p className="text-sm text-muted">
+          {block.help}{" "}
+          <Link href={`/w/${slug}/brand`} className={linkClass}>
+            Open Brand DNA
+          </Link>
+        </p>
+        <Button type="button" className={cn(bigTap, "sm:w-auto sm:px-6")} disabled>
+          <PenLine className="size-4" aria-hidden />
+          Write messages
+        </Button>
+      </div>
     );
   }
   const failed = card?.run?.status === "failed";

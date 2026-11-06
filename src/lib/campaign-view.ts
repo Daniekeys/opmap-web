@@ -68,9 +68,10 @@ export function findingSentence({
 }
 
 // The line under a campaign's title: who it is for (a suggested segment's
-// name, or the user's own words), where, the Brand DNA version it was built
-// from (with the version to link to, when it is still listed), when its search
-// started, and a note when a newer version has been approved since.
+// name, or the user's own words), where, the Brand DNA version it uses (its
+// deep-dives and drafts read it; with the version to link to, when it is still
+// listed), when its search started, and, when a newer version has been
+// approved since, the question whether to switch to it.
 export function campaignContext(
   campaign: Pick<Campaign, "segment" | "buyerSegment" | "locations" | "brandProfileVersion" | "startedAt">,
   brand: { approved: Pick<ProfileSummary, "version"> | null; versions: Pick<ProfileSummary, "id" | "version">[] },
@@ -86,7 +87,10 @@ export function campaignContext(
     where,
     brand: built === null ? null : { label: `Brand DNA v${built}`, profileId: profile?.id ?? null },
     started: campaign.startedAt ? `Started ${formatDay(campaign.startedAt)}` : null,
-    newer: built !== null && approved !== null && approved > built ? `Brand DNA v${approved} has been approved since. This campaign still uses v${built}.` : null,
+    newer:
+      built !== null && approved !== null && approved > built
+        ? { version: approved, question: `A newer Brand DNA (v${approved}) was approved. Switch this campaign to v${approved}?` }
+        : null,
   };
 }
 

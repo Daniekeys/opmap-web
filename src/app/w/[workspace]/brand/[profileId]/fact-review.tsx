@@ -3,11 +3,12 @@
 import { Check, ChevronLeft, ChevronRight, ChevronsUpDown, Pencil, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { inputClass } from "@/components/input-class";
 import { Button } from "@/components/ui/button";
 import type {
   AddFactBody,
+  ApproveProfileBody,
   ApproveProfileResponse,
   CrawledPage,
   EditFactBody,
@@ -24,7 +25,7 @@ import { FactSource, foundOn, KINDS, kindLabel, PreviouslyApproved, SourceLine, 
 import { emptyFactsMessage, factTabs } from "../kinds";
 import { approveNote, pagesRead, reviewFinding, siteMismatch } from "../review";
 
-type Result<T> = { ok: true; data: T } | { ok: false; message: string };
+type Result<T> = { ok: true; data: T } | { ok: false; message: string; code?: string };
 
 async function send<T>(method: "POST" | "PATCH", path: string, body?: unknown): Promise<Result<T>> {
   try {
@@ -40,7 +41,7 @@ async function send<T>(method: "POST" | "PATCH", path: string, body?: unknown): 
     if (res.ok) return { ok: true, data: (await res.json()) as T };
     if (res.status === 403) return { ok: false, message: "Owners only." };
     const error = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-    return { ok: false, message: error?.error.message ?? "That didn't save. Please try again." };
+    return { ok: false, message: error?.error.message ?? "That didn't save. Please try again.", code: error?.error.code };
   } catch {
     return { ok: false, message: "Could not reach the server. Check your connection and try again." };
   }
@@ -104,6 +105,7 @@ export function FactReview({
   const [kept, setKept] = useState<string[]>([]);
   const [adding, setAdding] = useState<FactKind | null>(null);
   const [approving, setApproving] = useState(false);
+  const [replacing, setReplacing] = useState<string | null>(null);
   const [approveError, setApproveError] = useState<string | null>(null);
 
   const visible = filter === "all" ? facts : facts.filter((f) => f.kind === filter);
@@ -159,16 +161,19 @@ export function FactReview({
     return result;
   }
 
-  async function approveProfile() {
+  // A version from another source than the approved one asks once more
+  // (409 replaces_brand); the second tap sends confirmReplace.
+  async function approveProfile(confirmReplace = false) {
     setApproving(true);
     setApproveError(null);
-    const result = await send<ApproveProfileResponse>("POST", `${api}/profiles/${profile.id}/approve`);
+    const result = await send<ApproveProfileResponse>("POST", `${api}/profiles/${profile.id}/approve`, { confirmReplace } satisfies ApproveProfileBody);
     if (result.ok) {
       router.push(brandHref);
       router.refresh();
       return;
     }
-    setApproveError(result.message);
+    if (result.code === "replaces_brand") setReplacing(result.message);
+    else setApproveError(result.message);
     setApproving(false);
   }
 
@@ -180,7 +185,9 @@ export function FactReview({
       approving={approving}
       error={approveError}
       note={approveNote(approvedVersion)}
-      onApprove={approveProfile}
+      replacing={replacing}
+      onApprove={() => approveProfile(replacing !== null)}
+      onCancel={() => setReplacing(null)}
     />
   );
 
@@ -404,7 +411,9 @@ function ApproveControls({
   approving,
   error,
   note,
+  replacing,
   onApprove,
+  onCancel,
 }: {
   version: number;
   pending: number;
@@ -412,9 +421,13 @@ function ApproveControls({
   approving: boolean;
   error: string | null;
   note: string;
+  // The second confirm's sentence, while it is asked.
+  replacing: string | null;
   onApprove: () => void;
+  onCancel: () => void;
 }) {
   const left = `${pending} ${pending === 1 ? "fact" : "facts"}`;
+  const replaceId = useId();
   return (
     <div className="flex flex-col gap-2">
       {error && (
@@ -422,7 +435,21 @@ function ApproveControls({
           {error}
         </p>
       )}
-      {isOwner ? (
+      {isOwner && replacing ? (
+        <div role="alertdialog" aria-labelledby={replaceId} className="flex flex-col gap-3 rounded-card bg-warning-soft px-4 py-3">
+          <p id={replaceId} className="text-sm font-medium text-warning-ink">
+            {replacing} Campaigns you already have keep the version they use.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button className="h-11 text-base md:h-9 md:text-sm" disabled={approving} onClick={onApprove}>
+              {approving ? "Approving" : `Yes, approve version ${version}`}
+            </Button>
+            <Button variant="outline" className="h-11 text-base md:h-9 md:text-sm" disabled={approving} onClick={onCancel}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : isOwner ? (
         <>
           <Button className="h-11 text-base sm:self-start xl:h-10 xl:self-stretch xl:text-sm" disabled={pending > 0 || approving} onClick={onApprove}>
             {approving ? "Approving" : `Approve version ${version}`}
