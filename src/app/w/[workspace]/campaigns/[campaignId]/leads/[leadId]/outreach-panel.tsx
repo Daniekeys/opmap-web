@@ -48,8 +48,7 @@ import {
   sourceReadDates,
   STAGE_NAMES,
   STAGE_TONES,
-  whatsappSendHref,
-} from "@/lib/outreach";
+  whatsappSendHref, channelChipTone } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { OfferGone, type Rerun } from "./brand-dna-notice";
 
@@ -271,8 +270,8 @@ function DraftTabs({
                 d.channel === open ? TAB_ON : "text-muted hover:text-ink",
               )}
             >
-              {/* A dot for a channel that can be sent to; none when it can't. */}
-              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", outreach.channels[d.channel].available ? "bg-positive-ink" : "border border-muted")} />
+              {/* A dot for a channel that can be sent to: green when checked, grey for a guess or one source; an empty ring when it can't. */}
+              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", DOT_TONES[channelChipTone(outreach.channels[d.channel])])} />
               <span className="truncate">
                 {d.channel === "call" ? (
                   <>
@@ -573,16 +572,18 @@ export function LikelyOnWhatsapp({ className }: { className?: string }) {
   );
 }
 
-// A channel's status in a few words: green when it can be sent to, a plain
-// grey chip when it can't (the reason sits beside or under it).
+// A channel's status in a few words: green only when the contact is checked,
+// neutral and outlined for a guess or one source (as on the leads list), a
+// plain grey chip when it can't be used (the reason sits beside or under it).
+const DOT_TONES = { checked: "bg-positive-ink", unchecked: "bg-muted", unavailable: "border border-muted" };
+const CHIP_TONES = {
+  checked: "bg-positive-soft text-positive-ink",
+  unchecked: "border border-control bg-neutral-soft text-neutral-ink",
+  unavailable: "bg-neutral-soft text-neutral-ink",
+};
 function ChannelChip({ status }: { status: ChannelStatus }) {
   return (
-    <span
-      className={cn(
-        "inline-flex self-start rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-        status.available ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
-      )}
-    >
+    <span className={cn("inline-flex self-start rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap", CHIP_TONES[channelChipTone(status)])}>
       {status.chip}
     </span>
   );

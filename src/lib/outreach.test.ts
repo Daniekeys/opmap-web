@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Draft, DraftLine } from "./api-types/outreach";
 import type { OpportunityCard } from "./api-types/research";
-import { canMarkSent, draftChecks, firstOpenChannel, gmailHref, outcomeText, outlookHref, showAnywayAllowed, sourceReadDates, whatsappSendHref } from "./outreach";
+import { canMarkSent, channelChipTone, draftChecks, firstOpenChannel, gmailHref, outcomeText, outlookHref, showAnywayAllowed, sourceReadDates, whatsappSendHref } from "./outreach";
 
 describe("send links", () => {
   it("fills WhatsApp with the draft, digits only in the number", () => {
@@ -133,5 +133,16 @@ describe("channels with no send target", () => {
     const none = off("none", "No WhatsApp link or mobile number found.");
     expect(firstOpenChannel(drafts, { whatsapp: none, email: on("Email found on their site"), linkedin: none, call: on("Phone, one source") })).toBe("email");
     expect(firstOpenChannel(drafts, { whatsapp: none, email: none, linkedin: none, call: none })).toBe("whatsapp");
+  });
+});
+
+describe("channel chip colour", () => {
+  const st = (available: boolean, code: string) => ({ available, code, chip: "x", reason: null });
+  it("is green only for a checked contact; a guess or one source looks like the leads list", () => {
+    expect(channelChipTone(st(true, "confirmed"))).toBe("checked");
+    expect(channelChipTone(st(true, "found"))).toBe("checked");
+    expect(channelChipTone(st(true, "likely"))).toBe("unchecked");
+    expect(channelChipTone(st(true, "single_source"))).toBe("unchecked");
+    expect(channelChipTone(st(false, "not_on_site"))).toBe("unavailable");
   });
 });

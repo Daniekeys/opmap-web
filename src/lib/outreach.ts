@@ -135,3 +135,13 @@ export function draftChecks(draft: Draft, rules: { optOut: string; sender: strin
   if (removed > 0) checks.push({ text: `${removed} ${removed === 1 ? "sentence" : "sentences"} removed: ${removed === 1 ? "its source didn't" : "their sources didn't"} back ${removed === 1 ? "it" : "them"}`, state: "info" });
   return checks;
 }
+
+// The channel chip's colour. Green means checked: a published WhatsApp link,
+// an email on their own site or verified, a phone two places list, a LinkedIn
+// they link to. A guess (likely WhatsApp) or one source is neutral, as on the
+// leads list; a channel that can't be used is the plain grey chip.
+const UNCHECKED = ["likely", "single_source"];
+export function channelChipTone(status: ChannelStatus): "checked" | "unchecked" | "unavailable" {
+  if (!status.available) return "unavailable";
+  return UNCHECKED.includes(status.code) ? "unchecked" : "checked";
+}
