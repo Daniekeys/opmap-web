@@ -99,5 +99,8 @@ export type AddFactBody = { kind: FactKind; text: string };
 // The fact went into the draft (made from the approved version if needed).
 export type AddToBrandResponse = { profileId: string; version: number; fact: Fact };
 
-// POST .../brand/profiles/:profileId/approve (owner)
+// POST .../brand/profiles/:profileId/approve (owner). A version from another
+// source than the approved one gets 409 replaces_brand until it is sent again
+// with confirmReplace.
+export type ApproveProfileBody = { confirmReplace?: boolean };
 export type ApproveProfileResponse = { profile: ProfileSummary };

@@ -117,13 +117,15 @@ export function pausedUntil(resumeAt: string, now = new Date()) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" }).format(at);
 }
 
-export function statusText(campaign: Pick<Campaign, "status" | "resumeAt">, now = new Date()) {
+export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pauseKind">, now = new Date()) {
   switch (campaign.status) {
     case "draft":
       return "Draft, not started";
     case "running":
       return "Searching";
     case "paused":
+      // Not a limit: no time to wait for (the banner says what to do).
+      if (campaign.pauseKind === "setup") return "Paused, Google search was off";
       if (resumeDue(campaign.resumeAt, now)) return "Paused, limit lifted";
       return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, now)}` : "Paused";
     case "stopped":

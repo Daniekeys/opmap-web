@@ -146,7 +146,7 @@ export function CardDrafts({
 
   return (
     <div className="flex flex-col gap-3">
-      {offerGone && !following && <OfferGone slug={slug} rerun={rerun} brandLink={brandLink} />}
+      {offerGone && !following && <OfferGone slug={slug} rerun={rerun} brandLink={brandLink} note={card?.offerNote ?? null} />}
       {following ? (
         <div className="flex flex-col gap-3">
           {offer}

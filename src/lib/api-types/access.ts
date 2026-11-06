@@ -10,8 +10,13 @@ export type ClaudeAlert = { spentUsd: number; thresholdUsd: number };
 
 export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role; claudeAlert: ClaudeAlert | null };
 
-// GET /api/me
-export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[] };
+// GET /api/me. canCreateWorkspaces: the platform owner only.
+export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[]; canCreateWorkspaces: boolean };
+
+// POST /api/workspaces (platform owner only; 403 otherwise), 201: the caller
+// owns it. Name 1 to 80 characters.
+export type CreateWorkspaceBody = { name: string };
+export type CreateWorkspaceResponse = { workspace: WorkspaceSummary };
 
 // GET /api/workspaces
 export type WorkspacesResponse = { workspaces: WorkspaceSummary[] };

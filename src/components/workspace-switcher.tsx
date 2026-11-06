@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, ChevronsUpDown } from "lucide-react";
+import { ChevronRight, ChevronsUpDown, Plus } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 import type { WorkspaceSummary } from "@/lib/api-types/access";
@@ -14,15 +15,20 @@ import { initials, toneOf } from "./avatar";
 // (switchTarget). The new slug remounts everything under /w/[workspace], so no
 // timer or state from the old workspace's pages survives the switch.
 // A native select sits invisibly over the card, so phones get their own
-// full-size picker and keyboards get the usual select behaviour.
+// full-size picker and keyboards get the usual select behaviour. The platform
+// owner (canCreate) also gets "New workspace", in the list and under the card.
+const NEW = "__new__";
+
 export function WorkspaceSwitcher({
   workspaces,
   current,
   size = "sidebar",
+  canCreate = false,
 }: {
   workspaces: WorkspaceSummary[];
   current: string;
   size?: "sidebar" | "menu";
+  canCreate?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -42,7 +48,7 @@ export function WorkspaceSwitcher({
   const menu = size === "menu";
   const hint = others.length === 1 ? `Switch to ${others[0]!.name}` : others.length > 1 ? "Switch workspace" : "Your only workspace";
 
-  return (
+  const card = (
     <div
       className={cn(
         "relative flex w-full items-center rounded-card border border-border bg-surface text-ink focus-within:border-ink focus-within:ring-3 focus-within:ring-ring/40",
@@ -68,7 +74,7 @@ export function WorkspaceSwitcher({
       <select
         aria-label="Workspace"
         value={active.slug}
-        onChange={(event) => switchTo(event.target.value)}
+        onChange={(event) => (event.target.value === NEW ? router.push("/workspaces/new") : switchTo(event.target.value))}
         className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
       >
         {workspaces.map((workspace) => (
@@ -76,7 +82,21 @@ export function WorkspaceSwitcher({
             {workspace.name}
           </option>
         ))}
+        {canCreate && <option value={NEW}>New workspace…</option>}
       </select>
+    </div>
+  );
+  if (!canCreate) return card;
+  return (
+    <div className="flex flex-col gap-1">
+      {card}
+      <Link
+        href="/workspaces/new"
+        className={cn("flex items-center gap-2 rounded-control px-2.5 text-sm text-muted hover:bg-raised hover:text-ink", menu ? "h-11" : "h-8.5")}
+      >
+        <Plus className="size-4" aria-hidden />
+        New workspace
+      </Link>
     </div>
   );
 }

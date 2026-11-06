@@ -14,7 +14,7 @@ const STYLE: Record<CampaignStatus, { icon: typeof Check; className: string }> =
 
 // A campaign's state as an icon and words, never colour alone: "Complete",
 // "Paused until tomorrow, 08:00".
-export function CampaignStatusBadge({ campaign, className }: { campaign: Pick<Campaign, "status" | "resumeAt">; className?: string }) {
+export function CampaignStatusBadge({ campaign, className }: { campaign: Pick<Campaign, "status" | "resumeAt" | "pauseKind">; className?: string }) {
   const { icon: Icon, className: tone } = STYLE[campaign.status];
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", tone, className)}>

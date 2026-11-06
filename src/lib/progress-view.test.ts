@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignProgressResponse } from "./api-types/leads";
-import { pauseText, problemText, progressSentence, stepDetail, usd } from "./progress-view";
+import { GOOGLE_OFF, pauseText, problemText, progressSentence, stepDetail, usd } from "./progress-view";
 
 const progress = (over: Partial<CampaignProgressResponse> = {}): CampaignProgressResponse => ({
   status: "running",
@@ -39,7 +39,7 @@ describe("progress words", () => {
 
   it("says which cap paused the search, when it resets, and that nothing was charged past it", () => {
     const now = new Date("2026-10-30T12:00:00Z");
-    const pause = { limit: "daily_cap" as const, resumeAt: "2026-10-31T07:00:00Z", reason: null, autoResume: true };
+    const pause = { limit: "daily_cap" as const, resumeAt: "2026-10-31T07:00:00Z", lifted: false, canResume: false, reason: null, autoResume: true };
     const text = pauseText(pause, progress({ status: "paused", cost: { claudeUsd: 0, searches: { campaign: 20, budget: null, today: 20, dailyCap: 20, month: 46, monthlyCap: 650 } } }), null, now);
     expect(text.title).toBe("Paused: today's Google searches are used up");
     expect(text.body).toBe(
@@ -50,12 +50,30 @@ describe("progress words", () => {
     expect(pauseText(pause, progress({ status: "paused" }), null, now).body).toContain("and only 2 are left today, fewer than the next map tile needs.");
   });
 
-  it("says a search that reached a server without Google didn't run, and how to resume it", () => {
-    const offline = pauseText({ limit: "offline", resumeAt: "2026-10-30T12:00:00Z", reason: null, autoResume: false }, progress({ status: "paused" }), null);
-    expect(offline.title).toBe("Paused: this server can't call Google");
-    expect(offline.body).toBe(
-      "The search didn't run: the API it reached can't call Google. Start the API with ALLOW_REAL_GOOGLE=true, then tap Resume search. Nothing was charged, and nothing tries again by itself.",
+  it("never claims fewer are left than the live count shows", () => {
+    const now = new Date("2026-10-30T12:00:00Z");
+    const pause = { limit: "daily_cap" as const, resumeAt: "2026-10-31T07:00:00Z", lifted: false, canResume: false, reason: null, autoResume: false };
+    const fresh = progress({ status: "paused", cost: { claudeUsd: 0, searches: { campaign: 10, budget: null, today: 0, dailyCap: 40, month: 110, monthlyCap: 300 } } });
+    expect(pauseText(pause, fresh, null, now).body).toMatch(/^All campaigns together may make 40 Google searches a day\. The limit resets tomorrow, 08:00 \(Lagos time\)\./);
+  });
+
+  it("calls Google being off a setup problem: no time, no limit, nothing charged", () => {
+    const off = { limit: "google_off" as const, resumeAt: null, lifted: false, canResume: false, reason: GOOGLE_OFF, autoResume: false };
+    const text = pauseText(off, progress({ status: "paused" }), null);
+    expect(text).toEqual({ title: "Paused: Google search is off", body: "Google search is turned off on this server. An owner needs to turn it on. Nothing was charged." });
+    expect(text.body).not.toMatch(/limit|until|\d{2}:\d{2}/);
+    expect(pauseText({ ...off, limit: "google_back", canResume: true }, progress({ status: "paused" }), null).body).toBe(
+      "Google search is on again on this server. An owner can resume the search now. Nothing was charged.",
     );
+  });
+
+  it("says a cap has lifted only once its own reset has passed, and shows that time", () => {
+    const now = new Date("2026-10-31T08:00:00Z");
+    const lifted = { limit: "daily_cap" as const, resumeAt: "2026-10-31T07:00:00Z", lifted: true, canResume: true, reason: null, autoResume: false };
+    expect(pauseText(lifted, progress({ status: "paused" }), null, now)).toEqual({
+      title: "Paused: the limit has lifted",
+      body: "The limit reset at later today, 08:00 (Lagos time). An owner can resume the search now.",
+    });
   });
 
   it("shows Claude credit in dollars, with a sliver as under a cent", () => {

@@ -59,15 +59,25 @@ export type BuyerSegment = {
   rankReason: string;
 };
 
-// GET /api/w/:workspaceId/buyer-segments; POST starts the run (202).
+// A Brand DNA version a campaign may be made with or switched to.
+export type CampaignBrandVersion = { version: number; current: boolean; source: "website" | "description"; website: string | null; approvedAt: string | null };
+
+// GET /api/w/:workspaceId/buyer-segments[?version=N]; POST starts the run for
+// the approved version (202). not_suggested: an earlier version with no
+// segments (none are made for it). versions: what a new campaign may use.
 export type SegmentsResponse = {
-  state: "not_approved" | "none" | "running" | "failed" | "ready";
+  state: "not_approved" | "none" | "running" | "failed" | "ready" | "not_suggested";
   brandProfileVersion: number | null;
   run: PipelineRun | null;
   error: string | null;
   setId: string | null;
   segments: BuyerSegment[];
+  versions: CampaignBrandVersion[];
 };
+
+// POST .../campaigns/:campaignId/brand-version (owner): logged as an event.
+export type SwitchBrandVersionBody = { version: number };
+export type SwitchBrandVersionResponse = { from: number | null; to: number };
 export type StartSegmentsBody = { retry?: boolean };
 
 // The segment a campaign is created from: a suggestion, maybe edited (setId
@@ -94,6 +104,8 @@ export type CreateCampaignBody = {
   buyerSegment?: CampaignSegment;
   // 20 to 30; the API starts a campaign at 20 without it.
   leadsWanted?: number;
+  // Any approved Brand DNA version; the current one when left out.
+  brandProfileVersion?: number;
 };
 
 export type Campaign = {
@@ -114,12 +126,20 @@ export type Campaign = {
   // stopped campaign keeps why it stopped here too.
   resumeAt: string | null;
   pauseReason: string | null;
+  // Set while paused: what paused it ("setup": Google was off, no reset time).
+  pauseKind: PauseKind | null;
   settings: SearchSettings;
   // Google searches the campaign has made so far.
   callsUsed: number;
   leadCount: number;
   createdAt: string;
+  // When its search was first started; null for a draft.
+  startedAt: string | null;
 };
+
+// Why a campaign is paused: Google was off on the server ("setup", no reset
+// time), or a Google cap that resets at resumeAt.
+export type PauseKind = "setup" | "campaign_daily" | "daily_cap" | "monthly_cap" | "google_quota";
 
 // A campaign's search settings: the most Google searches it may use (null: no
 // budget), pages per map tile (1 to 3), neighbourhood searches per city (0 to
@@ -184,7 +204,11 @@ export type ProgressStep = {
   state: ProgressStepState;
   problem: { message: string | null; next: "retrying" | "skipped" | "stopped"; attempt: number; attempts: number } | null;
 };
-export type PauseLimit = "daily_cap" | "monthly_cap" | "campaign_daily" | "offline" | "lifted" | "other";
+// What a paused search waits for, the same answer Resume search acts on:
+// google_off, this server can't call Google; google_back, it paused because
+// Google was off and now it is on; a cap until its reset; other, a cap pause
+// from before pause kinds were stored.
+export type PauseLimit = "google_off" | "google_back" | "campaign_daily" | "daily_cap" | "monthly_cap" | "google_quota" | "other";
 export type CampaignProgressResponse = {
   status: CampaignStatus;
   steps: ProgressStep[];
@@ -202,8 +226,10 @@ export type CampaignProgressResponse = {
     // the API's config) with what all workspaces used today and this month.
     searches: { campaign: number; budget: number | null; today: number; dailyCap: number; month: number; monthlyCap: number };
   };
-  // Set while paused; autoResume is false (an owner resumes, in every environment).
-  pause: { limit: PauseLimit; resumeAt: string | null; reason: string | null; autoResume: boolean } | null;
+  // Set while paused; autoResume is false (an owner resumes, in every
+  // environment). resumeAt: a cap's reset (never moved by a refused Resume);
+  // lifted: it has passed; canResume: Resume search would start it now.
+  pause: { limit: PauseLimit; resumeAt: string | null; lifted: boolean; canResume: boolean; reason: string | null; autoResume: boolean } | null;
 };
 
 // POST .../campaigns/:campaignId/start (owner), 202.

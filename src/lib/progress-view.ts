@@ -4,6 +4,10 @@
 import type { CampaignProgressResponse, PauseLimit, ProgressStep, ProgressStepKey, ProgressStepState } from "./api-types/leads";
 import { pausedUntil } from "./leads";
 
+// The banner while the server can't call Google (the API's GOOGLE_OFF, which
+// Resume search answers with too).
+export const GOOGLE_OFF = "Google search is turned off on this server. An owner needs to turn it on. Nothing was charged.";
+
 type Progress = CampaignProgressResponse;
 
 export const STEP_TITLES: Record<ProgressStepKey, string> = {
@@ -52,36 +56,52 @@ export function problemText(problem: NonNullable<ProgressStep["problem"]>): { re
 }
 
 const PAUSE_TITLES: Record<PauseLimit, string> = {
+  google_off: "Paused: Google search is off",
+  google_back: "Paused: Google search was off",
   daily_cap: "Paused: today's Google searches are used up",
   monthly_cap: "Paused: this month's Google searches are used up",
   campaign_daily: "Paused: this campaign's searches for today are done",
-  offline: "Paused: this server can't call Google",
-  lifted: "Paused: the limit has lifted",
+  google_quota: "Paused: Google's quota for today is used up",
   other: "Paused",
 };
 
-// The cap-reached state: which limit, when it resets, and that nothing was
-// charged past it.
+// Why the search is paused, from the API's pause state (the one Resume search
+// acts on): Google off is a setup problem with no time; a cap says which, when
+// it resets, and that nothing was charged past it.
 export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, now = new Date()) {
+  if (pause.limit === "google_off") return { title: PAUSE_TITLES.google_off, body: GOOGLE_OFF };
+  if (pause.limit === "google_back") {
+    return { title: PAUSE_TITLES.google_back, body: "Google search is on again on this server. An owner can resume the search now. Nothing was charged." };
+  }
+  if (pause.lifted) {
+    const at = pause.resumeAt ? ` at ${pausedUntil(pause.resumeAt, now)} (Lagos time)` : "";
+    const next = pause.autoResume ? "The search picks up again in a moment." : "An owner can resume the search now.";
+    return { title: "Paused: the limit has lifted", body: `The limit reset${at}. ${next}` };
+  }
   const { searches } = p.cost;
   const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, now)} (Lagos time).` : "";
   const byHand = pause.autoResume ? "" : " The search doesn't restart on its own: an owner resumes it here once the limit has lifted.";
   const notCharged = "Google is never called past a limit, so nothing was charged past it.";
-  // A search pauses once fewer are left than the next map tile needs.
-  const left = (cap: number, used: number, period: string) =>
-    cap - used <= 0 ? `and ${period}'s are all used.` : `and only ${cap - used} ${cap - used === 1 ? "is" : "are"} left ${period === "today" ? "today" : "this month"}, fewer than the next map tile needs.`;
+  // A search pauses once fewer are left than the next map tile needs (up to
+  // 3). The count is today's live one, so say how many are left only while it
+  // still shows that: the cap is the one the search stored.
+  const left = (cap: number, used: number, period: string) => {
+    const n = cap - used;
+    if (n <= 0) return `and ${period}'s are all used.`;
+    if (n < 3) return `and only ${n} ${n === 1 ? "is" : "are"} left ${period === "today" ? "today" : "this month"}, fewer than the next map tile needs.`;
+    return "";
+  };
+  const withLeft = (clause: string) => (clause ? `, ${clause}` : ".");
   const body = (() => {
     switch (pause.limit) {
       case "daily_cap":
-        return `All campaigns together may make ${searches.dailyCap} Google searches a day, ${left(searches.dailyCap, searches.today, "today")} ${resumes}${byHand} ${notCharged}`;
+        return `All campaigns together may make ${searches.dailyCap} Google searches a day${withLeft(left(searches.dailyCap, searches.today, "today"))} ${resumes}${byHand} ${notCharged}`;
       case "monthly_cap":
-        return `All campaigns together may make ${searches.monthlyCap.toLocaleString("en-GB")} Google searches a month, ${left(searches.monthlyCap, searches.month, "this month")} ${resumes}${byHand} ${notCharged}`;
+        return `All campaigns together may make ${searches.monthlyCap.toLocaleString("en-GB")} Google searches a month${withLeft(left(searches.monthlyCap, searches.month, "this month"))} ${resumes}${byHand} ${notCharged}`;
       case "campaign_daily":
         return `This campaign is set to ${dailyCalls ?? "a few"} Google searches a day. ${resumes}${byHand} ${notCharged}`;
-      case "offline":
-        return "The search didn't run: the API it reached can't call Google. Start the API with ALLOW_REAL_GOOGLE=true, then tap Resume search. Nothing was charged, and nothing tries again by itself.";
-      case "lifted":
-        return pause.autoResume ? "The limit has lifted. The search picks up again in a moment." : "The limit has lifted. An owner can resume the search now.";
+      case "google_quota":
+        return `Google says today's search quota is used up. ${resumes}${byHand} ${notCharged}`;
       case "other":
         return `${pause.reason ?? "The search is paused."} ${resumes}`;
     }

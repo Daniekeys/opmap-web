@@ -32,8 +32,6 @@ export function CampaignProgress({
 }) {
   const stoppable = isOwner && (campaign.status === "running" || campaign.status === "paused");
   const pause = progress.pause && pauseText(progress.pause, progress, campaign.settings.dailyCalls);
-  // Nothing left to wait for: the limit has lifted, or the server couldn't call Google.
-  const waitsForOwner = progress.pause?.limit === "lifted" || progress.pause?.limit === "offline";
   return (
     <section aria-labelledby="progress-heading" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -47,8 +45,10 @@ export function CampaignProgress({
         <div role="status" className="flex flex-col gap-1 rounded-card bg-warning-soft px-5 py-4 text-sm text-warning-ink">
           <p className="font-semibold">{pause.title}</p>
           <p>{pause.body}</p>
-          {waitsForOwner && isOwner && !progress.pause.autoResume && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
-          {!waitsForOwner && progress.pause.resumeAt && <RefreshAt at={progress.pause.resumeAt} />}
+          {progress.pause.canResume && isOwner && (!progress.pause.autoResume || progress.pause.limit === "google_back") && (
+            <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />
+          )}
+          {!progress.pause.lifted && progress.pause.resumeAt && <RefreshAt at={progress.pause.resumeAt} />}
         </div>
       )}
 

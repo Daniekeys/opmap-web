@@ -81,8 +81,8 @@ async function HomeLink({ params }: { params: Params }) {
 
 async function Switcher({ params, size }: { params: Params; size: "sidebar" | "menu" }) {
   const { workspace } = await params;
-  const { workspaces } = await getMe();
-  return <WorkspaceSwitcher workspaces={workspaces} current={workspace} size={size} />;
+  const { workspaces, canCreateWorkspaces } = await getMe();
+  return <WorkspaceSwitcher workspaces={workspaces} current={workspace} size={size} canCreate={canCreateWorkspaces} />;
 }
 
 // Owners only: the API sends claudeAlert to owners, for the rest of the UTC day.

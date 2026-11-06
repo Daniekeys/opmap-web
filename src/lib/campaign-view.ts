@@ -1,6 +1,7 @@
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
-import type { CampaignStatus, Lead } from "./api-types/leads";
+import type { ProfileSummary } from "./api-types/brand";
+import type { Campaign, CampaignStatus, Lead } from "./api-types/leads";
 import type { DraftCite } from "./api-types/outreach";
 import type { Stage } from "./api-types/outcomes";
 import type { Cite, DatedCite } from "./api-types/research";
@@ -36,11 +37,25 @@ export function leadMeta(lead: Lead) {
 }
 
 // The one sentence under the title: the most useful thing to do next.
-export function findingSentence({ leads, stages, status }: { leads: Lead[]; stages: Record<string, Stage>; status: CampaignStatus }) {
+// "Found no businesses that fit" only once the search has finished (its fit
+// checks with it); before any Google search has run, it hasn't started.
+export function findingSentence({
+  leads,
+  stages,
+  status,
+  callsUsed,
+}: {
+  leads: Lead[];
+  stages: Record<string, Stage>;
+  status: CampaignStatus;
+  callsUsed: number;
+}) {
   if (leads.length === 0) {
     if (status === "draft") return "Not searched yet. Confirm the search to find businesses that fit.";
     if (status === "running") return "Searching. Businesses that fit show up here as they are checked.";
-    return "The search found no businesses that fit.";
+    if (status === "done") return "The search found no businesses that fit.";
+    if (callsUsed === 0) return "The search hasn't started yet.";
+    return "No businesses that fit so far.";
   }
   const fresh = leads.filter((l) => (stages[l.leadId] ?? "new") === "new");
   const strong = fresh.filter((l) => fitOf(l).strong);
@@ -51,6 +66,33 @@ export function findingSentence({ leads, stages, status }: { leads: Lead[]; stag
   }
   if (fresh.length === 0) return "Every business here has been contacted.";
   return `${fresh.length} of ${leads.length} businesses haven't been contacted yet.`;
+}
+
+// The line under a campaign's title: who it is for (a suggested segment's
+// name, or the user's own words), where, the Brand DNA version it uses (its
+// deep-dives and drafts read it; with the version to link to, when it is still
+// listed), when its search started, and, when a newer version has been
+// approved since, the question whether to switch to it.
+export function campaignContext(
+  campaign: Pick<Campaign, "segment" | "buyerSegment" | "locations" | "brandProfileVersion" | "startedAt">,
+  brand: { approved: Pick<ProfileSummary, "version"> | null; versions: Pick<ProfileSummary, "id" | "version">[] },
+) {
+  const segment = campaign.buyerSegment;
+  const who = segment?.setId ? segment.name : `Your own: ${segment?.name ?? campaign.segment}`;
+  const where = campaign.locations.map((l) => l.name).join(", ");
+  const built = campaign.brandProfileVersion;
+  const profile = built === null ? null : (brand.versions.find((v) => v.version === built) ?? null);
+  const approved = brand.approved?.version ?? null;
+  return {
+    who,
+    where,
+    brand: built === null ? null : { label: `Brand DNA v${built}`, profileId: profile?.id ?? null },
+    started: campaign.startedAt ? `Started ${formatDay(campaign.startedAt)}` : null,
+    newer:
+      built !== null && approved !== null && approved > built
+        ? { version: approved, question: `A newer Brand DNA (v${approved}) was approved. Switch this campaign to v${approved}?` }
+        : null,
+  };
 }
 
 // " 3 of them are in Ikate and Osapa.", when two places hold most but not all.

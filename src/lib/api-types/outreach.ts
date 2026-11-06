@@ -55,8 +55,13 @@ export type LeadOutreachResponse = {
   contacts: ContactRow[];
   cards: {
     opportunityId: string;
-    // The card's offerInBrandDna: false, and no drafts can be written from it.
+    // False when the card's offer isn't a fact of the campaign's Brand DNA
+    // version that the approved version still holds: no drafts can be written
+    // for it, and offerNote says why ("This offer is no longer in your
+    // approved Brand DNA." or "This offer isn't in the Brand DNA this
+    // campaign uses.").
     offerInBrandDna: boolean;
+    offerNote: string | null;
     run: {
       draftSetId: string;
       status: "running" | "done" | "failed";

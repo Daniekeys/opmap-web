@@ -14,11 +14,13 @@ import { cn } from "@/lib/utils";
 
 type Load = { state: "loading" } | { state: "error"; message: string } | { state: "loaded"; data: SegmentsResponse };
 
-// GET the segments, or POST to start (or retry) their run. A GET that finds
-// none yet starts the run: opening the screen is what asks for them.
-// Null when the session has expired (the page is leaving for the login).
-async function fetchSegments(workspaceId: string, method: "GET" | "POST", body?: StartSegmentsBody): Promise<SegmentsResponse | null> {
-  const res = await fetch(`/api/w/${workspaceId}/buyer-segments`, {
+// GET the segments (of an earlier Brand DNA version, when one is chosen), or
+// POST to start (or retry) their run. A GET that finds none yet starts the
+// run: opening the screen is what asks for them. Earlier versions never get a
+// run. Null when the session has expired (the page is leaving for the login).
+async function fetchSegments(workspaceId: string, method: "GET" | "POST", body?: StartSegmentsBody, version?: number): Promise<SegmentsResponse | null> {
+  const query = method === "GET" && version !== undefined ? `?version=${version}` : "";
+  const res = await fetch(`/api/w/${workspaceId}/buyer-segments${query}`, {
     method,
     ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) } : {}),
   });
@@ -44,13 +46,16 @@ export function SegmentPicker({
 }: {
   workspaceId: string;
   slug: string;
-  onPick: (segment: BuyerSegment, setId: string) => void;
-  onOwn: (name: string) => void;
+  // version: the Brand DNA version the campaign will use.
+  onPick: (segment: BuyerSegment, setId: string, version: number | undefined) => void;
+  onOwn: (name: string, version: number | undefined) => void;
 }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   // The picked card's rank; null for none (or a buyer of your own).
   const [picked, setPicked] = useState<number | null>(null);
   const [own, setOwn] = useState("");
+  // An earlier approved version chosen instead of the current one.
+  const [version, setVersion] = useState<number | undefined>(undefined);
 
   const loaded = (data: SegmentsResponse | null) => {
     if (!data) return;
@@ -60,11 +65,11 @@ export function SegmentPicker({
   const failed = () => setLoad({ state: "error", message: "Couldn't load your buyer segments. Check your connection and try again." });
 
   // Retry buttons and a finished run fetch again.
-  const request = (method: "GET" | "POST", body?: StartSegmentsBody) => fetchSegments(workspaceId, method, body).then(loaded, failed);
+  const request = (method: "GET" | "POST", body?: StartSegmentsBody) => fetchSegments(workspaceId, method, body, version).then(loaded, failed);
 
   useEffect(() => {
     let live = true;
-    fetchSegments(workspaceId, "GET").then(
+    fetchSegments(workspaceId, "GET", undefined, version).then(
       (data) => {
         if (!live || !data) return;
         setLoad({ state: "loaded", data });
@@ -75,16 +80,25 @@ export function SegmentPicker({
     return () => {
       live = false;
     };
-  }, [workspaceId]);
+  }, [workspaceId, version]);
 
   const data = load.state === "loaded" ? load.data : null;
   const segments = data?.state === "ready" ? data.segments : [];
   const chosen = segments.find((s) => s.rank === picked) ?? null;
+  const shownVersion = data?.brandProfileVersion ?? undefined;
 
   function next(event: FormEvent) {
     event.preventDefault();
-    if (own.trim()) onOwn(own.trim());
-    else if (chosen && data?.setId) onPick(chosen, data.setId);
+    if (own.trim()) onOwn(own.trim(), shownVersion);
+    else if (chosen && data?.setId) onPick(chosen, data.setId, shownVersion);
+  }
+
+  function chooseVersion(value: number) {
+    const next = data?.versions.find((v) => v.version === value)?.current ? undefined : value;
+    if (next === version) return;
+    setLoad({ state: "loading" });
+    setPicked(null);
+    setVersion(next);
   }
 
   const ownForm = (
@@ -134,6 +148,13 @@ export function SegmentPicker({
         <Link href={`/w/${slug}/brand`} className={cn(buttonVariants(), "h-11 self-start text-base md:h-10 md:text-sm")}>
           Go to Brand DNA
         </Link>
+      </div>
+    );
+  } else if (data!.state === "not_suggested") {
+    body = (
+      <div className="flex max-w-read flex-col gap-2 rounded-card border border-dashed border-control bg-surface px-5 py-5 text-sm md:px-6">
+        <p className="font-semibold">No buyer segments for Brand DNA v{data!.brandProfileVersion}</p>
+        <p className="text-muted">Segments are only worked out for the approved version. Describe the buyer you want yourself below.</p>
       </div>
     );
   } else if (data!.state === "running" || data!.state === "none") {
@@ -192,12 +213,28 @@ export function SegmentPicker({
               : "Pick who to sell to, then where. You'll see what the search costs before anything runs."}
           </p>
         </div>
-        <Link
-          href={`/w/${slug}/brand`}
-          className="inline-flex min-h-11 items-center text-sm font-medium text-accent-ink hover:text-accent sm:pt-5"
-        >
-          Check Brand DNA
-        </Link>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:pt-5">
+          {data && data.versions.length > 1 && (
+            <label className="flex items-center gap-2 text-sm text-muted">
+              Brand DNA
+              <select
+                value={data.brandProfileVersion ?? ""}
+                onChange={(e) => chooseVersion(Number(e.target.value))}
+                className="h-11 rounded-control border border-control bg-surface px-2 text-sm text-ink md:h-9"
+              >
+                {data.versions.map((v) => (
+                  <option key={v.version} value={v.version}>
+                    v{v.version}
+                    {v.current ? " (approved)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <Link href={`/w/${slug}/brand`} className="inline-flex min-h-11 items-center text-sm font-medium text-accent-ink hover:text-accent">
+            Check Brand DNA
+          </Link>
+        </div>
       </header>
       {body}
       {ownForm}

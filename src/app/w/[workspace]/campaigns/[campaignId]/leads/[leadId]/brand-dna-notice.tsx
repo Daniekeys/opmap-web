@@ -9,15 +9,19 @@ import { cn } from "@/lib/utils";
 // what was read about the business. `allowed` is the API's brandDnaRerun.
 export type Rerun = { allowed: boolean; busy: boolean; onRerun: () => void };
 
+export const OFFER_NO_LONGER_APPROVED = "This offer is no longer in your approved Brand DNA.";
+
 // The warning's id: the lead page's "Offer missing, fix it" scrolls to it.
 export const OFFER_GONE_ID = "offer-gone";
 
 const brandLinkClass = "inline-flex min-h-11 shrink-0 items-center font-medium underline-offset-4 hover:underline";
 
-// On the card and in the composer when the card's offer isn't in the approved
-// Brand DNA any more: nothing can be written or sent from it. The re-run is the
-// main action; `brandLink` adds "Go to Brand DNA" beside it (on /messages).
-export function OfferGone({ slug, rerun, brandLink = false }: { slug: string; rerun: Rerun; brandLink?: boolean }) {
+// On the card and in the composer when the card's offer can't be written:
+// dropped from the approved Brand DNA, or (`note`, the API's offerNote) never
+// in the Brand DNA version the campaign uses. Nothing can be written or sent
+// from it. The re-run is the main action; `brandLink` adds "Go to Brand DNA"
+// beside it (on /messages).
+export function OfferGone({ slug, rerun, brandLink = false, note = null }: { slug: string; rerun: Rerun; brandLink?: boolean; note?: string | null }) {
   return (
     // With the Brand DNA link the actions need a row of their own, under the text.
     <div
@@ -27,7 +31,7 @@ export function OfferGone({ slug, rerun, brandLink = false }: { slug: string; re
     >
       <p className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>This offer isn&apos;t in your approved Brand DNA anymore.</span>
+        <span>{note ?? OFFER_NO_LONGER_APPROVED}</span>
       </p>
       {rerun.allowed ? (
         <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">

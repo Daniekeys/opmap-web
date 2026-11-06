@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
+import { campaignContext, citeReadAt, contactNote, findingSentence, fitOf, leadMeta, readOn } from "./campaign-view";
 
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
@@ -65,25 +65,72 @@ describe("findingSentence", () => {
       lead({ leadId: "4", score: 0.72, city: "Agungi" }),
       lead({ leadId: "5", score: 0.4 }),
     ];
-    expect(findingSentence({ leads, stages, status: "done" })).toBe("4 strong fits haven't been contacted yet. 3 of them are in Ikate and Osapa.");
+    expect(findingSentence({ leads, stages, status: "done", callsUsed: 3 })).toBe("4 strong fits haven't been contacted yet. 3 of them are in Ikate and Osapa.");
   });
 
   it("skips the place when they are all in one", () => {
     const leads = [lead({ leadId: "1", score: 0.9 }), lead({ leadId: "2", score: 0.8 })];
-    expect(findingSentence({ leads, stages, status: "done" })).toBe("2 strong fits haven't been contacted yet.");
-    expect(findingSentence({ leads: [leads[0]!], stages, status: "done" })).toBe("1 strong fit hasn't been contacted yet.");
+    expect(findingSentence({ leads, stages, status: "done", callsUsed: 3 })).toBe("2 strong fits haven't been contacted yet.");
+    expect(findingSentence({ leads: [leads[0]!], stages, status: "done", callsUsed: 3 })).toBe("1 strong fit hasn't been contacted yet.");
   });
 
   it("counts what is left when the strong fits are contacted", () => {
     const leads = [lead({ leadId: "1", score: 0.9 }), lead({ leadId: "2" }), lead({ leadId: "3" })];
-    expect(findingSentence({ leads, stages: { "1": "sent" }, status: "done" })).toBe("2 of 3 businesses haven't been contacted yet.");
-    expect(findingSentence({ leads: [leads[0]!], stages: { "1": "replied" }, status: "done" })).toBe("Every business here has been contacted.");
+    expect(findingSentence({ leads, stages: { "1": "sent" }, status: "done", callsUsed: 3 })).toBe("2 of 3 businesses haven't been contacted yet.");
+    expect(findingSentence({ leads: [leads[0]!], stages: { "1": "replied" }, status: "done", callsUsed: 3 })).toBe("Every business here has been contacted.");
   });
 
   it("says what the empty states mean", () => {
-    expect(findingSentence({ leads: [], stages, status: "draft" })).toBe("Not searched yet. Confirm the search to find businesses that fit.");
-    expect(findingSentence({ leads: [], stages, status: "running" })).toBe("Searching. Businesses that fit show up here as they are checked.");
-    expect(findingSentence({ leads: [], stages, status: "done" })).toBe("The search found no businesses that fit.");
+    expect(findingSentence({ leads: [], stages, status: "draft", callsUsed: 0 })).toBe("Not searched yet. Confirm the search to find businesses that fit.");
+    expect(findingSentence({ leads: [], stages, status: "running", callsUsed: 0 })).toBe("Searching. Businesses that fit show up here as they are checked.");
+    expect(findingSentence({ leads: [], stages, status: "done", callsUsed: 3 })).toBe("The search found no businesses that fit.");
+  });
+
+  it("says the search hasn't started until a Google search has run, and never 'found none' before it finished", () => {
+    // Paused before any search ran (Google off, or a cap reached first).
+    expect(findingSentence({ leads: [], stages, status: "paused", callsUsed: 0 })).toBe("The search hasn't started yet.");
+    expect(findingSentence({ leads: [], stages, status: "stopped", callsUsed: 0 })).toBe("The search hasn't started yet.");
+    // Searched, but not finished: nothing found so far.
+    expect(findingSentence({ leads: [], stages, status: "paused", callsUsed: 6 })).toBe("No businesses that fit so far.");
+    // Searched, fit checks finished, none fit.
+    expect(findingSentence({ leads: [], stages, status: "done", callsUsed: 6 })).toBe("The search found no businesses that fit.");
+  });
+});
+
+describe("campaignContext", () => {
+  const segment = { setId: "set-1", rank: 1, name: "Fast food restaurants", edited: false, searchTerms: [], whyTheyBuy: "", pain: "", pitchFirst: "", buyerSignals: { minReviews: null, minRating: null, website: "any" as const, socials: "any" as const, categories: [] } };
+  const area = (name: string) => ({ id: name, name, level: "city" as const, parentName: null, country: "NG", population: null });
+  const campaign = {
+    segment: "Fast food restaurants",
+    buyerSegment: segment,
+    locations: [area("Ilorin"), area("Offa")],
+    brandProfileVersion: 4,
+    startedAt: "2026-10-31T16:05:17Z",
+  };
+  const brand = { approved: { version: 4 }, versions: [{ id: "p4", version: 4 }, { id: "p3", version: 3 }] };
+
+  it("says who it is for, where, the Brand DNA it was built from and when it started", () => {
+    expect(campaignContext(campaign, brand)).toEqual({
+      who: "Fast food restaurants",
+      where: "Ilorin, Offa",
+      brand: { label: "Brand DNA v4", profileId: "p4" },
+      started: "Started 31 Oct",
+      newer: null,
+    });
+  });
+
+  it("marks the user's own segment, and a draft as not started", () => {
+    const own = campaignContext({ ...campaign, buyerSegment: { ...segment, setId: null, name: "Chop bars near campus" }, startedAt: null }, brand);
+    expect([own.who, own.started]).toEqual(["Your own: Chop bars near campus", null]);
+    // Made before segments: its typed segment.
+    expect(campaignContext({ ...campaign, buyerSegment: null }, brand).who).toBe("Your own: Fast food restaurants");
+  });
+
+  it("asks whether to switch when a newer Brand DNA has been approved since", () => {
+    const later = campaignContext(campaign, { approved: { version: 5 }, versions: [{ id: "p5", version: 5 }, ...brand.versions] });
+    expect(later.newer).toEqual({ version: 5, question: "A newer Brand DNA (v5) was approved. Switch this campaign to v5?" });
+    expect(later.brand).toEqual({ label: "Brand DNA v4", profileId: "p4" });
+    expect(campaignContext({ ...campaign, brandProfileVersion: null }, brand)).toMatchObject({ brand: null, newer: null });
   });
 });
 
