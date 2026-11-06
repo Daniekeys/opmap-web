@@ -3,13 +3,14 @@
 import { Mail, MessageCircle, Search, Ban } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
 import { fitOf, leadMeta } from "@/lib/campaign-view";
 import { hasPhoneOrWhatsapp, leadBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
+import { moreToRight } from "@/lib/scroll-hint";
 import { cn } from "@/lib/utils";
 
 type Tab = "all" | "researched" | "outreach";
@@ -42,6 +43,17 @@ export function LeadRail({
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [phoneOnly, setPhoneOnly] = useState(false);
+  // The phone's chip row: whether chips are hidden off its right edge.
+  const chipRow = useRef<HTMLDivElement>(null);
+  const [chipsHidden, setChipsHidden] = useState(false);
+  const updateChipHint = useCallback(() => {
+    if (chipRow.current) setChipsHidden(moreToRight(chipRow.current));
+  }, []);
+  useEffect(() => {
+    updateChipHint();
+    window.addEventListener("resize", updateChipHint);
+    return () => window.removeEventListener("resize", updateChipHint);
+  }, [updateChipHint, leads.length]);
 
   const stageOf = (lead: Lead) => stages[lead.leadId] ?? "new";
   const contactedSet = useMemo(() => new Set(contacted), [contacted]);
@@ -98,16 +110,23 @@ export function LeadRail({
             className="w-full bg-transparent text-base text-ink outline-none placeholder:text-muted lg:text-sm"
           />
         </label>
-        {/* Phones: the tabs as filter chips, with the phone filter beside them. */}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:hidden">
-          {TABS.map((t) => (
-            <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)} className={chipClass(tab === t.key)}>
-              {t.chip} <span className="tabular-nums opacity-80">{counts[t.key]}</span>
+        {/* Phones: the tabs as filter chips, with the phone filter beside them.
+            A fade at the right edge while more chips are off-screen. */}
+        <div className="relative -mx-4 lg:hidden">
+          <div ref={chipRow} onScroll={updateChipHint} className="flex gap-2 overflow-x-auto px-4">
+            {TABS.map((t) => (
+              <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)} className={chipClass(tab === t.key)}>
+                {t.chip} <span className="tabular-nums opacity-80">{counts[t.key]}</span>
+              </button>
+            ))}
+            <button type="button" aria-pressed={phoneOnly} onClick={() => setPhoneOnly((v) => !v)} className={chipClass(phoneOnly)}>
+              Has phone
             </button>
-          ))}
-          <button type="button" aria-pressed={phoneOnly} onClick={() => setPhoneOnly((v) => !v)} className={chipClass(phoneOnly)}>
-            Has phone
-          </button>
+          </div>
+          <span
+            aria-hidden
+            className={cn("pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-ground to-transparent transition-opacity", chipsHidden ? "opacity-100" : "opacity-0")}
+          />
         </div>
         <div className="hidden shrink-0 items-center gap-3 lg:flex">
           <button
