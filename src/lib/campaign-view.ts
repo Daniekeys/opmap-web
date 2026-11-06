@@ -2,7 +2,6 @@
 // summary, and the sentence under the campaign's title.
 import type { CampaignStatus, Lead } from "./api-types/leads";
 import type { DraftCite } from "./api-types/outreach";
-import type { Stage } from "./api-types/outcomes";
 import type { Cite, DatedCite } from "./api-types/research";
 import { formatDay } from "./format";
 import { categoryText, FIT_WORDS, labelText } from "./leads";
@@ -36,13 +35,14 @@ export function leadMeta(lead: Lead) {
 }
 
 // The one sentence under the title: the most useful thing to do next.
-export function findingSentence({ leads, stages, status }: { leads: Lead[]; stages: Record<string, Stage>; status: CampaignStatus }) {
+// `contacted`: the leads that ever had a stage outcome (contactedLeads).
+export function findingSentence({ leads, contacted, status }: { leads: Lead[]; contacted: ReadonlySet<string>; status: CampaignStatus }) {
   if (leads.length === 0) {
     if (status === "draft") return "Not searched yet. Confirm the search to find businesses that fit.";
     if (status === "running") return "Searching. Businesses that fit show up here as they are checked.";
     return "The search found no businesses that fit.";
   }
-  const fresh = leads.filter((l) => (stages[l.leadId] ?? "new") === "new");
+  const fresh = leads.filter((l) => !contacted.has(l.leadId));
   const strong = fresh.filter((l) => fitOf(l).strong);
   if (strong.length > 0) {
     const n = strong.length;

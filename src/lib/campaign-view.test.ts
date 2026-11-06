@@ -55,7 +55,7 @@ describe("leadMeta", () => {
 });
 
 describe("findingSentence", () => {
-  const stages = {};
+  const contacted = new Set<string>();
 
   it("leads with the strong fits nobody has contacted, and where they are", () => {
     const leads = [
@@ -65,25 +65,25 @@ describe("findingSentence", () => {
       lead({ leadId: "4", score: 0.72, city: "Agungi" }),
       lead({ leadId: "5", score: 0.4 }),
     ];
-    expect(findingSentence({ leads, stages, status: "done" })).toBe("4 strong fits haven't been contacted yet. 3 of them are in Ikate and Osapa.");
+    expect(findingSentence({ leads, contacted, status: "done" })).toBe("4 strong fits haven't been contacted yet. 3 of them are in Ikate and Osapa.");
   });
 
   it("skips the place when they are all in one", () => {
     const leads = [lead({ leadId: "1", score: 0.9 }), lead({ leadId: "2", score: 0.8 })];
-    expect(findingSentence({ leads, stages, status: "done" })).toBe("2 strong fits haven't been contacted yet.");
-    expect(findingSentence({ leads: [leads[0]!], stages, status: "done" })).toBe("1 strong fit hasn't been contacted yet.");
+    expect(findingSentence({ leads, contacted, status: "done" })).toBe("2 strong fits haven't been contacted yet.");
+    expect(findingSentence({ leads: [leads[0]!], contacted, status: "done" })).toBe("1 strong fit hasn't been contacted yet.");
   });
 
   it("counts what is left when the strong fits are contacted", () => {
     const leads = [lead({ leadId: "1", score: 0.9 }), lead({ leadId: "2" }), lead({ leadId: "3" })];
-    expect(findingSentence({ leads, stages: { "1": "sent" }, status: "done" })).toBe("2 of 3 businesses haven't been contacted yet.");
-    expect(findingSentence({ leads: [leads[0]!], stages: { "1": "replied" }, status: "done" })).toBe("Every business here has been contacted.");
+    expect(findingSentence({ leads, contacted: new Set(["1"]), status: "done" })).toBe("2 of 3 businesses haven't been contacted yet.");
+    expect(findingSentence({ leads: [leads[0]!], contacted: new Set(["1"]), status: "done" })).toBe("Every business here has been contacted.");
   });
 
   it("says what the empty states mean", () => {
-    expect(findingSentence({ leads: [], stages, status: "draft" })).toBe("Not searched yet. Confirm the search to find businesses that fit.");
-    expect(findingSentence({ leads: [], stages, status: "running" })).toBe("Searching. Businesses that fit show up here as they are checked.");
-    expect(findingSentence({ leads: [], stages, status: "done" })).toBe("The search found no businesses that fit.");
+    expect(findingSentence({ leads: [], contacted, status: "draft" })).toBe("Not searched yet. Confirm the search to find businesses that fit.");
+    expect(findingSentence({ leads: [], contacted, status: "running" })).toBe("Searching. Businesses that fit show up here as they are checked.");
+    expect(findingSentence({ leads: [], contacted, status: "done" })).toBe("The search found no businesses that fit.");
   });
 });
 

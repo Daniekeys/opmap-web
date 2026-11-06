@@ -28,11 +28,14 @@ export function LeadRail({
   base,
   leads,
   stages,
+  contacted,
   searched,
 }: {
   base: string;
   leads: Lead[];
   stages: Record<string, Stage>;
+  // Leads with any stage outcome (lib/pipeline.ts, contactedLeads).
+  contacted: string[];
   searched: boolean;
 }) {
   const pathname = usePathname();
@@ -41,11 +44,12 @@ export function LeadRail({
   const [phoneOnly, setPhoneOnly] = useState(false);
 
   const stageOf = (lead: Lead) => stages[lead.leadId] ?? "new";
-  const inTab = (lead: Lead, t: Tab) => (t === "all" ? true : t === "researched" ? lead.researched : stageOf(lead) !== "new");
+  const contactedSet = useMemo(() => new Set(contacted), [contacted]);
+  const inTab = (lead: Lead, t: Tab) => (t === "all" ? true : t === "researched" ? lead.researched : contactedSet.has(lead.leadId));
   const counts = useMemo(
     () => Object.fromEntries(TABS.map((t) => [t.key, leads.filter((l) => inTab(l, t.key)).length])) as Record<Tab, number>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [leads, stages],
+    [leads, contactedSet],
   );
   const q = query.trim().toLowerCase();
   const shown = leads.filter(

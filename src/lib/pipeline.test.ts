@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PipelineLead, PipelineResponse } from "./api-types/outcomes";
-import { dayText, pipelineFinding, whenLine } from "./pipeline";
+import { contactedLeads, dayText, pipelineFinding, whenLine } from "./pipeline";
 
 // 31 Oct 2026, 14:00 in Lagos.
 const NOW = new Date("2026-10-31T13:00:00Z");
@@ -14,6 +14,7 @@ const lead = (over: Partial<PipelineLead> = {}): PipelineLead => ({
   stage: "sent",
   offer: "A website",
   optedOut: false,
+  messaged: false,
   lastOutcome: { type: "sent", channel: "whatsapp", note: null, createdAt: "2026-10-31T08:00:00Z" },
   ...over,
 });
@@ -43,5 +44,14 @@ describe("pipeline words", () => {
     expect(pipelineFinding({ messaged: 9, replied: 0, meeting: 0, won: 0 }, [], "Africa/Lagos", NOW)).toBe("0 of 9 replied.");
     const replied = lead({ name: "Adewole Cake Studio", stage: "replied", lastOutcome: { type: "replied", channel: "whatsapp", note: null, createdAt: "2026-10-31T09:00:00Z" } });
     expect(pipelineFinding({ messaged: 9, replied: 3, meeting: 1, won: 1 }, stages([replied]), "Africa/Lagos", NOW)).toBe("3 of 9 replied. Adewole Cake Studio replied today.");
+  });
+});
+
+describe("contacted leads", () => {
+  it("are the ones the API marks messaged, not every lead past New", () => {
+    const one = (leadId: string, stage: PipelineLead["stage"], messaged: boolean) => ({ leadId, stage, messaged }) as PipelineLead;
+    const pipeline = { stages: [{ stage: "replied", count: 1, leads: [one("a", "replied", true)] }, { stage: "lost", count: 2, leads: [one("b", "lost", true), one("c", "lost", false)] }] } as PipelineResponse;
+    // c asked us to stop before anything was sent: Lost, but not contacted.
+    expect([...contactedLeads(pipeline)].sort()).toEqual(["a", "b"]);
   });
 });

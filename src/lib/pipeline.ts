@@ -52,3 +52,11 @@ export function pipelineFinding(funnel: PipelineFunnel, stages: PipelineResponse
   if (!first || first.lastOutcome?.type !== "replied") return counts;
   return `${counts} ${first.name} replied ${dayText(first.lastOutcome.createdAt, timeZone, now)}.`;
 }
+
+// The leads counted as contacted (the Contacted tab, "haven't been contacted
+// yet"): those with any stage outcome, the same rule as the Messaged count.
+// A lead that asked us to stop before anything was sent is Lost but not
+// contacted.
+export function contactedLeads(pipeline: Pick<PipelineResponse, "stages">) {
+  return new Set(pipeline.stages.flatMap((s) => s.leads).filter((l) => l.messaged).map((l) => l.leadId));
+}
