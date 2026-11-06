@@ -16,8 +16,13 @@ export type GeoArea = {
   population: number | null;
 };
 
-// GET /api/w/:workspaceId/geo-areas?q=
+// GET /api/w/:workspaceId/geo-areas?q= (or ?ids=a,b for exact places)
 export type GeoAreasResponse = { areas: GeoArea[] };
+
+// GET /api/w/:workspaceId/campaigns/suggested-places: the default places for a
+// new campaign from the approved Brand DNA. from: the location fact the first
+// place came from. unmatched: location facts that name no known place.
+export type SuggestedPlacesResponse = { areas: GeoArea[]; from: string | null; unmatched: string[] };
 
 // POST /api/w/:workspaceId/campaigns/route-target
 export type RouteTargetBody = { segment: string; queries?: string[] };

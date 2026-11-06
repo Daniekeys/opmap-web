@@ -14,6 +14,7 @@ import type {
   CreateCampaignBody,
   GeoArea,
   GeoAreasResponse,
+  SuggestedPlacesResponse,
   Presence,
   RouteTargetBody,
   RouteTargetResponse,
@@ -48,11 +49,18 @@ const PRESENCE_OPTIONS: { value: Presence; label: string }[] = [
 
 const NO_SIGNALS: BuyerSignals = { minReviews: null, minRating: null, website: "any", socials: "any", categories: [] };
 
-// Places of a suggestion that are in geo_areas, as the picker shows them.
-const startPlaces = (start: FormStart): GeoArea[] =>
-  (start?.segment.suggestedPlaces ?? []).flatMap((p) =>
-    p.areaId ? [{ id: p.areaId, name: p.name, level: "city" as const, parentName: null, country: "NG", population: null }] : [],
-  );
+// Where the starting places came from: the buyer segment's suggestion, or
+// the approved Brand DNA (spec, Location: the seller's location is the
+// default). The user can remove them or pick any other place.
+export type PlacesSource = { kind: "segment" } | { kind: "brand"; from: string | null } | null;
+
+export function placesNote(source: PlacesSource, chosen: GeoArea[]) {
+  if (!source || chosen.length === 0) return null;
+  if (source.kind === "segment") return "Suggested for this buyer. Remove any, or pick other places.";
+  return source.from
+    ? `Suggested from your Brand DNA ("${source.from}"). Remove it, or pick any other place.`
+    : "Suggested from your Brand DNA. Remove it, or pick any other place.";
+}
 
 export function CampaignForm({
   workspaceId,
@@ -76,7 +84,36 @@ export function CampaignForm({
   const [signals, setSignals] = useState<BuyerSignals>(picked?.buyerSignals ?? NO_SIGNALS);
   const [kind, setKind] = useState<TargetKind>("local_business");
   const [suggestion, setSuggestion] = useState<Suggestion>({ state: "idle" });
-  const [chosen, setChosen] = useState<GeoArea[]>(() => startPlaces(start));
+  const [chosen, setChosen] = useState<GeoArea[]>([]);
+  const [placesSource, setPlacesSource] = useState<PlacesSource>(null);
+
+  // The starting places, fetched once: the segment's suggested places as
+  // full rows, else the places in the approved Brand DNA. Never replaces
+  // places the user already picked.
+  useEffect(() => {
+    const ids = (start?.segment.suggestedPlaces ?? []).flatMap((p) => (p.areaId ? [p.areaId] : []));
+    const controller = new AbortController();
+    (async () => {
+      try {
+        if (ids.length > 0) {
+          const res = await fetch(`/api/w/${workspaceId}/geo-areas?ids=${ids.join(",")}`, { signal: controller.signal });
+          if (!res.ok) return;
+          const { areas }: GeoAreasResponse = await res.json();
+          setChosen((now) => (now.length ? now : areas));
+          setPlacesSource({ kind: "segment" });
+        } else {
+          const res = await fetch(`/api/w/${workspaceId}/campaigns/suggested-places`, { signal: controller.signal });
+          if (!res.ok) return;
+          const s: SuggestedPlacesResponse = await res.json();
+          setChosen((now) => (now.length ? now : s.areas));
+          setPlacesSource({ kind: "brand", from: s.from });
+        }
+      } catch {
+        // No suggestion: the user picks places as before.
+      }
+    })();
+    return () => controller.abort();
+  }, [start, workspaceId]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -331,6 +368,7 @@ export function CampaignForm({
         )}
 
         <PlacePicker workspaceId={workspaceId} chosen={chosen} onChange={setChosen} />
+        {placesNote(placesSource, chosen) && <p className="text-sm text-muted">{placesNote(placesSource, chosen)}</p>}
         {notSearchable.length > 0 && (
           <p className="text-sm text-muted">Also suggested, not in the place list yet: {notSearchable.map((p) => p.name).join(", ")}.</p>
         )}
@@ -424,7 +462,7 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
             type="search"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="A city, state or area, e.g. Ilorin"
+            placeholder="City, state or area, e.g. Accra"
             autoComplete="off"
             className={cn(inputClass, "pl-9")}
           />

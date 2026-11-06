@@ -239,6 +239,8 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 Rules follow the lead's country (`businesses.country`, from Places). Prices in drafts follow the seller: drafts quote the seller's approved Brand DNA facts word for word, so their currency is the seller's. Drafts are written in English for now.
 
+**Where a campaign starts.** A new campaign opens with the seller's own places already chosen: the approved Brand DNA's location facts (where they are based before where they serve) matched to known places as whole words. A country is never suggested (a whole country isn't searched); within one fact the most specific place wins, a place inside one already suggested is skipped, and at most 3 are suggested. A note names the fact they came from. The user removes them or picks any other place. A buyer segment's own suggested places take precedence. No Google call; facts that name no known place wait for on-demand geocoding (Part D4).
+
 **Workspace time zone.** Every time the app shows (run times, "Paused until", today and yesterday) is in the workspace's time zone, saved in `workspaces.settings.timeZone` by an owner on the Settings page. Until one is saved it is suggested from the approved Brand DNA: the first location fact that names a country (where they are based before where they serve) and that country's profile time zone. With neither, UTC. Never the browser's, so every member sees the same times.
 
 **Data model changes**
