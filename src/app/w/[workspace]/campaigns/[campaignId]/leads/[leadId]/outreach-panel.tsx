@@ -313,19 +313,30 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
     );
   }
 
+  // Every view of a tab starts with its chip; with no target, the reason too.
+  const statusRow = (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <ChannelChip status={status} />
+      {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
+    </div>
+  );
+
   // Written from an offer the approved Brand DNA no longer holds: the text
   // stays readable, with nothing to open, copy or mark as sent. The warning
   // above it offers the re-run.
   if (!draft.offerInBrandDna) {
     return (
-      <article aria-label={`${TAB_NAMES[draft.channel]} message, not ready`} className="flex min-w-0 flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 text-muted sm:px-6 sm:py-5">
-        {draft.subject && (
-          <p className="border-y border-rule py-1 text-sm">
-            <span className="text-xs">Subject</span> <span className="font-semibold">{draft.subject}</span>
-          </p>
-        )}
-        <Lines lines={draft.lines} dates={dates} call={draft.channel === "call"} />
-      </article>
+      <div className="flex flex-col gap-3">
+        {statusRow}
+        <article aria-label={`${TAB_NAMES[draft.channel]} message, not ready`} className="flex min-w-0 flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 text-muted sm:px-6 sm:py-5">
+          {draft.subject && (
+            <p className="border-y border-rule py-1 text-sm">
+              <span className="text-xs">Subject</span> <span className="font-semibold">{draft.subject}</span>
+            </p>
+          )}
+          <Lines lines={draft.lines} dates={dates} call={draft.channel === "call"} />
+        </article>
+      </div>
     );
   }
 
@@ -333,6 +344,7 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
     const why = draft.removed.find((r) => r.text === "(whole draft)")?.reason.replace(/^not ready: /, "");
     return (
       <div className="flex flex-col gap-2">
+        {statusRow}
         <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Draft not ready">
           {why === "no what you offer passed the checks"
             ? "We couldn't write a line about what you offer, because this card's offer isn't in your approved Brand DNA."
@@ -387,10 +399,7 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <ChannelChip status={status} />
-        {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
-      </div>
+      {statusRow}
       <div className="flex flex-wrap items-start gap-6">
         <article aria-label={`${TAB_NAMES[draft.channel]} message`} className="flex min-w-0 flex-[3_1_400px] flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex justify-between gap-3 text-small text-muted">
