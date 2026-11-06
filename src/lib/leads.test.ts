@@ -7,6 +7,7 @@ import {
   labelText,
   pausedUntil,
   previewQuery,
+  leadBadges,
   readyBadges,
   readSettings,
   resumeDue,
@@ -30,6 +31,7 @@ const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   promoted: false,
   researched: false,
   ready: [],
+  optedOut: false,
   contacts: { phone: null, whatsapp: null, email: null, website: null, person: null, socials: [], ...contacts },
 });
 
@@ -148,5 +150,13 @@ describe("ready badges", () => {
     ]);
     expect(readyBadges(["whatsapp_likely"]).map((b) => [b.word, b.checked])).toEqual([["Likely WhatsApp", false]]);
     expect(readyBadges([])).toEqual([]);
+  });
+});
+
+describe("a lead row's badges", () => {
+  it("shows the ready channels, or only Opted out for a business that asked us to stop", () => {
+    const ready = { ...lead({}), ready: ["whatsapp_confirmed"] as Lead["ready"] };
+    expect(leadBadges(ready).map((b) => b.word)).toEqual(["WhatsApp"]);
+    expect(leadBadges({ ...ready, optedOut: true }).map((b) => [b.word, b.kind])).toEqual([["Opted out", "opted_out"]]);
   });
 });

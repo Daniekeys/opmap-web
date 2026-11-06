@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MessageCircle, Search } from "lucide-react";
+import { Mail, MessageCircle, Search, Ban } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -8,7 +8,7 @@ import { Avatar } from "@/components/avatar";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
 import { fitOf, leadMeta } from "@/lib/campaign-view";
-import { hasPhoneOrWhatsapp, readyBadges } from "@/lib/leads";
+import { hasPhoneOrWhatsapp, leadBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 
@@ -166,18 +166,18 @@ function Empty({ title, children }: { title: string; children: React.ReactNode }
 }
 
 // The channels a lead can be messaged on now, one badge each, so a checked
-// contact stands out without opening the lead (readyBadges).
-function ReadyBadge({ ready }: { ready: Lead["ready"] }) {
-  return readyBadges(ready).map((b) => (
+// contact stands out without opening the lead; or "Opted out" (leadBadges).
+function ReadyBadge({ lead }: { lead: Lead }) {
+  return leadBadges(lead).map((b) => (
     <span
-      key={b.channel}
+      key={b.kind}
       title={b.title}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 text-xs/[18px] font-medium",
-        b.checked ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
+        b.kind === "opted_out" ? "bg-negative-soft text-negative-ink" : b.checked ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
       )}
     >
-      {b.channel === "email" ? <Mail className="size-3" aria-hidden /> : <MessageCircle className="size-3" aria-hidden />}
+      {b.kind === "opted_out" ? <Ban className="size-3" aria-hidden /> : b.kind === "email" ? <Mail className="size-3" aria-hidden /> : <MessageCircle className="size-3" aria-hidden />}
       {b.word}
     </span>
   ));
@@ -205,7 +205,7 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="shrink-0 lg:hidden">{right}</span>
         </span>
         <span className="flex min-w-0 items-center gap-1.5">
-          <ReadyBadge ready={lead.ready} />
+          <ReadyBadge lead={lead} />
           <span className="truncate text-xs text-muted">{meta}</span>
         </span>
       </span>

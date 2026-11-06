@@ -16,6 +16,13 @@ const READY_BADGES = {
 export const readyBadges = (ready: Lead["ready"]) =>
   (["whatsapp_confirmed", "whatsapp_likely", "email"] as const).filter((c) => ready.includes(c)).map((c) => ({ channel: c, ...READY_BADGES[c] }));
 
+// A lead row's badges: its ready channels, or only "Opted out" for a business
+// that asked not to be contacted.
+export function leadBadges(lead: Pick<Lead, "ready" | "optedOut">) {
+  if (lead.optedOut) return [{ kind: "opted_out" as const, word: "Opted out", title: "They asked not to be contacted" }];
+  return readyBadges(lead.ready).map((b) => ({ kind: b.channel, word: b.word, title: b.title, checked: b.checked }));
+}
+
 export type ContactKindGroup = "phone" | "whatsapp" | "email" | "website" | "person" | "social";
 
 type LabelText = { word: string; tip: string; tone: "good" | "fair" | "weak" };

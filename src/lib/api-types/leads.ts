@@ -255,6 +255,8 @@ export type Lead = {
   // contact point; none when the business asked not to be contacted.
   // Confirmed and likely WhatsApp apart; confirmed sorts first.
   ready: ("whatsapp_confirmed" | "whatsapp_likely" | "email")[];
+  // Asked not to be contacted (an opt-out, or on the suppression list).
+  optedOut: boolean;
   contacts: {
     phone: Contact | null;
     whatsapp: Contact | null;
