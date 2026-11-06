@@ -28,7 +28,7 @@ import { ProgressPanel } from "@/components/progress-panel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
-import type { Channel, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
+import type { Channel, ChannelStatus, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
 import type { OpportunityCard } from "@/lib/api-types/research";
 import { citeName, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
@@ -38,9 +38,11 @@ import {
   canMarkSent,
   type Check as DraftCheck,
   draftChecks,
+  firstOpenChannel,
   gmailHref,
   outcomeText,
   outlookHref,
+  showAnywayAllowed,
   sourceReadDates,
   STAGE_NAMES,
   STAGE_TONES,
@@ -241,7 +243,7 @@ function DraftTabs({
   outreach: LeadOutreachResponse;
   onChange: () => Promise<void>;
 }) {
-  const [open, setOpen] = useState<Channel>(drafts[0]!.channel);
+  const [open, setOpen] = useState<Channel>(() => firstOpenChannel(drafts, outreach.channels));
   const draft = drafts.find((d) => d.channel === open) ?? drafts[0]!;
   return (
     <div className="flex flex-col gap-4">
@@ -256,10 +258,12 @@ function DraftTabs({
               aria-selected={d.channel === open}
               onClick={() => setOpen(d.channel)}
               className={cn(
-                "flex h-11 items-center justify-center rounded-control text-sm transition-colors sm:h-[30px] sm:px-3",
+                "flex h-11 items-center justify-center gap-1.5 rounded-control text-sm transition-colors sm:h-[30px] sm:px-3",
                 d.channel === open ? TAB_ON : "text-muted hover:text-ink",
               )}
             >
+              {/* A dot for a channel that can be sent to; none when it can't. */}
+              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", outreach.channels[d.channel].available ? "bg-positive-ink" : "border border-muted")} />
               <span className="truncate">
                 {d.channel === "call" ? (
                   <>
@@ -271,6 +275,7 @@ function DraftTabs({
                 )}
               </span>
               {d.status !== "ready" && <span className="sr-only">(not ready)</span>}
+              {!outreach.channels[d.channel].available && <span className="sr-only">({outreach.channels[d.channel].chip})</span>}
             </button>
           ))}
         </div>
@@ -288,6 +293,25 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
   const [sentHere, setSentHere] = useState(false);
   const outcome = useOutcomeTap(base, onChange);
   const target = outreach.targets[draft.channel];
+  const status = outreach.channels[draft.channel];
+  // "Show draft anyway" on a channel with no target.
+  const [anyway, setAnyway] = useState(false);
+
+  // No send target: the chip and the reason first. The saved draft opens on
+  // request, for copying only (no compose link, no wa.me button).
+  if (!status.available && !anyway) {
+    return (
+      <div className="flex flex-col gap-2 rounded-card border border-border bg-surface px-4 py-4 text-sm sm:px-6">
+        <ChannelChip status={status} />
+        <p className="text-muted">{status.reason}</p>
+        {showAnywayAllowed(status) && (
+          <button type="button" className={cn(linkClass, "inline-flex min-h-11 items-center self-start text-sm sm:min-h-7")} onClick={() => setAnyway(true)}>
+            Show draft anyway
+          </button>
+        )}
+      </div>
+    );
+  }
 
   // Written from an offer the approved Brand DNA no longer holds: the text
   // stays readable, with nothing to open, copy or mark as sent. The warning
@@ -363,6 +387,10 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <ChannelChip status={status} />
+        {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
+      </div>
       <div className="flex flex-wrap items-start gap-6">
         <article aria-label={`${TAB_NAMES[draft.channel]} message`} className="flex min-w-0 flex-[3_1_400px] flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex justify-between gap-3 text-small text-muted">
@@ -404,7 +432,6 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
         </aside>
       </div>
 
-      {!target && <p className="text-xs text-muted">{TARGET_MISSING[draft.channel]}</p>}
       {draft.channel === "email" && outreach.country.emailNote && (
         <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
           {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
@@ -486,23 +513,30 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
   );
 }
 
-// A Nigerian mobile number with no WhatsApp link from them: probably on
-// WhatsApp, not checked.
+// A mobile number with no WhatsApp link from them: probably on WhatsApp, not
+// checked (Nigerian numbers only, until the country profiles).
 export function LikelyOnWhatsapp({ className }: { className?: string }) {
   return (
-    <span className={cn("text-xs text-muted", className)} title="A Nigerian mobile number, but no WhatsApp link from them">
-      Likely on WhatsApp
+    <span className={cn("text-xs text-muted", className)} title="A mobile number, but no WhatsApp link from them">
+      Likely on WhatsApp (mobile number)
     </span>
   );
 }
 
-// One line under the draft when its Open button is hidden. Copy text stays.
-const TARGET_MISSING: Record<Channel, string> = {
-  whatsapp: "No WhatsApp link from them and no Nigerian mobile number: copy the message and send it from WhatsApp yourself if you know their number.",
-  email: "No email found on their own site: copy the message if you have another way to reach them.",
-  linkedin: "No LinkedIn page linked from their own site: copy the message to send it there yourself.",
-  call: "No phone number for them: copy the opener if you find one.",
-};
+// A channel's status in a few words: green when it can be sent to, a plain
+// grey chip when it can't (the reason sits beside or under it).
+function ChannelChip({ status }: { status: ChannelStatus }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex self-start rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+        status.available ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
+      )}
+    >
+      {status.chip}
+    </span>
+  );
+}
 
 const CHECK_ICONS = {
   pass: <CircleCheck className="mt-0.5 size-4 shrink-0 text-positive-ink" aria-hidden />,

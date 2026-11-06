@@ -1,6 +1,6 @@
 // Send links and plain words for drafts and outcomes (spec, Core pipelines > 4).
 import type { Outcome, Stage } from "./api-types/outcomes";
-import type { Channel, Draft } from "./api-types/outreach";
+import type { Channel, ChannelStatus, Draft } from "./api-types/outreach";
 import type { OpportunityCard } from "./api-types/research";
 import { citeName, citeReadAt } from "./campaign-view";
 
@@ -57,6 +57,17 @@ export function outcomeText(o: { type: string; channel: string | null; contactVa
 }
 
 // ---- the composer ------------------------------------------------------------
+
+// A channel with no send target shows its chip and reason first, with "Show
+// draft anyway" opening the saved draft for copying only. A suppressed
+// business never shows a draft, so it gets no link.
+export const showAnywayAllowed = (status: ChannelStatus) => !status.available && status.code !== "suppressed";
+
+// The tab a lead's drafts open on: the first channel that can be sent to,
+// else the first draft.
+export function firstOpenChannel(drafts: Pick<Draft, "channel">[], channels: Record<Channel, ChannelStatus>): Channel {
+  return (drafts.find((d) => channels[d.channel].available) ?? drafts[0]!).channel;
+}
 
 // Opening or copying a draft logs Sent once per channel, so "Mark as sent"
 // is offered only until this channel has a Sent.

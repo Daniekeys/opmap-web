@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Draft, DraftLine } from "./api-types/outreach";
 import type { OpportunityCard } from "./api-types/research";
-import { canMarkSent, draftChecks, gmailHref, outcomeText, outlookHref, sourceReadDates, whatsappSendHref } from "./outreach";
+import { canMarkSent, draftChecks, firstOpenChannel, gmailHref, outcomeText, outlookHref, showAnywayAllowed, sourceReadDates, whatsappSendHref } from "./outreach";
 
 describe("send links", () => {
   it("fills WhatsApp with the draft, digits only in the number", () => {
@@ -111,5 +111,24 @@ describe("source dates for a draft's claims", () => {
       offerInBrandDna: true,
     } satisfies OpportunityCard;
     expect(sourceReadDates(card, "2026-10-29T09:00:00Z")).toEqual(new Map([["s1", "2026-10-28T10:00:00Z"], ["s2", "2026-10-29T09:00:00Z"]]));
+  });
+});
+
+describe("channels with no send target", () => {
+  const on = (chip: string) => ({ available: true, code: "ok", chip, reason: null });
+  const off = (code: string, reason: string) => ({ available: false, code, chip: "No WhatsApp", reason });
+
+  it("offer 'Show draft anyway' for every channel without a target, a landline or email included, never for a suppressed business", () => {
+    expect(showAnywayAllowed(off("landline", "Their number is a landline, so it can't be on WhatsApp."))).toBe(true);
+    expect(showAnywayAllowed({ available: false, code: "none", chip: "No email", reason: "No email found on their own site." })).toBe(true);
+    expect(showAnywayAllowed({ available: false, code: "suppressed", chip: "Not to be contacted", reason: "They asked not to be contacted." })).toBe(false);
+    expect(showAnywayAllowed(on("WhatsApp confirmed"))).toBe(false);
+  });
+
+  it("open on the first channel that can be sent to", () => {
+    const drafts = [{ channel: "whatsapp" as const }, { channel: "email" as const }, { channel: "linkedin" as const }, { channel: "call" as const }];
+    const none = off("none", "No WhatsApp link or mobile number found.");
+    expect(firstOpenChannel(drafts, { whatsapp: none, email: on("Email found on their site"), linkedin: none, call: on("Phone, one source") })).toBe("email");
+    expect(firstOpenChannel(drafts, { whatsapp: none, email: none, linkedin: none, call: none })).toBe("whatsapp");
   });
 });

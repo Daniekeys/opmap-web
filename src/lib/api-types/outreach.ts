@@ -38,6 +38,10 @@ export type ContactRow = { kind: "phone" | "whatsapp" | "email" | "person"; valu
 export type Blocked = "not_enough_information" | "no_cards" | "no_target" | "brand_not_usable" | "suppressed";
 
 // GET /api/w/:workspaceId/campaigns/:campaignId/leads/:leadId/outreach
+// What a channel tab shows: a chip always, and the reason when the channel
+// has no send target. A suppressed business has code "suppressed" everywhere.
+export type ChannelStatus = { available: boolean; code: string; chip: string; reason: string | null };
+
 export type LeadOutreachResponse = {
   stage: Stage;
   suppressed: boolean;
@@ -47,6 +51,7 @@ export type LeadOutreachResponse = {
   // Who drafts sign as, or null when Brand DNA isn't usable.
   sender: { name: string } | null;
   targets: Record<Channel, Target | null>;
+  channels: Record<Channel, ChannelStatus>;
   contacts: ContactRow[];
   cards: {
     opportunityId: string;
