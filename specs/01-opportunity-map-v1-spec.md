@@ -232,6 +232,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 | Neighbourhood | Tanke, GRA | One or a few tiles |
 | City | Ilorin | The whole city tiled |
 | State | Kwara | Towns ranked by size (Ilorin, Offa, Omu-Aran, Jebba) and run in that order |
+| Region or county | Greater Accra Region, England | A first-level division with no town list: searched as one area |
 | Country | Nigeria | Cities ranked for the segment, run in waves; the next wave runs only if the last one produced fit leads |
 | Region or global | Africa, UK, US | AI picks best-fit countries from Brand DNA, then the country flow runs per country |
 
@@ -239,7 +240,9 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 Rules follow the lead's country (`businesses.country`, from Places). Prices in drafts follow the seller: drafts quote the seller's approved Brand DNA facts word for word, so their currency is the seller's. Drafts are written in English for now.
 
-**Where a campaign starts.** A new campaign opens with the seller's own places already chosen: the approved Brand DNA's location facts (where they are based before where they serve) matched to known places as whole words. A country is never suggested (a whole country isn't searched); within one fact the most specific place wins, a place inside one already suggested is skipped, and at most 3 are suggested. A note names the fact they came from. The user removes them or picks any other place. A buyer segment's own suggested places take precedence. No Google call; facts that name no known place wait for on-demand geocoding (Part D4).
+**Where a campaign starts.** A new campaign opens with the seller's own places already chosen: the approved Brand DNA's location facts (where they are based before where they serve) matched to known places as whole words. A country is never suggested (a whole country isn't searched); within one fact the most specific place wins, a place inside one already suggested is skipped, and at most 3 are suggested. A note names the fact they came from. The user removes them or picks any other place. A buyer segment's own suggested places take precedence. No Google call; a fact that names no known place is left for the user to look up.
+
+**Places not in the list.** When no place in the list has the name typed, the picker offers "Look up <name> on Google Maps": one geocode (metered, on the usage ledger), run in the worker because it writes the shared `geo_areas` table, preferring the workspace's country for a bare name ("Camden"). What Google found is shown to pick; it is cached in `geo_areas` with its level, country and boundary, so the next search finds it without Google. Level and parents come from Google's types: a town (locality, the UK's postal town) sits under its first-level division; a district or neighbourhood (a London borough, a sublocality) sits under its town ("Camden, London"); a first-level division is a seeded state when we have one (Nigeria's, which run their towns) and otherwise a region or county, searched as one area. Parents nobody seeded are added with no boundary and geocoded when first searched. A whole country, a street or a business, or a name Google doesn't know is refused with the reason, and nothing is saved.
 
 **Workspace time zone.** Every time the app shows (run times, "Paused until", today and yesterday) is in the workspace's time zone, saved in `workspaces.settings.timeZone` by an owner on the Settings page. Until one is saved it is suggested from the approved Brand DNA: the first location fact that names a country (where they are based before where they serve) and that country's profile time zone. With neither, UTC. Never the browser's, so every member sees the same times. The picker lists the workspace country's zones first, then the rest.
 
@@ -247,7 +250,7 @@ Rules follow the lead's country (`businesses.country`, from Places). Prices in d
 
 **Data model changes**
 
-- `geo_areas` (id, level, name, parent_id, country, bbox, population): seeded with Nigeria's 36 states, the FCT and their main towns; other countries are geocoded on demand.
+- `geo_areas` (id, level, name, parent_id, country, bbox, population): seeded with Nigeria's 36 states, the FCT and their main towns; other places are looked up on demand. Levels: country, state (seeded, with towns), region (looked up, searched whole), city, neighbourhood.
 - `search_coverage` (query, tile_bbox, geo_area_id, searched_at, result_count): shared across workspaces like `businesses`, so expanding from Ilorin to Kwara only searches new ground and re-runs skip tiles that are still fresh.
 - `campaigns.locations` is a list of `geo_areas` ids at any level.
 

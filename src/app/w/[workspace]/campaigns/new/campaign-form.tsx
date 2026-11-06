@@ -14,6 +14,8 @@ import type {
   CreateCampaignBody,
   GeoArea,
   GeoAreasResponse,
+  PlaceLookupResponse,
+  PlaceLookupStarted,
   SuggestedPlacesResponse,
   Presence,
   RouteTargetBody,
@@ -22,10 +24,11 @@ import type {
 } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
 import { TARGET_KINDS } from "@/lib/leads";
+import { offerLookup } from "@/lib/place-lookup";
 import { parseSearchTerms, ratingOptions } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
-const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", city: "City", neighbourhood: "Area" };
+const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", region: "Region", city: "City", neighbourhood: "Area" };
 
 const areaLabel = (a: GeoArea) => (a.parentName ? `${a.name}, ${a.parentName}` : a.name);
 
@@ -451,6 +454,7 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
     setResults(null);
   };
   const shown = text.trim().length >= 2 && !loading ? results : null;
+  const lookup = usePlaceLookup(workspaceId, text.trim());
 
   return (
     <div className="flex flex-col gap-2">
@@ -467,7 +471,9 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
             className={cn(inputClass, "pl-9")}
           />
         </span>
-        <span className="font-normal text-muted">A state runs its towns biggest first. Pick as many places as you like.</span>
+        <span className="font-normal text-muted">
+          A state runs its listed towns, biggest first; a region or county is searched as one area. Pick as many places as you like.
+        </span>
       </label>
 
       {chosen.length > 0 && (
@@ -494,7 +500,7 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
         </p>
       )}
       {failed && <p className="text-sm text-negative-ink">Couldn&apos;t look up places. Try again.</p>}
-      {shown && shown.length === 0 && <p className="text-sm text-muted">No place called &quot;{text.trim()}&quot; in the list.</p>}
+      {shown && shown.length === 0 && lookup.state.kind === "idle" && <p className="text-sm text-muted">No place called &quot;{text.trim()}&quot; in the list.</p>}
       {shown && shown.length > 0 && (
         <ul className="divide-y rounded-lg border">
           {shown.map((a) => {
@@ -517,6 +523,95 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
             );
           })}
         </ul>
+      )}
+      {shown && <LookupOnMaps text={text.trim()} results={shown} lookup={lookup} onPick={pick} />}
+    </div>
+  );
+}
+
+type LookupState =
+  | { kind: "idle" }
+  | { kind: "looking" }
+  | { kind: "found"; area: GeoArea }
+  | { kind: "problem"; message: string };
+
+// One lookup on Google Maps for the typed text, polled until the worker is
+// done. Typing something else forgets it.
+function usePlaceLookup(workspaceId: string, text: string) {
+  const [lookup, setLookup] = useState<{ text: string; state: LookupState }>({ text: "", state: { kind: "idle" } });
+  const state: LookupState = lookup.text === text ? lookup.state : { kind: "idle" };
+  const set = (s: LookupState) => setLookup((current) => (current.text === text ? { text, state: s } : current));
+
+  async function start() {
+    setLookup({ text, state: { kind: "looking" } });
+    const problem = (message: string) => set({ kind: "problem", message });
+    try {
+      const res = await fetch(`/api/w/${workspaceId}/geo-areas/lookup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: text }),
+      });
+      if (res.status === 401) return goToLogin();
+      if (!res.ok) return problem("Couldn't look it up on Google Maps. Try again.");
+      const { runId }: PlaceLookupStarted = await res.json();
+      // The worker answers in a second or two; give up after 30.
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 1_000));
+        const poll = await fetch(`/api/w/${workspaceId}/geo-areas/lookup/${runId}`);
+        if (poll.status === 401) return goToLogin();
+        if (!poll.ok) return problem("Couldn't look it up on Google Maps. Try again.");
+        const body: PlaceLookupResponse = await poll.json();
+        if (body.status === "running") continue;
+        return body.area ? set({ kind: "found", area: body.area }) : problem(body.problem?.message ?? "Google Maps found nothing to search there.");
+      }
+      problem("Google Maps is taking too long. Try again in a minute.");
+    } catch {
+      problem("Could not reach the server. Check your connection and try again.");
+    }
+  }
+  return { state, start };
+}
+
+// Under the list: "Look up Accra on Google Maps" when no place in the list is
+// called that, then what Google found, to pick, or why it can't be used.
+function LookupOnMaps({ text, results, lookup, onPick }: { text: string; results: GeoArea[]; lookup: ReturnType<typeof usePlaceLookup>; onPick: (area: GeoArea) => void }) {
+  const { state, start } = lookup;
+  if (state.kind === "found") {
+    const a = state.area;
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-xs text-muted">Found on Google Maps</p>
+        <button
+          type="button"
+          onClick={() => onPick(a)}
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left hover:bg-raised"
+        >
+          <span className="min-w-0 flex-1 font-medium">{areaLabel(a)}</span>
+          <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-xs">{LEVELS[a.level]}</span>
+        </button>
+      </div>
+    );
+  }
+  if (state.kind === "looking") {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted" role="status">
+        <LoaderCircle className="size-4 animate-spin" aria-hidden /> Looking up &quot;{text}&quot; on Google Maps
+      </p>
+    );
+  }
+  if (!offerLookup(text, results)) return null;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {state.kind === "problem" && (
+        <p className="text-sm text-negative-ink" role="alert">
+          {state.message}
+        </p>
+      )}
+      {state.kind === "idle" && (
+        <Button type="button" variant="outline" className="h-11 max-w-full" onClick={() => void start()}>
+          <Search className="size-4" aria-hidden />
+          <span className="truncate">Look up &quot;{text}&quot; on Google Maps</span>
+        </Button>
       )}
     </div>
   );

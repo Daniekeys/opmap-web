@@ -4,7 +4,9 @@ import type { PipelineRun } from "./pipeline";
 
 export type TargetKind = "local_business" | "b2b" | "institution";
 export type CampaignStatus = "draft" | "running" | "paused" | "stopped" | "done" | "failed";
-export type AreaLevel = "country" | "state" | "city" | "neighbourhood";
+// region: a first-level division nobody seeded (Greater Accra Region,
+// England), searched as one area; a seeded state runs its towns.
+export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood";
 
 // A place from geo_areas, with the place above it ("Ilorin", "Kwara").
 export type GeoArea = {
@@ -18,6 +20,18 @@ export type GeoArea = {
 
 // GET /api/w/:workspaceId/geo-areas?q= (or ?ids=a,b for exact places)
 export type GeoAreasResponse = { areas: GeoArea[] };
+
+// POST /api/w/:workspaceId/geo-areas/lookup { query }: look a place up on
+// Google Maps (one geocode, in the worker). Then GET .../lookup/:runId until
+// it is done: `area` is the place found and saved, or `problem` says why
+// it can't be used (not_found, whole_country, not_an_area, unknown_country;
+// "failed" when the lookup didn't run).
+export type PlaceLookupStarted = { runId: string };
+export type PlaceLookupResponse = {
+  status: "running" | "done" | "failed";
+  area: GeoArea | null;
+  problem: { code: string; message: string } | null;
+};
 
 // GET /api/w/:workspaceId/campaigns/suggested-places: the default places for a
 // new campaign from the approved Brand DNA. from: the location fact the first
