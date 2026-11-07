@@ -21,6 +21,7 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Any country, polish after D3 2026-11-06: country notes at the top of the draft; phones national only for the workspace's own country, else international; Settings text follows a save and the zone picker lists the workspace country's zones first.
 - Any country, step D2 2026-11-06 on branch `any-country` (worktree, both repos): country profiles for NG, GH, KE, GB and a default for every other country (all drafts, a "check local marketing rules" note); phone parsing, dedupe, social search, Places language, WhatsApp guesses and draft tab order read the lead's profile; the workspace time zone (Settings page, suggested from the Brand DNA) replaces Lagos time in the web. No migration.
 - Any country, D2 follow-ups and D3 2026-11-06 on `any-country`: an unknown country code gets the default profile, never Nigeria's; phone display loads its library only on the lead and messages pages; `/campaigns/new` starts from the Brand DNA's places.
+- Fix A 2026-11-07 on `redesign`: the campaigns 500 was code ahead of the database (0028 on 11-04, 0029 on 11-07); the API and worker now refuse to start on a database behind the code, naming the missing migrations; every 500 is logged with a request id the error screen shows; error screens with Retry for the workspace shell and every section.
 - Next: the user's manual check of drafts for 10 real leads, then contacting 10 real leads with the tool (more deep-dives are needed: 6 of 19 local leads with cards have a send target).
 
 ## Clones to re-clone
@@ -38,7 +39,7 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 
 Before `redesign` deploys to Railway:
 
-- [ ] Set `RUN_MIGRATIONS_ON_START=true` on the `api` service. Without it the new image starts without migrating, and the code fails on the missing columns (from 0028 on).
+- [ ] Set `RUN_MIGRATIONS_ON_START=true` on the `api` service. Without it the new image doesn't migrate, and the API refuses to start, logging the missing migrations (from 0029 on).
 - [ ] `PLACES_DAILY_CAP` and `PLACES_MONTHLY_CAP`, if set, are at or below 50 and 650, or the API refuses to start.
 - [ ] Google Cloud's Places daily quota is at least 60 (production 50 plus development 10).
 - [ ] Optional: `CLAUDE_DAILY_ALERT_USD` (default 5).
