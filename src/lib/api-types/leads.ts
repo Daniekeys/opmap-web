@@ -295,6 +295,9 @@ export type Lead = {
   ready: ("whatsapp_confirmed" | "whatsapp_likely" | "email")[];
   // Asked not to be contacted (an opt-out, or on the suppression list).
   optedOut: boolean;
+  // Its messages: Tailored (a specific, sourced gap) or General (the general
+  // offer card or the fallback rewrite); null with none yet. Tailored first.
+  tailoring: "tailored" | "general" | null;
   contacts: {
     phone: Contact | null;
     whatsapp: Contact | null;

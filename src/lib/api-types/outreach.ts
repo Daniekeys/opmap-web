@@ -31,7 +31,14 @@ export type Draft = {
   body: string;
   lines: DraftLine[];
   removed: RemovedSentence[];
+  // The fallback rewrite filled its fact about the business or its offer:
+  // what the checks removed is still in `removed`.
+  fallback: boolean;
 };
+
+// Tailored: the drafts rest on a specific, sourced gap from an evidence-backed
+// card. General: the general offer card or the fallback rewrite.
+export type Tailoring = "tailored" | "general";
 
 export type Target = { kind: "whatsapp" | "email" | "phone" | "linkedin"; value: string; label: string; confidence: number };
 
@@ -62,6 +69,8 @@ export type LeadOutreachResponse = {
   stage: Stage;
   suppressed: boolean;
   blocked: Blocked | null;
+  // The top card's newest drafts: Tailored or General; null with none.
+  tailoring: Tailoring | null;
   // optOut: the line every email draft ends with, for this country.
   // name: the country in words. draftNote: shown on every draft when no rules
   // are on file for the country. channelOrder: the draft tab order, from the
@@ -124,6 +133,7 @@ export type MessageRow = {
   businessId: string;
   name: string;
   offer: string | null;
+  tailoring: Tailoring | null;
   note: string | null;
   at: string;
 };

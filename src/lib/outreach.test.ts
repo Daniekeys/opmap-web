@@ -35,6 +35,7 @@ const line = (kind: DraftLine["kind"], text: string, cites: DraftLine["cites"] =
 
 function emailDraft(body: string): Draft {
   return {
+    fallback: false,
     id: "d1",
     channel: "email",
     status: "ready",
@@ -112,6 +113,7 @@ describe("source dates for a draft's claims", () => {
       angle: null,
       offerInBrandDna: true,
       mismatch: false,
+      general: false,
     } satisfies OpportunityCard;
     expect(sourceReadDates(card, "2026-10-29T09:00:00Z")).toEqual(new Map([["s1", "2026-10-28T10:00:00Z"], ["s2", "2026-10-29T09:00:00Z"]]));
   });

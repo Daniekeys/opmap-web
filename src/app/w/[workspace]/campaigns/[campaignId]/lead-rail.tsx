@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { TailoringBadge } from "@/components/tailoring-badge";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
 import { fitOf, LITTLE_DATA, leadMeta } from "@/lib/campaign-view";
 import { hasPhoneOrWhatsapp, leadBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { moreToRight } from "@/lib/scroll-hint";
+import { matchesTailoring, TAILORING, type TailoringFilter, tailoringCounts } from "@/lib/tailoring";
 import { cn } from "@/lib/utils";
 
 type Tab = "all" | "researched" | "outreach";
@@ -21,7 +23,8 @@ const TABS: { key: Tab; label: string; chip: string }[] = [
   { key: "outreach", label: "Contacted", chip: "Contacted" },
 ];
 
-// The campaign's leads, ready to message first, then best fit, as a list to pick from
+// The campaign's leads, Tailored first, then General, then ready to message,
+// then best fit (the API's order), as a list to pick from
 // (Main.dc.html; MobileLeads.dc.html on a phone). The open lead is
 // highlighted. Opening one that isn't researched yet starts its paid
 // deep-dive, so nothing is opened for the user.
@@ -46,6 +49,8 @@ export function LeadRail({
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [phoneOnly, setPhoneOnly] = useState(false);
+  const [kind, setKind] = useState<TailoringFilter>("all");
+  const kinds = useMemo(() => tailoringCounts(leads), [leads]);
   // The phone's chip row: whether chips are hidden off its right edge.
   const chipRow = useRef<HTMLDivElement>(null);
   const [chipsHidden, setChipsHidden] = useState(false);
@@ -70,6 +75,7 @@ export function LeadRail({
   const shown = leads.filter(
     (l) =>
       inTab(l, tab) &&
+      matchesTailoring(l, kind) &&
       (!phoneOnly || hasPhoneOrWhatsapp(l)) &&
       (!q || [l.name, l.category, l.city].some((v) => v?.toLowerCase().includes(q))),
   );
@@ -122,6 +128,11 @@ export function LeadRail({
                 {t.chip} <span className="tabular-nums opacity-80">{counts[t.key]}</span>
               </button>
             ))}
+            {(["tailored", "general"] as const).map((k) => (
+              <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind((v) => (v === k ? "all" : k))} className={chipClass(kind === k)}>
+                {TAILORING[k].word} <span className="tabular-nums opacity-80">{kinds[k]}</span>
+              </button>
+            ))}
             <button type="button" aria-pressed={phoneOnly} onClick={() => setPhoneOnly((v) => !v)} className={chipClass(phoneOnly)}>
               Has phone
             </button>
@@ -132,6 +143,23 @@ export function LeadRail({
           />
         </div>
         <div className="hidden shrink-0 items-center gap-3 lg:flex">
+          <div role="group" aria-label="Messages" className="flex gap-1">
+            {(["tailored", "general"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={kind === k}
+                onClick={() => setKind((v) => (v === k ? "all" : k))}
+                title={TAILORING[k].title}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1 rounded-control border px-2.5 text-xs",
+                  kind === k ? "border-primary bg-primary font-medium text-on-primary" : "border-control bg-surface text-ink hover:bg-raised",
+                )}
+              >
+                {TAILORING[k].word} <span className="tabular-nums opacity-80">{kinds[k]}</span>
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             aria-pressed={phoneOnly}
@@ -144,7 +172,7 @@ export function LeadRail({
           >
             Has phone
           </button>
-          <span className="text-xs text-muted">Ready first</span>
+          <span className="text-xs text-muted">Tailored first</span>
         </div>
       </div>
 
@@ -158,7 +186,7 @@ export function LeadRail({
         )
       ) : shown.length === 0 ? (
         <Empty title="Nothing matches">
-          {tab === "outreach" && !q && !phoneOnly ? "Nobody contacted yet. Open a business, write its messages and send one." : "Try another word, or clear the filters."}
+          {tab === "outreach" && !q && !phoneOnly && kind === "all" ? "Nobody contacted yet. Open a business, write its messages and send one." : "Try another word, or clear the filters."}
         </Empty>
       ) : (
         <ul className="-mx-4 flex min-h-0 flex-col overflow-y-auto border-y border-border bg-surface lg:mx-0 lg:rounded-card lg:border">
@@ -230,7 +258,8 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="truncate font-semibold">{lead.name}</span>
           <span className="shrink-0 lg:hidden">{right}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+          <TailoringBadge tailoring={lead.tailoring} />
           <ReadyBadge lead={lead} />
           <span className="truncate text-xs text-muted">{meta}</span>
         </span>

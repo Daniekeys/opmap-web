@@ -5,6 +5,8 @@ import { getBrand, getCampaign, getCampaignLeads, getPipeline, getWorkspace } fr
 import type { Stage } from "@/lib/api-types/outcomes";
 import { campaignContext, findingSentence } from "@/lib/campaign-view";
 import { contactedLeads } from "@/lib/pipeline";
+import { tailoringCounts, tailoringSummary } from "@/lib/tailoring";
+import { TailoringBadge } from "@/components/tailoring-badge";
 import { cn } from "@/lib/utils";
 import { CampaignFrame } from "./campaign-frame";
 import { LeadRail } from "./lead-rail";
@@ -36,6 +38,9 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
   const stages: Record<string, Stage> = {};
   for (const s of pipeline.stages) for (const l of s.leads) stages[l.leadId] = s.stage;
   const contacted = contactedLeads(pipeline);
+  const counts = tailoringCounts(leads);
+  const summary = tailoringSummary(counts);
+  const kinds = summary ? { ...counts, text: summary } : null;
   const base = `/w/${slug}/campaigns/${campaign.id}`;
   const { messaged, replied, meeting: meetings } = pipeline.funnel;
 
@@ -72,6 +77,15 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
           />
         )}
         <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, contacted, status: campaign.status, callsUsed: campaign.callsUsed, fewResults })}</p>
+        {/* "12 Tailored, 8 General": how many leads' messages rest on a specific gap. */}
+        {kinds && (
+          <p className="flex flex-wrap items-center gap-2 text-sm" aria-label={kinds.text}>
+            <TailoringBadge tailoring="tailored" size="md" />
+            <span className="tabular-nums">{kinds.tailored}</span>
+            <TailoringBadge tailoring="general" size="md" />
+            <span className="tabular-nums">{kinds.general}</span>
+          </p>
+        )}
       </div>
       {leads.length > 0 && (
         <Link
