@@ -15,6 +15,10 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Channel status 2026-11-06 on branch `channel-status` (worktree, both repos): every draft tab shows a status chip and, with no target, the reason with "Show draft anyway" (copy only); likely WhatsApp for Nigerian MOBILE or FIXED_LINE_OR_MOBILE numbers, decided in `research/phone-rules.ts`; LinkedIn only from their site or listing; a "Not on WhatsApp" button; WhatsApp confirmed and likely apart in the leads list, confirmed first. No migration.
 - Next: the user's manual check of drafts for 10 real leads, then contacting 10 real leads with the tool (more deep-dives are needed: 6 of 19 local leads with cards have a send target).
 
+## Clones to re-clone
+
+- `opmap_shots_redesign` and `opmap_b_backfill` ran migration 0029 before its backfill changed (2026-11-06, merging pause-state-fixes into redesign: it now also turns campaigns paused with "This server can't call Google..." into setup pauses). Their pause labels can't be trusted until both are re-cloned from local `opmap` and migrated again.
+
 ## Deploy checklist
 
 Before `redesign` deploys to Railway:
