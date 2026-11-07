@@ -5,6 +5,7 @@ import { PageLoading } from "@/components/page-loading";
 import { getBrand, getBrandProfile, getWorkspace } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { FactSource, KINDS, sourceLabel, StaleFlag, VersionBadge } from "../facts";
+import { CountryQuestionCard } from "./country-question";
 import { FactReview } from "./fact-review";
 
 type Props = PageProps<"/w/[workspace]/brand/[profileId]">;
@@ -58,6 +59,7 @@ async function Profile({ params }: { params: Props["params"] }) {
         approvedSite={brand.approved}
         initialFacts={detail.facts}
         missing={detail.missing}
+        countryQuestion={detail.countryQuestion}
         isOwner={workspace.role === "owner"}
       />
     );
@@ -75,6 +77,11 @@ async function Profile({ params }: { params: Props["params"] }) {
         {profile.changes.total} {profile.changes.total === 1 ? "change" : "changes"} during review ({profile.changes.edited}{" "}
         edited, {profile.changes.added} added, {profile.changes.rejected} rejected).
       </p>
+      {detail.countryQuestion && (
+        <div className="max-w-read">
+          <CountryQuestionCard workspaceId={workspace.id} profileId={profile.id} initial={detail.countryQuestion} isOwner={workspace.role === "owner"} />
+        </div>
+      )}
       {KINDS.map(({ kind, label }) => {
         const facts = detail.facts.filter((f) => f.kind === kind);
         if (facts.length === 0) return null;

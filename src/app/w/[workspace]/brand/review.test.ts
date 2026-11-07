@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Fact } from "@/lib/api-types/brand";
-import { approveNote, pageName, pagesRead, reviewFinding, siteMismatch } from "./review";
+import { approveNote, countryQuestionText, pageName, pagesRead, reviewFinding, siteMismatch } from "./review";
 
 const fact = (kind: Fact["kind"], status: Fact["status"] = "pending", possiblyStale = false) => ({ kind, status, possiblyStale });
 
@@ -79,5 +79,38 @@ describe("approve note", () => {
   it("says which version approving replaces", () => {
     expect(approveNote(2)).toBe("Approving replaces version 2 in messages written from now on.");
     expect(approveNote(null)).toBe("Approving makes it the version used in messages written from now on.");
+  });
+});
+
+describe("country question", () => {
+  const ghana = {
+    country: "GH",
+    countryName: "Ghana",
+    timeZone: "Africa/Accra",
+    fact: "Based in Accra, Ghana",
+    question: "Based in Accra, Ghana: use Ghana for this workspace's country and time zone?",
+    status: "pending" as const,
+  };
+
+  it("asks the owner, and tells a member an owner decides", () => {
+    expect(countryQuestionText(ghana, true)).toEqual({
+      heading: "Based in Accra, Ghana: use Ghana for this workspace's country and time zone?",
+      body: "Approve and times show in Africa/Accra, and Ghana phone numbers in their local format. Reject and the workspace stays as it is. An owner can change it later on Settings.",
+      canDecide: true,
+    });
+    expect(countryQuestionText(ghana, false)).toMatchObject({ body: expect.stringContaining("An owner decides this."), canDecide: false });
+  });
+
+  it("says what was decided", () => {
+    expect(countryQuestionText({ ...ghana, status: "approved" }, true)).toEqual({
+      heading: "Based in Accra, Ghana",
+      body: "Approved: this workspace uses Ghana and Africa/Accra. An owner can change it on Settings.",
+      canDecide: false,
+    });
+    expect(countryQuestionText({ ...ghana, status: "rejected" }, true)).toEqual({
+      heading: "Based in Accra, Ghana",
+      body: "Rejected: the workspace kept its country and time zone. An owner can change them on Settings.",
+      canDecide: false,
+    });
   });
 });

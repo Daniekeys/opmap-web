@@ -71,12 +71,29 @@ export type CrawledPage = { url: string; title: string; via: "http" | "browser" 
 export type MissingFact = { kind: FactKind; text: string; sourceUrl: string | null };
 
 // GET /api/w/:workspaceId/brand/profiles/:profileId
+// The version's country question: its facts say the seller is based in
+// another country than the workspace's. "pending" until an owner approves (the
+// workspace switches to `country` and `timeZone`) or rejects (it stays).
+export type CountryQuestion = {
+  country: string;
+  countryName: string;
+  timeZone: string;
+  fact: string;
+  question: string;
+  status: "pending" | "approved" | "rejected";
+};
+
 export type ProfileDetailResponse = {
   profile: ProfileSummary;
   pages: CrawledPage[];
   facts: Fact[];
   missing: MissingFact[];
+  countryQuestion: CountryQuestion | null;
 };
+
+// POST /api/w/:workspaceId/brand/profiles/:profileId/country/{approve,reject}
+// (owner). 409 when no question is waiting.
+export type CountryDecisionResponse = { countryQuestion: CountryQuestion };
 
 // POST /api/w/:workspaceId/brand/runs (owner, 202). A bare domain gets https://.
 // A website, or a description (30 to 3000 characters) and an optional

@@ -10,24 +10,21 @@ import { zoneName } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
 import { cn } from "@/lib/utils";
 
-// "" in the select means: no saved zone, use the Brand DNA suggestion.
-const SUGGESTED = "";
+// "" in the select means: no saved zone, use the default (Nigeria).
+const DEFAULT = "";
 
 const ZONES: string[] = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
 
-export function suggestionText(settings: WorkspaceSettingsResponse) {
-  return settings.suggested
-    ? `From your Brand DNA ("${settings.suggested.from}"): ${settings.suggested.timeZone}.`
-    : "Your Brand DNA doesn't name a country yet, so times show in UTC until you pick a zone.";
+export function defaultText(settings: WorkspaceSettingsResponse) {
+  return `No zone has been chosen, so the workspace uses ${settings.default.country} and ${settings.default.timeZone}, the default.`;
 }
 
-// The line under the heading, for the zone in use: chosen by an owner, or the
-// Brand DNA's suggestion.
+// The line under the heading, for the zone in use: chosen by an owner (here,
+// or by approving the Brand DNA's country question), or the default.
 export function zoneDescription(settings: WorkspaceSettingsResponse) {
   const inUse = `Every time in this workspace (searches, pauses, replies) shows in ${settings.timeZone}.`;
-  if (!settings.saved) return `${inUse} ${suggestionText(settings)}`;
-  const back = settings.suggested ? ` Pick "From Brand DNA" to go back to ${settings.suggested.timeZone}.` : "";
-  return `${inUse} An owner chose it.${back}`;
+  if (!settings.saved) return `${inUse} ${defaultText(settings)}`;
+  return `${inUse} An owner chose it. Pick "Default: ${settings.default.country}" to go back to ${settings.default.timeZone}.`;
 }
 
 // The picker's groups, so a phone user doesn't scroll 400 zones: the
@@ -47,7 +44,7 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
   const router = useRouter();
   // The settings as last saved here, so the text follows a save at once.
   const [current, setCurrent] = useState(settings);
-  const [value, setValue] = useState(settings.saved ?? SUGGESTED);
+  const [value, setValue] = useState(settings.saved ?? DEFAULT);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const groups = zoneGroups(current, ZONES);
@@ -60,7 +57,7 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
       const res = await fetch(`/api/w/${workspaceId}/settings`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ timeZone: value === SUGGESTED ? null : value }),
+        body: JSON.stringify({ timeZone: value === DEFAULT ? null : value }),
       });
       if (res.status === 401) {
         goToLogin();
@@ -98,7 +95,7 @@ export function TimeZoneForm({ workspaceId, settings, canEdit }: { workspaceId: 
             onChange={(e) => setValue(e.target.value)}
             className={cn(inputClass, "appearance-none pr-9")}
           >
-            <option value={SUGGESTED}>{current.suggested ? `From Brand DNA (${current.suggested.timeZone})` : "UTC (no Brand DNA country yet)"}</option>
+            <option value={DEFAULT}>{`Default: ${current.default.country} (${current.default.timeZone})`}</option>
             {groups.map((g) => (
               <optgroup key={g.label} label={g.label}>
                 {g.zones.map((z) => (

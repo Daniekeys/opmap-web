@@ -1,6 +1,6 @@
 // Words for the draft review screen (design/screens/BrandDNA.dc.html): the
 // one-sentence finding, short page names and the "read from" line.
-import type { CrawledPage, Fact, FactKind, ProfileSummary } from "@/lib/api-types/brand";
+import type { CountryQuestion, CrawledPage, Fact, FactKind, ProfileSummary } from "@/lib/api-types/brand";
 import { formatDay } from "@/lib/format";
 
 // What one or several facts of a kind are called in a sentence.
@@ -107,4 +107,21 @@ export function approveNote(approvedVersion: number | null) {
   return approvedVersion === null
     ? "Approving makes it the version used in messages written from now on."
     : `Approving replaces version ${approvedVersion} in messages written from now on.`;
+}
+
+// The country question's card: the question while it waits (an owner
+// decides), else what was decided.
+export function countryQuestionText(q: CountryQuestion, isOwner: boolean) {
+  if (q.status === "approved") {
+    return { heading: q.fact, body: `Approved: this workspace uses ${q.countryName} and ${q.timeZone}. An owner can change it on Settings.`, canDecide: false };
+  }
+  if (q.status === "rejected") {
+    return { heading: q.fact, body: "Rejected: the workspace kept its country and time zone. An owner can change them on Settings.", canDecide: false };
+  }
+  const what = `Approve and times show in ${q.timeZone}, and ${q.countryName} phone numbers in their local format. Reject and the workspace stays as it is.`;
+  return {
+    heading: q.question,
+    body: isOwner ? `${what} An owner can change it later on Settings.` : `${what} An owner decides this.`,
+    canDecide: isOwner,
+  };
 }

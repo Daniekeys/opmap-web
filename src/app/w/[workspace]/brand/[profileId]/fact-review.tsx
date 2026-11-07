@@ -11,6 +11,7 @@ import type {
   AddFactBody,
   ApproveProfileBody,
   ApproveProfileResponse,
+  CountryQuestion,
   CrawledPage,
   EditFactBody,
   Fact,
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { FactSource, foundOn, KINDS, kindLabel, PreviouslyApproved, SourceLine, sourceLabel, StaleFlag, StalePill } from "../facts";
 import { emptyFactsMessage, factTabs } from "../kinds";
 import { approveNote, pagesRead, reviewFinding, siteMismatch } from "../review";
+import { CountryQuestionCard } from "./country-question";
 
 type Result<T> = { ok: true; data: T } | { ok: false; message: string; code?: string };
 
@@ -78,6 +80,7 @@ export function FactReview({
   approvedSite,
   initialFacts,
   missing,
+  countryQuestion,
   isOwner,
 }: {
   workspaceId: string;
@@ -89,6 +92,7 @@ export function FactReview({
   approvedSite: Pick<ProfileSummary, "source" | "website"> | null;
   initialFacts: Fact[];
   missing: MissingFact[];
+  countryQuestion: CountryQuestion | null;
   isOwner: boolean;
 }) {
   const timeZone = useTimeZone();
@@ -209,6 +213,8 @@ export function FactReview({
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
         <div className="flex w-full max-w-read min-w-0 flex-col gap-6">
+          {/* The country question first, at every width: its own item, not a fact. */}
+          {countryQuestion && <CountryQuestionCard workspaceId={workspaceId} profileId={profile.id} initial={countryQuestion} isOwner={isOwner} />}
           {/* Below xl the side panel's progress sits above the facts. */}
           <section aria-label="Review progress" className="flex flex-col gap-2 xl:hidden">
             <p className="text-sm font-medium">
