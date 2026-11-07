@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse, WorkspaceSettingsResponse } from "./api-types/access";
 import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
+import { apiFailure } from "./api-error";
 import type { ApiErrorResponse } from "./api-types/errors";
 import type { CampaignDetailResponse, CampaignProgressResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
@@ -15,15 +16,28 @@ import type { LeadResearchResponse } from "./api-types/research";
 // `use cache`, so nothing is stored on the server or shared between users.
 // Reading cookies() makes the caller request-time, which is why every component
 // that calls these sits inside a <Suspense> boundary.
+// Any other failure throws apiFailure (lib/api-error.ts): the nearest error.tsx
+// shows it in plain words with the API's request id.
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${process.env.API_URL}${path}`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const cookie = (await cookies()).toString();
+  let res: Response;
+  try {
+    res = await fetch(`${process.env.API_URL}${path}`, { headers: { cookie }, cache: "no-store" });
+  } catch {
+    throw apiFailure(0, path, null);
+  }
   if (res.status === 401) redirect("/login");
   if (res.status === 404) notFound();
-  if (!res.ok) throw new Error(`API answered ${res.status} for ${path}`);
+  if (!res.ok) throw apiFailure(res.status, path, await requestIdOf(res));
   return res.json();
+}
+
+// The id a 500 is logged under: the X-Request-Id header, else the body's.
+async function requestIdOf(res: Response) {
+  const header = res.headers.get("x-request-id");
+  if (header) return header;
+  const body = (await res.json().catch(() => null)) as ApiErrorResponse | null;
+  return body?.error?.requestId ?? null;
 }
 
 // The session check for every app route. React's cache() only dedupes calls
