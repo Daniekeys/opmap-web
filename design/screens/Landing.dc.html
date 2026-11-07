@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opportunity Map: your next client, street by street</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#17131A}a:hover{color:#6B1D3E}
+button,input{font-family:inherit}
+.btn{transition:transform .15s ease, background-color .15s ease}
+.btn:hover{background:#2E2732}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible,.ex:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #B8336A;outline-offset:3px}
+.ex{transition:color .15s ease}
+.ex:hover{color:#6B1D3E}
+.step{transition:color .15s ease}
+.step:hover{color:#17131A!important}
+.step:focus-visible{outline:2px solid #B8336A;outline-offset:3px}
+@keyframes shutter{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes settle{from{transform:scale(1.12)}to{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes lit{0%,18%{color:#17131A}24%,100%{color:#8C8590}}
+.shutter{animation:shutter 1.1s cubic-bezier(.7,0,.2,1) .2s both}
+.shutter>span{display:inline-flex;animation:settle 1.1s cubic-bezier(.2,.7,.2,1) .2s both}
+.h-in{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.src{color:#8C8590;animation:lit 10s linear infinite}
+@supports (animation-timeline: view()){
+  .reveal>*{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
+  .reveal>*:nth-child(2){animation-range:entry 6% entry 46%}
+  .reveal>*:nth-child(3){animation-range:entry 12% entry 52%}
+}
+@media (max-width:640px){.opening{clip-path:inset(0 0 0 0)}
+@supports (animation-timeline: view()){.opening{animation:shutter linear both;animation-timeline:view();animation-range:entry 0% cover 35%}.opening img{animation:settle linear both;animation-timeline:view();animation-range:entry 0% cover 45%}}
+.night{position:relative;background:#17131A url("/_blob/355d9003c72882cdaa3db3493ad19f5f") center 40%/cover no-repeat}
+.night::before{content:"";position:absolute;inset:0;background:rgba(23,19,26,0.78)}
+.night>*{position:relative;z-index:1}
+@media (prefers-reduced-motion: reduce){.opening,.opening img{animation:none!important}}
+@media (prefers-reduced-motion: reduce){.shutter,.shutter>span,.h-in,.reveal>*{animation:none!important}.src{animation:none;color:#17131A}}
+</style>
+</helmet>
+<div style="background: #FBF7F8; color: #17131A; font-family: 'DM Sans', system-ui, sans-serif; font-size: 18px; line-height: 28px; overflow-x: hidden;">
+
+  <!-- HERO: the sentence is the layout. A lit map tile sits in the line where a word would be. -->
+  <header id="top" style="container-type: inline-size; min-height: 900px; box-sizing: border-box; padding: 24px 24px 32px; display: flex; flex-direction: column;">
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+      <a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="0" y="0" width="10" height="10" rx="2" fill="#E8DDE2"></rect><rect x="12" y="0" width="10" height="10" rx="2" fill="#B8336A"></rect><rect x="0" y="12" width="10" height="10" rx="2" fill="#E8DDE2"></rect><rect x="12" y="12" width="10" height="10" rx="2" fill="#E8DDE2"></rect></svg>
+        <span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em;">Opportunity Map</span>
+      </a>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; font-size: 15px;">
+        <a href="#how" style="text-decoration: none;">How it works</a>
+        <a href="#try" style="text-decoration: none;">Try a search</a>
+        <a href="#sources" style="text-decoration: none;">Where the facts come from</a>
+      </div>
+    </nav>
+
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 64px 0;">
+      <h1 class="h-in" style="margin: 0; font-size: clamp(40px, 16.4cqw, 256px); line-height: 0.92; font-weight: 700; letter-spacing: -0.05em;">
+        Your next client<br>is in <span class="shutter" data-ui="" role="img" aria-label="a lit map tile with 14 bakeries" style="display: inline-block; vertical-align: baseline; width: 1.7em; height: 0.7em; background: #B8336A; color: #FFFFFF; overflow: hidden;"><span style="display: flex; flex-direction: column; justify-content: flex-end; width: 100%; height: 100%; padding: 0.09em 0.12em; box-sizing: border-box; font-size: 0.16em; line-height: 1.15; letter-spacing: 0; font-weight: 600;"><span style="font-size: 2.4em; line-height: 1; font-variant-numeric: tabular-nums;">14</span><span>bakeries</span></span></span> Lekki.
+      </h1>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px;">
+      <p class="h-in" style="margin: 0; max-width: 620px; font-size: 19px; line-height: 29px; animation-delay: .15s;">Opportunity Map searches your city tile by tile, finds the local businesses most likely to buy what you sell, shows what to offer each one with proof, and writes the WhatsApp message for you.</p>
+      <a class="btn h-in" href="#sample" style="display: inline-flex; align-items: center; height: 52px; padding: 0 24px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 16px; text-decoration: none; animation-delay: .25s;">Get 5 free leads</a>
+    </div>
+  </header>
+
+  <!-- THE STREET: the tile in the headline opens onto the world it stands for. -->
+  <figure style="margin: 0; padding: 0 24px;">
+    <div class="opening" style="overflow: hidden; aspect-ratio: 16 / 8;"><img src="/_blob/b35c9c62ec77fe942bcff778001aac3c" alt="A busy street in Kawo, Kaduna, with shops, motorbikes and a man carrying drinks on his head" width="1280" height="725" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; filter: saturate(0.9) contrast(1.04);"></div>
+    <figcaption style="padding-top: 12px; font-size: 14px; line-height: 20px; color: #5F5A62;">Every shop on a street like this is a business someone could be selling to. Lekki, Yaba, Surulere, Ikeja, all of it.</figcaption>
+  </figure>
+
+  <!-- HOW IT WORKS: four steps on the left drive a full-size product fragment on the right. -->
+  <section id="how" aria-labelledby="how-h" style="container-type: inline-size; padding-top: 160px;">
+    <div style="display: flex; flex-wrap: wrap; min-height: 760px;">
+      <div style="flex: 1 1 520px; box-sizing: border-box; background: #F5EFF1; padding: 56px 24px; display: flex; flex-direction: column; gap: 48px;">
+        <h2 id="how-h" style="margin: 0; font-size: clamp(36px, 4.6cqw, 72px); line-height: 1; font-weight: 700; letter-spacing: -0.035em; max-width: 640px;">From your website to a sent message.</h2>
+        <div role="tablist" aria-label="How it works" style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{stops}}" as="st" hint-placeholder-count="4">
+            <button class="step" type="button" role="tab" aria-selected="{{st.sel}}" onClick="{{st.go}}" style="display: flex; gap: 20px; align-items: flex-start; text-align: left; padding: 14px 0; border: 0; background: transparent; cursor: pointer; color: {{st.fg}};">
+              <span aria-hidden="true" style="flex: none; width: 22px; height: 22px; margin-top: 0.3em; border-radius: 4px; background: {{st.tile}}; transition: background-color .2s ease;"></span>
+              <span style="display: flex; flex-direction: column; gap: 10px; max-width: 540px;">
+                <span style="font-size: clamp(24px, 2.6cqw, 38px); line-height: 1.12; font-weight: 600; letter-spacing: -0.02em;">{{st.clause}}</span>
+                <sc-if value="{{st.on}}" hint-placeholder-val="{{true}}"><span style="font-size: 18px; line-height: 28px; color: #5F5A62;">{{st.detail}}</span></sc-if>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+        <p style="margin: auto 0 0; font-size: 16px; line-height: 24px; color: #5F5A62; max-width: 460px;">Your first five leads arrive within two working days. After that, a campaign keeps finding new ones as the map fills in.</p>
+      </div>
+
+      <div style="flex: 1 1 520px; box-sizing: border-box; background: #FDF2F7; padding: 56px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+        <div data-ui="" style="width: 100%; max-width: 580px; min-height: 560px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 24px; box-sizing: border-box; font-size: 15px; line-height: 22px; display: flex; flex-direction: column;">
+
+          <sc-if value="{{s0}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span style="font-size: 13px; color: #5F5A62;">Your website or Instagram</span>
+                <span data-ui="" style="height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 6px 0 14px; border: 1px solid #D6CDD1; border-radius: 6px; font-size: 16px;">daniekeysstudios.com<span style="height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-size: 14px; font-weight: 600;">Read site</span></span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <span style="font-weight: 600;">Read 9 pages</span>
+                <span style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{pages}}" as="pg" hint-placeholder-count="6">
+                    <span style="font-size: 13px; line-height: 26px; padding: 0 10px; border-radius: 999px; background: #F5EFF1; color: #17131A;">{{pg}}</span>
+                  </sc-for>
+                </span>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 600; padding-bottom: 6px;">What you sell, as we found it</span>
+                <sc-for list="{{sells}}" as="sl" hint-placeholder-count="4">
+                  <span data-ui="" style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 11px 0; border-bottom: 1px solid #F2EDEF;"><span>{{sl.what}}</span><span style="flex: none; font-size: 13px; color: #5F5A62;">{{sl.src}}</span></span>
+                </sc-for>
+              </div>
+              <span style="font-size: 14px; color: #5F5A62;">16 facts found in all. Next you check each one.</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{s1}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 32px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">12 of 16</span><span style="color: #5F5A62;">facts approved</span></span>
+                <span data-ui="" aria-hidden="true" style="display: block; height: 8px; border-radius: 999px; background: #F8DBE8; overflow: hidden;"><span style="display: block; width: 75%; height: 100%; background: #B8336A;"></span></span>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+                  <span data-ui="" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #F2EDEF;"><span style="display: flex; flex-direction: column;"><span>{{f.what}}</span><span style="font-size: 13px; color: #5F5A62;">{{f.src}}</span></span><span style="flex: none; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: {{f.bg}}; color: {{f.fg}}; font-weight: 500;">{{f.status}}</span></span>
+                </sc-for>
+              </div>
+              <div data-ui="" style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 8px; background: #FFFBEB;">
+                <span style="align-self: flex-start; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; color: #92400E; font-weight: 500;">May be out of date</span>
+                <span style="font-weight: 600; font-size: 17px;">Smart automation for small businesses</span>
+                <span style="color: #5F5A62;">Found on /services, last changed March 2025. Do you still offer it?</span>
+                <span data-ui="" style="display: flex; gap: 8px; padding-top: 4px;"><span style="height: 34px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-size: 14px; font-weight: 600;">Remove</span><span style="height: 34px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 6px; border: 1px solid #D6CDD1; background: #FFFFFF; font-size: 14px;">Still true</span></span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{s2}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <span style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+                <sc-for list="{{kpis}}" as="k" hint-placeholder-count="3">
+                  <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: {{k.c}};">{{k.n}}</span><span style="font-size: 13px; color: #5F5A62;">{{k.l}}</span></span>
+                </sc-for>
+              </span>
+              <span style="position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 6px;">
+                <img src="/_blob/b7f1ac6e445f51748780859b66497406" alt="A street market in Kaduna seen from above" width="640" height="480" loading="lazy" style="display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(0.9) contrast(1.04);">
+                <span data-ui="" aria-hidden="true" style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr));">
+                  <sc-for list="{{aerialTiles}}" as="t" hint-placeholder-count="12">
+                    <span data-ui="" style="border: 1px solid rgba(255,255,255,0.5); background: {{t.bg}}; color: #FFFFFF; font-size: 14px; font-weight: 600; display: flex; align-items: flex-end; padding: 6px 8px; font-variant-numeric: tabular-nums;">{{t.n}}</span>
+                  </sc-for>
+                </span>
+              </span>
+              <span style="display: flex; flex-direction: column; gap: 4px;">
+                <span><span style="font-weight: 600;">Lekki Phase 1 tile:</span> 14 bakeries, 9 fit what you sell.</span>
+                <span style="font-size: 13px; color: #5F5A62;">46 of 950 map searches used this month. We stop before the limit.</span>
+              </span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{s3}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <span style="display: flex; align-items: center; gap: 12px;">
+                <span style="flex: none; width: 44px; height: 44px; border-radius: 6px; background: #F9E0EA; color: #9B2456; display: inline-flex; align-items: center; justify-content: center; font-weight: 600;">CC</span>
+                <span style="flex: 1; display: flex; flex-direction: column;"><span style="font-weight: 600; font-size: 17px;">Crumbs and Co. Bakery</span><span style="font-size: 13px; color: #5F5A62;">Lekki Phase 1, Lagos. 4.6 stars, 112 reviews</span></span>
+                <span style="flex: none; font-size: 13px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: #FDF2F7; color: #6B1D3E; font-weight: 500;">Strong fit</span>
+              </span>
+              <span style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 13px; color: #5F5A62;">What to offer</span>
+                <span style="font-weight: 600; font-size: 17px;">An order page that sends each cake order to their WhatsApp</span>
+              </span>
+              <span data-ui="" style="background: #F5EFF1; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;"><span>"DM to order. 3 days notice for custom cakes."</span><span style="font-size: 13px; color: #5F5A62;">Instagram bio of @crumbsandco, read 28 Oct</span></span>
+              <span data-ui="" style="align-self: stretch; background: #FDF2F7; border-radius: 8px 8px 8px 2px; padding: 14px 16px; line-height: 23px;">Hi, I saw on your Instagram that you take cake orders by <mark style="background: #FFFFFF; color: #6B1D3E; text-decoration: underline; text-decoration-color: #B8336A; text-decoration-thickness: 2px; text-underline-offset: 3px;">DM with 3 days notice</mark>. We could set up a simple order page that sends each order straight to your WhatsApp, so nothing gets lost in DMs. Want me to send a quick example?</span>
+              <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                <span style="height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 14px;">Open in WhatsApp</span>
+                <span style="font-size: 13px; color: #5F5A62; padding-left: 8px;">Then tap</span>
+                <sc-for list="{{outcomes}}" as="o" hint-placeholder-count="3">
+                  <span style="font-size: 13px; line-height: 28px; padding: 0 10px; border-radius: 999px; background: #F3F4F6; color: #374151;">{{o}}</span>
+                </sc-for>
+              </span>
+            </div>
+          </sc-if>
+        </div>
+        <span style="width: 100%; max-width: 580px; font-size: 14px; line-height: 20px; color: #5F5A62;">{{caption}}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRY A SEARCH: the headline is an input; the answer is the product's own rows. -->
+  <section id="try" aria-labelledby="try-h" class="reveal" style="container-type: inline-size; padding: 160px 24px 0; display: flex; flex-direction: column; gap: 32px;">
+    <h2 id="try-h" style="margin: 0; font-size: 36px; line-height: 42px; font-weight: 600; letter-spacing: -0.02em; max-width: 760px;">Type who you sell to. See who we'd find.</h2>
+    <div style="display: flex; flex-direction: column; gap: 40px;">
+      <label style="display: block;">
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Kind of business and place</span>
+        <input data-ui="" type="text" value="{{query}}" onChange="{{onQuery}}" style="width: 100%; border: 0; border-bottom: 0; outline: none; background: transparent; padding: 0; font-size: clamp(40px, 11.8cqw, 184px); line-height: 1.05; font-weight: 700; letter-spacing: -0.04em; color: #17131A; caret-color: #B8336A;">
+      </label>
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start;">
+        <div data-ui="" style="flex: 3 1 560px; max-width: 900px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; font-size: 15px; line-height: 22px;">
+          <sc-if value="{{hasRows}}" hint-placeholder-val="{{true}}">
+            <div>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+                <div data-ui="" style="display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 0 16px; border-bottom: 1px solid #F2EDEF;">
+                  <span style="flex: none; width: 40px; height: 40px; border-radius: 6px; background: {{r.bg}}; color: {{r.fg}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">{{r.ini}}</span>
+                  <span style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-weight: 600;">{{r.name}}</span><span style="font-size: 13px; color: #5F5A62;">{{r.why}}</span></span>
+                  <span style="flex: none; font-size: 13px; color: #6B1D3E; font-weight: 500;">{{r.fit}}</span>
+                </div>
+              </sc-for>
+              <div style="padding: 12px 16px; font-size: 13px; color: #5F5A62;">{{note}}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{noRows}}" hint-placeholder-val="{{false}}">
+            <div style="padding: 20px 16px; display: flex; flex-direction: column; gap: 6px;"><span style="font-weight: 600;">We'd cut that place into map tiles and search every one.</span><span style="color: #5F5A62;">Ask for the 5 free leads below and we'll run it for you.</span></div>
+          </sc-if>
+        </div>
+        <div style="flex: 2 1 320px; display: flex; flex-direction: column; gap: 8px;">
+          <img src="/_blob/4e7fa3fd6ae819bfed5e432c20fbe23a" alt="Bread dough rising on wooden racks in a small bakery" width="640" height="482" loading="lazy" style="display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; margin-bottom: 20px; filter: saturate(0.9) contrast(1.04);">
+          <span style="font-size: 18px; color: #5F5A62;">Or try</span>
+          <sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
+            <button class="ex" type="button" onClick="{{e.pick}}" style="text-align: left; padding: 6px 0; border: 0; background: transparent; font-size: clamp(22px, 2.4cqw, 34px); line-height: 1.25; font-weight: 500; letter-spacing: -0.015em; color: #17131A; text-decoration: underline; text-underline-offset: 5px; text-decoration-color: #D6CDD1; cursor: pointer;">{{e.q}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOURCES: the statement names what we read, lit one at a time; the proof is a real evidence card. -->
+  <section id="sources" aria-labelledby="src-h" class="reveal" style="padding: 160px 24px 0; display: flex; flex-wrap: wrap; gap: 48px; align-items: center;">
+    <div style="flex: 1 1 560px; display: flex; flex-direction: column; gap: 24px;">
+      <h2 id="src-h" style="margin: 0; font-size: 36px; line-height: 42px; font-weight: 600; letter-spacing: -0.02em;">Every claim points to where it came from.</h2>
+      <p style="margin: 0; font-size: 30px; line-height: 38px; font-weight: 500; letter-spacing: -0.015em; max-width: 720px;">We read <span class="src" style="animation-delay: 0s;">their Google Maps listing</span>, <span class="src" style="animation-delay: 2s;">their own website</span>, <span class="src" style="animation-delay: 4s;">their Instagram bio</span>, <span class="src" style="animation-delay: 6s;">their Google reviews</span> and <span class="src" style="animation-delay: 8s;">nothing behind a login</span>.</p>
+      <p style="margin: 0; max-width: 560px;">If we can't back something up, the card says "not enough information" instead of guessing. Anyone who asks us to stop never hears from your campaigns again.</p>
+    </div>
+    <figure data-ui="" style="flex: 1 1 380px; max-width: 480px; margin: 0; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 14px; font-size: 16px; line-height: 25px;">
+      <span>Their Instagram bio says <mark style="background: #FDF2F7; color: #6B1D3E; text-decoration: underline; text-decoration-color: #B8336A; text-decoration-thickness: 2px; text-underline-offset: 3px;">DM to order, 3 days notice</mark>, and 4 of their last 20 reviews mention waiting for a reply.</span>
+      <span style="background: #F5EFF1; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; font-size: 15px; line-height: 22px;"><span>"DM to order. 3 days notice for custom cakes."</span><span style="font-size: 13px; color: #5F5A62;">Instagram bio of @crumbsandco, read 28 Oct</span></span>
+      <figcaption style="font-size: 13px; color: #5F5A62;">An opportunity card for a bakery in Lekki Phase 1, Lagos. Sample data.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SIGN UP: the closing sentence has a blank, and the blank is the form. -->
+  <section id="sample" aria-labelledby="cta-h" class="reveal" style="container-type: inline-size; padding: 160px 24px 160px;">
+    <form action="mailto:daniel@daniekeysstudios.com" method="get" enctype="text/plain" style="margin: 0;">
+      <h2 id="cta-h" style="margin: 0; font-size: clamp(36px, 8.8cqw, 150px); line-height: 1.1; font-weight: 700; letter-spacing: -0.04em;">
+        Get five free leads for
+        <label style="display: inline;"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Your website or Instagram</span><input type="text" name="site" placeholder="your website" style="width: 6.4em; height: 1.05em; vertical-align: -0.12em; border: 0; border-radius: 0; background: #F5EFF1; padding: 0 0.2em; font: inherit; letter-spacing: inherit; color: #17131A;"></label>
+        <button class="btn" type="submit" style="height: 1.05em; vertical-align: -0.12em; padding: 0 0.3em; border: 0; background: #17131A; color: #FFFFFF; font: inherit; letter-spacing: inherit; cursor: pointer;">Send</button>
+      </h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-end; margin-top: 40px;">
+        <p style="flex: 1 1 320px; margin: 0; max-width: 560px; color: #5F5A62;">Within two working days you get 5 businesses, what to offer each one, the proof behind it and a message ready to send. No card, no account.</p>
+        <figure style="flex: 1 1 520px; max-width: 760px; margin: 0;">
+          <img src="/_blob/4240a98dff34f6d82c9f57907dad0471" alt="A food vendor under a wooden stall roof at a roadside market in Kaduna" width="1280" height="854" loading="lazy" style="display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; filter: saturate(0.9) contrast(1.04);">
+          <figcaption style="padding-top: 10px; font-size: 14px; color: #5F5A62;">A roadside food stall. Thousands like it across Lagos.</figcaption>
+        </figure>
+      </div>
+    </form>
+  </section>
+
+  <!-- CLOSE: invitation over the cropped name. -->
+  <footer class="night" style="container-type: inline-size; position: relative; overflow: hidden; background: #17131A; color: #F4EEF1; min-height: 760px; padding: 96px 24px 0; box-sizing: border-box; display: flex; flex-direction: column;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 40px;">
+      <div style="display: flex; flex-direction: column; gap: 28px; max-width: 720px;">
+        <h2 style="margin: 0; font-size: clamp(36px, 5cqw, 76px); line-height: 1; font-weight: 700; letter-spacing: -0.035em;">Built for Lagos.<br>Works in any city.</h2>
+        <a class="btn" href="#sample" style="align-self: flex-start; display: inline-flex; align-items: center; height: 52px; padding: 0 24px; background: #F4EEF1; color: #17131A; font-weight: 600; font-size: 16px; text-decoration: none;">Get 5 free leads</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; font-size: 16px;">
+        <a href="mailto:daniel@daniekeysstudios.com" style="color: #F4EEF1;">daniel@daniekeysstudios.com</a>
+        <a href="#sources" style="color: #F4EEF1;">Privacy and data sources</a>
+        <a href="#sources" style="color: #F4EEF1;">Ask us to stop contacting you</a>
+      </div>
+    </div>
+    <div style="margin-top: auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 80px; font-size: 14px; color: #B1A9B0;">
+      <span>A Daniekeys Studios product. Made in Nigeria.</span>
+      <span>Data from public listings and websites, handled under the NDPA.</span>
+      <span style="flex-basis: 100%;">Photos from Pexels: Muhammad-Taha Ibrahim (Kawo street), Abdulrahman Abubakar (aerial), VIVO Ken (bakery), Vurzie Kim (food stall), Segun Jana (Abeokuta at night).</span>
+    </div>
+    <div aria-hidden="true" style="white-space: nowrap; font-size: 22cqw; line-height: 0.8; font-weight: 700; letter-spacing: -0.05em; color: #F4EEF1; transform: translateY(28%); margin-left: -0.04em;">Opportunity Map</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":4700}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { stage: 0, query: 'cake shops in Lekki' }; }
+  renderVals() {
+    var self = this;
+    var stage = this.state.stage;
+    var names = ['Describe', 'Approve', 'Search', 'Send'];
+    var clauses = ['First, tell us what you sell.', 'Then approve what is true.', 'We search the city tile by tile.', 'Finally, send it on WhatsApp.'];
+    var details = [
+      'Paste your website, or describe your business in a few lines if you don’t have one.',
+      'We pull out your services and proof. You approve each fact, so nothing stale reaches a customer.',
+      'We cut your city into small map tiles and search each one, then keep only the businesses that fit.',
+      'Open a lead, read what to offer and why, and send the ready message. Then tap what happened.'
+    ];
+    var stops = names.map(function (n, i) {
+      return { name: n, clause: clauses[i], detail: details[i], on: i === stage, sel: i === stage ? 'true' : 'false',
+        fg: i === stage ? '#17131A' : '#5F5A62', tile: i === stage ? '#B8336A' : (i < stage ? '#F8DBE8' : '#E2D6DB'),
+        go: function () { self.setState({ stage: i }); } };
+    });
+    var captions = [
+      'Sample: Daniekeys Studios reading its own website.',
+      'Nothing reaches a customer until you approve it.',
+      'Tile counts are sample data. Photo: a Nigerian market from above.',
+      'Sample data. You always press send yourself, and anyone who asks to stop is never contacted again.'
+    ];
+    var P = [['#DCFCE7','#14532D'],['#F3F4F6','#374151']];
+
+    var M = [['#F9E0EA','#9B2456'],['#DCF2F0','#0F5E5A'],['#FBEFCF','#7A5300'],['#DDEBF6','#1D5F8A'],['#DCF1E4','#0F5E3A'],['#F1EADB','#5C4A1F']];
+    var answers = {
+      'cake shops in lekki': { note: '159 good fits across 46 tiles. Sample data.', rows: [
+        ['CC','Crumbs and Co. Bakery','Lekki Phase 1. No website, takes orders by DM','Strong fit'],
+        ['MT','Mama Tobi Pastries','Ikate. Website slow on phones','Strong fit'],
+        ['AC','Adewole Cake Studio','Chevron. Opened in 2026, 41 reviews','Strong fit'] ] },
+      'private clinics in ikeja': { note: '42 good fits across Ikeja so far. Sample data.', rows: [
+        ['SH','Shonibare Health Clinic','Shonibare Estate. Bookings by phone only','Strong fit'],
+        ['OM','Opebi Medical Centre','Opebi. Website down since August','Strong fit'],
+        ['GC','Greenfield Clinic','Alausa. Open weekends, no booking page','Good fit'] ] },
+      'event planners in surulere': { note: 'Not searched yet. These show what a result looks like. Sample data.', rows: [
+        ['BE','Bode Events and Decor','Bode Thomas. Portfolio only on Instagram','Strong fit'],
+        ['RP','Royal Party Planners','Adeniran Ogunsanya. 4.8 stars, no website','Strong fit'],
+        ['JA','Jolly Aso Ebi Events','Aguda. Prices only by DM','Good fit'] ] }
+    };
+    var key = (this.state.query || '').trim().toLowerCase();
+    var a = answers[key];
+    var rows = a ? a.rows.map(function (r, j) { return { ini: r[0], name: r[1], why: r[2], fit: r[3], bg: M[j * 2 % 6][0], fg: M[j * 2 % 6][1] }; }) : [];
+    var examples = ['cake shops in Lekki', 'private clinics in Ikeja', 'event planners in Surulere']
+      .filter(function (q) { return q.toLowerCase() !== key; })
+      .map(function (q) { return { q: q, pick: function () { self.setState({ query: q }); } }; });
+    return {
+      s0: stage === 0, s1: stage === 1, s2: stage === 2, s3: stage === 3,
+      stops: stops, caption: captions[stage],
+      pages: ['Home', 'About', 'Services', 'Portfolio', 'Contact', '4 case studies'],
+      sells: [
+        { what: 'Websites for small businesses', src: '/services' },
+        { what: 'Online order and booking pages', src: '/portfolio' },
+        { what: 'WhatsApp ordering setup', src: '/case-studies/ope-salon' },
+        { what: 'Product and brand photography', src: '/services' }
+      ],
+      facts: [
+        { what: 'Websites for small businesses', src: '/services', status: 'Approved', bg: P[0][0], fg: P[0][1] },
+        { what: 'Built 30+ sites for Nigerian businesses', src: '/portfolio', status: 'Approved', bg: P[0][0], fg: P[0][1] },
+        { what: 'Sites from ₦150,000', src: '/services', status: 'Waiting', bg: P[1][0], fg: P[1][1] }
+      ],
+      kpis: [ { n: '46', l: 'tiles searched', c: '#17131A' }, { n: '612', l: 'businesses read', c: '#17131A' }, { n: '159', l: 'good fits', c: '#B8336A' } ],
+      outcomes: ['Replied', 'No answer', 'Not now'],
+      aerialTiles: [0,0,3,0, 1,9,14,2, 0,4,0,0].map(function (n) { return { n: n ? String(n) : '', bg: n >= 8 ? 'rgba(184,51,106,0.72)' : (n >= 3 ? 'rgba(184,51,106,0.38)' : 'rgba(23,19,26,0.12)') }; }),
+      query: this.state.query, onQuery: function (e) { self.setState({ query: e.target.value }); },
+      rows: rows, hasRows: !!a, noRows: !a, note: a ? a.note : '', examples: examples
+    };
+  }
+}
+</script>
+</body>
+</html>

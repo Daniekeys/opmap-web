@@ -10,8 +10,8 @@ describe("fact tabs", () => {
       "Proof points",
       "Ideal clients",
       "Industries",
-      "Tone",
-      "Locations served",
+      "Tone of voice",
+      "Places served",
     ]);
     expect(tabs.find((t) => t.kind === "all")!.count).toBe(3);
     expect(tabs.find((t) => t.kind === "service")!.count).toBe(2);

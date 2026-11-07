@@ -6,4 +6,6 @@ export type ApiIssue = { code: string; path: (string | number)[]; message: strin
 // Codes the web app acts on: unauthenticated (401), forbidden (403),
 // not_found (404), invalid_input (400), invite_invalid (404), invite_used and
 // invite_expired (410).
-export type ApiErrorResponse = { error: { code: string; message: string; issues?: ApiIssue[] } };
+// `requestId` comes with a 500 (code internal): the id its real error is
+// logged under in the API.
+export type ApiErrorResponse = { error: { code: string; message: string; issues?: ApiIssue[]; requestId?: string } };

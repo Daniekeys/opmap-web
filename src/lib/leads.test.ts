@@ -1,6 +1,23 @@
+import { formatPhone } from "./phone";
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./api-types/leads";
-import { formatPhone, hasAnyContact, hasPhoneOrWhatsapp, labelText, pausedUntil, resumeDue, statusText, whatsappHref } from "./leads";
+import {
+  hasAnyContact,
+  hasPhoneOrWhatsapp,
+  labelText,
+  pausedUntil,
+  previewQuery,
+  googleCost,
+  leadBadges,
+  readyBadges,
+  readSettings,
+  resumeDue,
+  sameSettings,
+  settingsDraft,
+  statusText,
+  telHref,
+  whatsappHref,
+} from "./leads";
 
 const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   leadId: "l",
@@ -14,6 +31,8 @@ const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
   buyer: null,
   promoted: false,
   researched: false,
+  ready: [],
+  optedOut: false,
   contacts: { phone: null, whatsapp: null, email: null, website: null, person: null, socials: [], ...contacts },
 });
 
@@ -33,13 +52,27 @@ describe("contact labels in plain words", () => {
 });
 
 describe("phones", () => {
-  it("writes Nigerian numbers the local way and links WhatsApp by digits", () => {
-    expect(formatPhone("+2348033718771")).toBe("0803 371 8771");
-    expect(formatPhone("+447700900123")).toBe("+447700900123");
+  it("writes a number from the workspace's country the national way, and any other number internationally", () => {
+    // A Nigerian workspace reads Nigerian numbers as people there write them.
+    expect(formatPhone("+2348033718771", "NG")).toBe("0803 371 8771");
+    expect(formatPhone("+233244123456", "GH")).toBe("024 412 3456");
+    expect(formatPhone("+254712345678", "KE")).toBe("0712 345678");
+    expect(formatPhone("+447400123456", "GB")).toBe("07400 123456");
+    // Same calling code, same dialling: a Guernsey mobile reads 07911 in the UK.
+    expect(formatPhone("+447911123456", "GB")).toBe("07911 123456");
+    // From elsewhere, or with no workspace country: international.
+    expect(formatPhone("+2348062148513", "GB")).toBe("+234 806 214 8513");
+    expect(formatPhone("+447400123456", "NG")).toBe("+44 7400 123456");
+    expect(formatPhone("+2348062148513", "ZZ")).toBe("+234 806 214 8513");
+    expect(formatPhone("+2348062148513", null)).toBe("+234 806 214 8513");
+    // Not a valid number (a reserved UK drama range): shown as stored.
+    expect(formatPhone("+447700900123", "GB")).toBe("+447700900123");
+    // Links always use E.164, whatever the text says.
+    expect(telHref("+2348062148513")).toBe("tel:+2348062148513");
     expect(whatsappHref("+2348033718771")).toBe("https://wa.me/2348033718771");
     // A wa.me/message link has no number: linked as it is.
     expect(whatsappHref("https://wa.me/message/EO2NVG7LHIROG1")).toBe("https://wa.me/message/EO2NVG7LHIROG1");
-    expect(formatPhone("https://wa.me/message/EO2NVG7LHIROG1")).toBe("WhatsApp link");
+    expect(formatPhone("https://wa.me/message/EO2NVG7LHIROG1", "NG")).toBe("WhatsApp link");
   });
 
   it("filters leads with a phone or WhatsApp, and spots leads with no contact at all", () => {
@@ -56,9 +89,11 @@ describe("campaign status", () => {
 
   it("shows a cap pause as paused until tomorrow, in Lagos time", () => {
     // Pacific midnight is 08:00 in Lagos.
-    expect(pausedUntil("2026-10-26T07:00:00Z", now)).toBe("tomorrow, 08:00");
-    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z" }, now)).toBe("Paused until tomorrow, 08:00");
-    expect(statusText({ status: "done", resumeAt: null }, now)).toBe("Complete");
+    expect(pausedUntil("2026-10-26T07:00:00Z", "Africa/Lagos", now)).toBe("tomorrow, 08:00");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-26T07:00:00Z", pauseKind: null }, "Africa/Lagos", now)).toBe("Paused until tomorrow, 08:00");
+    expect(statusText({ status: "done", resumeAt: null, pauseKind: null }, "Africa/Lagos", now)).toBe("Complete");
+    // Google off isn't a limit: no time.
+    expect(statusText({ status: "paused", resumeAt: null, pauseKind: "setup" }, "Africa/Lagos", now)).toBe("Paused, Google search was off");
   });
 
   it("offers Resume search only once the resume time has passed", () => {
@@ -66,6 +101,72 @@ describe("campaign status", () => {
     expect(resumeDue("2026-10-25T15:00:00Z", now)).toBe(true);
     expect(resumeDue("2026-10-26T07:00:00Z", now)).toBe(false);
     expect(resumeDue(null, now)).toBe(false);
-    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z" }, now)).toBe("Paused, limit lifted");
+    expect(statusText({ status: "paused", resumeAt: "2026-10-25T14:00:00Z", pauseKind: null }, "Africa/Lagos", now)).toBe("Paused, limit lifted");
+  });
+});
+
+describe("search settings form", () => {
+  const saved = { leadsWanted: 20, maxCalls: null, dailyCalls: 5, pagesPerTile: 3, extrasPerCity: 3 };
+
+  it("round-trips settings, with an empty box for no limit", () => {
+    const draft = settingsDraft(saved);
+    expect(draft).toEqual({ leadsWanted: "20", maxCalls: "", dailyCalls: "5", pagesPerTile: "3", extrasPerCity: "3" });
+    expect(readSettings(draft, 20)).toEqual({ settings: saved });
+    expect(readSettings({ ...draft, maxCalls: " 150 " }, 20)).toEqual({ settings: { ...saved, maxCalls: 150 } });
+  });
+
+  it("refuses limits that aren't whole numbers in range, and a pace above the shared cap", () => {
+    const draft = settingsDraft(saved);
+    expect(readSettings({ ...draft, maxCalls: "0" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, maxCalls: "2.5" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, dailyCalls: "21" }, 20)).toEqual({ error: expect.stringContaining("from 1 to 20, the shared Google limit") });
+    // Without the cap known, the API checks it.
+    expect(readSettings({ ...draft, dailyCalls: "21" })).toEqual({ settings: { ...saved, dailyCalls: 21 } });
+  });
+
+  it("keeps leads wanted to 20 to 30, and empty only for a campaign made before it", () => {
+    const draft = settingsDraft(saved);
+    expect(readSettings({ ...draft, leadsWanted: "30" })).toEqual({ settings: { ...saved, leadsWanted: 30 } });
+    expect(readSettings({ ...draft, leadsWanted: "19" })).toEqual({ error: "Leads wanted must be a whole number from 20 to 30." });
+    expect(readSettings({ ...draft, leadsWanted: "31" })).toHaveProperty("error");
+    expect(readSettings({ ...draft, leadsWanted: "" })).toEqual({ settings: { ...saved, leadsWanted: null } });
+  });
+
+  it("compares settings and builds the estimate preview query", () => {
+    expect(sameSettings(saved, { ...saved })).toBe(true);
+    expect(sameSettings(saved, { ...saved, pagesPerTile: 1 })).toBe(false);
+    expect(sameSettings(saved, { ...saved, leadsWanted: 25 })).toBe(false);
+    expect(previewQuery(saved)).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3&leadsWanted=20");
+    expect(previewQuery({ ...saved, leadsWanted: null })).toBe("maxCalls=none&dailyCalls=5&pagesPerTile=3&extrasPerCity=3");
+  });
+
+  it("names a stopped campaign", () => {
+    expect(statusText({ status: "stopped", resumeAt: null, pauseKind: null }, "Africa/Lagos")).toBe("Stopped");
+  });
+});
+
+describe("ready badges", () => {
+  it("show confirmed and likely WhatsApp apart, likely in grey, in a fixed order", () => {
+    expect(readyBadges(["email", "whatsapp_confirmed"]).map((b) => [b.word, b.checked])).toEqual([
+      ["WhatsApp", true],
+      ["Email", true],
+    ]);
+    expect(readyBadges(["whatsapp_likely"]).map((b) => [b.word, b.checked])).toEqual([["Likely WhatsApp", false]]);
+    expect(readyBadges([])).toEqual([]);
+  });
+});
+
+describe("a lead row's badges", () => {
+  it("shows the ready channels, or only Opted out for a business that asked us to stop", () => {
+    const ready = { ...lead({}), ready: ["whatsapp_confirmed"] as Lead["ready"] };
+    expect(leadBadges(ready).map((b) => b.word)).toEqual(["WhatsApp"]);
+    expect(leadBadges({ ...ready, optedOut: true }).map((b) => [b.word, b.kind])).toEqual([["Opted out", "opted_out"]]);
+  });
+});
+
+describe("a Google cost on screen", () => {
+  it("is $0 inside the free tier, with the list price beside it, and says list price outside it", () => {
+    expect(googleCost("$0.70", true)).toEqual({ line: "Inside the free tier: $0 to you ($0.70 at list price).", button: "" });
+    expect(googleCost("$0.35 to $0.70", false)).toEqual({ line: "More than the free tier left this month: $0.35 to $0.70 at list price.", button: ", $0.35 to $0.70 at list price" });
   });
 });

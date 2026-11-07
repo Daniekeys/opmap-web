@@ -64,7 +64,7 @@ export function AddFactButton({ workspaceId, brandHref, hasDraft }: { workspaceI
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <h3 className="font-medium">Add a fact</h3>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted">
         Something true about your business that isn&apos;t here yet. It is marked as added by you, with no source page.{" "}
         {hasDraft
           ? "It goes into the draft you're reviewing."
@@ -82,7 +82,7 @@ export function AddFactButton({ workspaceId, brandHref, hasDraft }: { workspaceI
             ))}
           </select>
           <ChevronsUpDown
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
             aria-hidden
           />
         </span>
@@ -92,7 +92,7 @@ export function AddFactButton({ workspaceId, brandHref, hasDraft }: { workspaceI
         <textarea name="text" required rows={3} maxLength={500} className={cn(inputClass, "h-auto min-h-24 py-2")} />
       </label>
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}

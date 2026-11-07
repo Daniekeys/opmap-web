@@ -15,7 +15,7 @@ type Props = PageProps<"/invite/[token]">;
 export default function InvitePage({ params }: Props) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
-      <p className="text-sm font-medium text-muted-foreground">Opportunity Map</p>
+      <p className="text-sm font-medium text-muted">Opportunity Map</p>
       <Suspense fallback={<PageLoading />}>
         <Invite params={params} />
       </Suspense>
@@ -50,7 +50,7 @@ async function Invite({ params }: { params: Props["params"] }) {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p role="alert" className="text-sm text-muted-foreground">
+        <p role="alert" className="text-sm text-muted">
           {body}
         </p>
         {signIn && (
@@ -66,7 +66,7 @@ async function Invite({ params }: { params: Props["params"] }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">Join {invite.workspaceName}</h1>
-        <p className="text-sm text-muted-foreground wrap-break-word">
+        <p className="text-sm text-muted wrap-break-word">
           {invite.hasAccount
             ? `You already have an account as ${invite.email}. Join, then sign in with it.`
             : `You were invited as ${invite.email}. Choose your name and a password to create your account.`}

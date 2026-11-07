@@ -1,20 +1,23 @@
-import { ChevronDown, ChevronLeft } from "lucide-react";
-import Link from "next/link";
-import { Suspense } from "react";
-import { CampaignStatusBadge } from "@/components/campaign-status";
+import { ChevronDown } from "lucide-react";
+import { Fragment, Suspense } from "react";
+import { Container } from "@/components/container";
+import { TileMark } from "@/components/logo";
 import { PageLoading } from "@/components/page-loading";
-import { getCampaign, getCampaignEstimate, getCampaignLeads, getWorkspace } from "@/lib/api";
+import { getCampaign, getCampaignEstimate, getCampaignLeads, getCampaignProgress, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
-import { pausedUntil, resumeDue, TARGET_KINDS } from "@/lib/leads";
-import { AutoRefresh, RefreshAt } from "./auto-refresh";
+import { TARGET_KINDS } from "@/lib/leads";
+import { AutoRefresh } from "./auto-refresh";
+import { CampaignProgress } from "./campaign-progress";
 import { ConfirmPanel } from "./confirm-panel";
-import { LeadsList } from "./leads-list";
-import { ResumeButton } from "./resume-button";
+import { EditCampaign } from "./edit-campaign";
+import { Possibles } from "./possibles";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
-// One campaign: where its search stands, the confirm button with its cost
-// while it is a draft, and its leads.
+// One campaign, beside its list of leads (the layout): where its search
+// stands (with Stop search while it runs or waits), the confirm button with
+// its cost and settings while it is a draft or stopped, the edit panel
+// whenever it is not searching, and the businesses it was unsure about.
 export default function CampaignPage({ params }: Props) {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -30,52 +33,99 @@ async function CampaignView({ params }: { params: Props["params"] }) {
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
   ]);
-  const startable = campaign.status === "draft" || campaign.status === "failed";
-  const estimate = startable ? await getCampaignEstimate(workspace.id, campaignId) : null;
+  const startable = campaign.status === "draft" || campaign.status === "failed" || campaign.status === "stopped";
+  const editable = startable || campaign.status === "paused";
+  const isOwner = workspace.role === "owner";
+  const [estimate, progress] = await Promise.all([
+    startable ? getCampaignEstimate(workspace.id, campaignId) : null,
+    campaign.status !== "draft" ? getCampaignProgress(workspace.id, campaignId) : null,
+  ]);
   const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
+  // While it searches or waits, its progress comes first; after, the pick hint.
+  const searching = campaign.status === "running" || campaign.status === "paused";
+  const progressView = progress && (
+    <CampaignProgress progress={progress} campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} timeZone={workspace.timeZone} />
+  );
 
   return (
     <>
-      <Link
-        href={`/w/${slug}/campaigns`}
-        className="-mt-2 -ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" aria-hidden /> Campaigns
-      </Link>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">{campaign.name}</h1>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <CampaignStatusBadge campaign={campaign} />
-          {kind && <span>{kind.label}</span>}
-          <span>Searching for: {campaign.queries.join(", ")}</span>
-        </div>
-        <NameWordsPanel campaign={campaign} />
-      </div>
+      <StatusNote campaign={campaign} leadCount={leads.length} isOwner={isOwner} />
+      {searching && progressView}
+      {leads.length > 0 && <PickHint count={leads.length} />}
+      {campaign.status === "running" && <AutoRefresh seconds={10} />}
 
-      <StatusNote campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={workspace.role === "owner"} />
-      {campaign.status === "running" && <AutoRefresh seconds={15} />}
+      <Container size="read" className="flex flex-col gap-5 empty:hidden">
+        {estimate && (
+          <ConfirmPanel
+            key={`confirm:${editKey(campaign)}`}
+            workspaceId={workspace.id}
+            campaignId={campaign.id}
+            isOwner={isOwner}
+            estimate={estimate}
+            supported={kind?.supported ?? true}
+            continuing={campaign.status === "stopped"}
+            locations={campaign.locations.map((l) => l.id)}
+          />
+        )}
 
-      {estimate && (
-        <ConfirmPanel
-          workspaceId={workspace.id}
-          campaignId={campaign.id}
-          isOwner={workspace.role === "owner"}
-          estimate={estimate}
-          supported={kind?.supported ?? true}
-        />
-      )}
+        {editable && isOwner && (
+          <EditCampaign
+            key={`edit:${editKey(campaign)}`}
+            workspaceId={workspace.id}
+            campaign={campaign}
+            withSettings={campaign.status === "paused"}
+          />
+        )}
+      </Container>
 
-      <LeadsList
-        key={campaign.id}
-        workspaceId={workspace.id}
-        campaignId={campaign.id}
-        leads={leads}
-        possibleCount={possibleCount}
-        searched={!startable}
-      />
+      {!searching && progressView}
+      <SearchSummary campaign={campaign} />
+      <NameWordsPanel campaign={campaign} />
+      {campaign.status !== "draft" && <Possibles workspaceId={workspace.id} campaignId={campaign.id} count={possibleCount} />}
     </>
   );
 }
+
+// From 1024px the list sits beside this pane: nothing is opened for the user,
+// since opening a lead that isn't researched yet starts its paid deep-dive.
+function PickHint({ count }: { count: number }) {
+  return (
+    <div className="hidden flex-col gap-3 rounded-card border border-border bg-surface px-6 py-8 lg:flex">
+      <TileMark className="size-8" />
+      <h2 className="text-section font-semibold">Pick a business to see its opportunity</h2>
+      <p className="max-w-lg text-muted">
+        {count} {count === 1 ? "business" : "businesses"} on the left: ready to message first, then best fit. Opening one for the first time researches it, which takes about a minute
+        and a few cents. After that it opens for free, with messages you can send on WhatsApp, email or a call.
+      </p>
+    </div>
+  );
+}
+
+// What the campaign searches for, where, and what it has spent.
+function SearchSummary({ campaign }: { campaign: Campaign }) {
+  const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
+  const budget = campaign.settings.maxCalls;
+  const rows: [string, string][] = [
+    ["Searching for", campaign.queries.join(", ") || "Not set"],
+    ["Places", campaign.locations.map((l) => l.name).join(", ") || "Not set"],
+    ...(kind ? ([["Kind", kind.label]] as [string, string][]) : []),
+    ["Leads wanted", campaign.settings.leadsWanted === null ? "Every place searched" : String(campaign.settings.leadsWanted)],
+    ["Google searches", `${campaign.callsUsed}${budget !== null ? ` of ${budget}` : ""} used`],
+  ];
+  return (
+    <dl className="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2.5 rounded-card border border-border bg-surface px-5 py-4 text-sm sm:px-6">
+      {rows.map(([k, v]) => (
+        <Fragment key={k}>
+          <dt className="text-muted">{k}</dt>
+          <dd className="min-w-0 wrap-break-word tabular-nums">{v}</dd>
+        </Fragment>
+      ))}
+    </dl>
+  );
+}
+
+// Remounts the forms after a save, so they start from what was saved.
+const editKey = (c: Campaign) => [c.queries.join(","), c.locations.map((l) => l.id).join(","), JSON.stringify(c.settings)].join("|");
 
 // The words the fit check classifies business names with, read-only, so the
 // user can see why a name passed or failed. A name with a word for this kind
@@ -83,14 +133,14 @@ async function CampaignView({ params }: { params: Props["params"] }) {
 function NameWordsPanel({ campaign }: { campaign: Campaign }) {
   const words = campaign.nameWords;
   return (
-    <details className="group rounded-xl border bg-card text-sm">
+    <details className="group rounded-card border border-border bg-surface text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-medium">
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+        <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
         Words used to check names
       </summary>
       <div className="flex flex-col gap-3 border-t px-4 py-3">
         {!words ? (
-          <p className="text-muted-foreground">Not made yet. They are made from this campaign&apos;s segment before its first fit check.</p>
+          <p className="text-muted">Not made yet. They are made from this campaign&apos;s segment before its first fit check.</p>
         ) : (
           <>
             <WordList
@@ -109,14 +159,14 @@ function NameWordsPanel({ campaign }: { campaign: Campaign }) {
 function WordList({ label, hint, words }: { label: string; hint: string; words: string[] }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="text-muted-foreground">{hint}</p>
+      <p className="font-medium">{label}</p>
+      <p className="text-muted">{hint}</p>
       {words.length === 0 ? (
-        <p className="text-muted-foreground">None</p>
+        <p className="text-muted">None</p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
           {words.map((w) => (
-            <li key={w} className="rounded-full bg-muted px-2 py-1 text-xs">
+            <li key={w} className="rounded-control bg-raised px-2 py-1 text-xs">
               {w}
             </li>
           ))}
@@ -126,44 +176,25 @@ function WordList({ label, hint, words }: { label: string; hint: string; words: 
   );
 }
 
-// What the campaign's state means for the user, in a sentence.
-function StatusNote({ campaign, leadCount, workspaceId, isOwner }: { campaign: Campaign; leadCount: number; workspaceId: string; isOwner: boolean }) {
-  if (campaign.status === "paused") {
-    // The limit has lifted: an owner can restart it (the only way in
-    // development, where nothing restarts it by itself).
-    const due = resumeDue(campaign.resumeAt);
+// What a stopped or failed campaign's state means, in a sentence. A running,
+// paused or finished search says so in its progress.
+function StatusNote({ campaign, leadCount, isOwner }: { campaign: Campaign; leadCount: number; isOwner: boolean }) {
+  if (campaign.status === "stopped") {
     return (
-      <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        <p className="font-medium">
-          {due ? "Paused: the limit has lifted" : `Paused until ${campaign.resumeAt ? pausedUntil(campaign.resumeAt) : "the limit resets"} (Lagos time)`}
+      <div role="status" className="rounded-card border border-border bg-surface px-5 py-4 text-sm">
+        <p className="font-medium">Stopped</p>
+        <p className="mt-1 text-muted">
+          {campaign.pauseReason ?? "Stopped by an owner."} It used {campaign.callsUsed} Google {campaign.callsUsed === 1 ? "search" : "searches"}, and the{" "}
+          {leadCount} {leadCount === 1 ? "lead" : "leads"} it found {leadCount === 1 ? "is" : "are"} in the list.{" "}
+          {isOwner ? "Edit it, or change its settings below and continue the search." : "An owner can edit it and continue the search."}
         </p>
-        <p className="mt-1">
-          {campaign.pauseReason ?? "Today's Google searches are used up."} The {leadCount} {leadCount === 1 ? "lead" : "leads"} found so far{" "}
-          {leadCount === 1 ? "is" : "are"} below.
-        </p>
-        {due && isOwner && <ResumeButton workspaceId={workspaceId} campaignId={campaign.id} />}
-        {!due && campaign.resumeAt && <RefreshAt at={campaign.resumeAt} />}
       </div>
-    );
-  }
-  if (campaign.status === "done") {
-    return (
-      <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-        Complete. The search covered every place in this campaign and found {leadCount} {leadCount === 1 ? "lead" : "leads"} that fit.
-      </p>
-    );
-  }
-  if (campaign.status === "running") {
-    return (
-      <p role="status" className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
-        Searching. Leads appear here as they are found and checked; this page updates by itself.
-      </p>
     );
   }
   if (campaign.status === "failed") {
     return (
-      <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-        The search stopped with an error. What it found is kept below; an owner can start it again.
+      <p role="alert" className="rounded-card bg-negative-soft px-5 py-4 text-sm text-negative-ink">
+        The search stopped with an error. What it found is kept in the list; an owner can start it again.
       </p>
     );
   }

@@ -47,7 +47,7 @@ export function TestJobRunner({ workspaceId, initialRunId }: { workspaceId: stri
     <>
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Test job</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted">
           Queues the three-step demo pipeline in the worker. It uses the fake adapters only, so it costs nothing.
         </p>
       </div>
@@ -57,7 +57,7 @@ export function TestJobRunner({ workspaceId, initialRunId }: { workspaceId: stri
           {starting ? "Starting" : runId ? "Start another test job" : "Start test job"}
         </Button>
         {error && (
-          <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
             {error}
           </p>
         )}

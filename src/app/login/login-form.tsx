@@ -52,7 +52,7 @@ export function LoginForm() {
         <input name="password" type="password" autoComplete="current-password" required className={inputClass} />
       </label>
       {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
           {error}
         </p>
       )}

@@ -23,7 +23,7 @@ async function TestJob({ params, searchParams }: Props) {
     return (
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Test job</h1>
-        <p role="alert" className="rounded-lg bg-muted px-3 py-2 text-sm">
+        <p role="alert" className="rounded-lg bg-raised px-3 py-2 text-sm">
           Owners only. Ask an owner of {workspace.name} to run the test job.
         </p>
       </div>

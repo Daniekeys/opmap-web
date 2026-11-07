@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Replies and deals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6B1D3E}a:hover{color:#B8336A}
+button{font-family:inherit}
+.card:hover{border-color:#D6CDD1}
+</style>
+</helmet>
+<!-- Grid: 1152 = 5 columns x 211.2 + 4 x 24. Funnel strip spans all five. -->
+<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #FBF7F8; color: #17131A; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+  <div style="flex: 0 0 240px;"><dc-import name="Sidebar" active="pipeline" hint-size="240px,900px"></dc-import></div>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 32px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em;">Replies and deals</h1>
+        <p style="margin: 0; color: #5F5A62;">3 of 9 bakeries replied. Adewole Cake Studio asked for a price this morning.</p>
+      </div>
+      <a href="Composer.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 6px; background: #17131A; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none;">Reply to Adewole</a>
+    </div>
+
+    <section aria-label="From message to deal" style="background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; padding: 20px 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;">
+      <sc-for list="{{funnel}}" as="f" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 13px; color: #5F5A62;">{{f.label}}</span>
+          <span style="font-size: 24px; line-height: 30px; font-weight: 500; font-variant-numeric: tabular-nums;">{{f.n}} <span style="font-size: 14px; color: #5F5A62;">{{f.of}}</span></span>
+          <span style="display: block; height: 8px; border-radius: 999px; background: #F2EDEF;"><span style="display: block; height: 8px; width: {{f.w}}; border-radius: 999px; background: #B8336A;"></span></span>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="overflow-x: auto;">
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 24px; min-width: 1100px;">
+        <sc-for list="{{cols}}" as="col" hint-placeholder-count="5">
+          <section aria-label="{{col.title}}" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 2px 4px;">
+              <h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600;">{{col.title}}</h2>
+              <span style="font-size: 13px; color: #5F5A62; font-variant-numeric: tabular-nums;">{{col.count}}</span>
+            </div>
+            <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+              <a class="card" href="Composer.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #FFFFFF; border: 1px solid #EAE4E6; border-radius: 8px; text-decoration: none; color: #17131A;">
+                <span style="display: flex; gap: 10px; align-items: center;">
+                  <span style="flex: none; width: 28px; height: 28px; border-radius: 6px; background: {{c.bg}}; color: {{c.fg}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">{{c.ini}}</span>
+                  <span style="font-weight: 600; font-size: 14px; line-height: 20px;">{{c.name}}</span>
+                </span>
+                <span style="font-size: 14px; line-height: 20px;">{{c.offer}}</span>
+                <span style="font-size: 13px; line-height: 18px; color: {{c.whenFg}};">{{c.when}}</span>
+              </a>
+            </sc-for>
+          </section>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var M = [['#F9E0EA','#9B2456'],['#DCF2F0','#0F5E5A'],['#FBEFCF','#7A5300'],['#DDEBF6','#1D5F8A'],['#DCF1E4','#0F5E3A'],['#F1EADB','#5C4A1F']];
+    var k = 0, G = '#5F5A62';
+    function card(name, ini, offer, when, fg) { var m = M[(k++) % 6]; return { name: name, ini: ini, offer: offer, when: when, whenFg: fg || G, bg: m[0], fg: m[1] }; }
+    var cols = [
+      { title: 'Sent, waiting', cards: [
+        card('Mama Tobi Pastries','MT','Faster website on phones','Sent today, WhatsApp'),
+        card('Oven Fresh Ajah','OF','Cake reveal videos','Sent yesterday, WhatsApp'),
+        card('Golden Bread House','GB','Order flow on their site','Sent 28 Oct, email'),
+        card('The Rolling Pin','TR','Instagram brand refresh','Sent 27 Oct, WhatsApp'),
+        card('Unity Road Cakes','UR','One page website','Called 26 Oct, no answer') ] },
+      { title: 'Replied', cards: [
+        card('Adewole Cake Studio','AC','Brand identity for a new shop','Asked for a price today', '#6B1D3E') ] },
+      { title: 'Meeting booked', cards: [
+        card('Sweet Kitchen Confectionery','SK','Online menu for two branches','Friday 31 Oct, 10:00') ] },
+      { title: 'Won', cards: [
+        card('Freedom Way Bakes','FW','Cake order page','Won 24 Oct', '#247B50') ] },
+      { title: 'Lost', cards: [
+        card('Challenge Pastry Hub','CP','Website refresh','Not now. Try again in January') ] }
+    ];
+    var total = 0; cols.forEach(function (c) { c.count = String(c.cards.length); total += c.cards.length; });
+    var replied = cols[1].cards.length + cols[2].cards.length + cols[3].cards.length;
+    var meeting = cols[2].cards.length + cols[3].cards.length;
+    var won = cols[3].cards.length;
+    console.assert(total === 9, 'messaged should be 9');
+    function pct(n) { return Math.round(n / total * 100) + '%'; }
+    var funnel = [
+      { label: 'Messaged', n: String(total), of: 'bakeries', w: '100%' },
+      { label: 'Replied', n: String(replied), of: 'of ' + total, w: pct(replied) },
+      { label: 'Meeting booked', n: String(meeting), of: 'of ' + total, w: pct(meeting) },
+      { label: 'Won', n: String(won), of: 'of ' + total, w: pct(won) }
+    ];
+    return { cols: cols, funnel: funnel };
+  }
+}
+</script>
+</body>
+</html>

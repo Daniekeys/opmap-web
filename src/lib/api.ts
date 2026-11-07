@@ -2,26 +2,42 @@ import "server-only";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse } from "./api-types/access";
+import type { InviteDescription, MeResponse, MembersResponse, PendingInvitesResponse, WorkspaceSettingsResponse } from "./api-types/access";
 import type { BrandOverviewResponse, ProfileDetailResponse } from "./api-types/brand";
+import { apiFailure } from "./api-error";
 import type { ApiErrorResponse } from "./api-types/errors";
-import type { CampaignDetailResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
+import type { CampaignDetailResponse, CampaignProgressResponse, CampaignsResponse, EstimateResponse, LeadsResponse } from "./api-types/leads";
 import type { PipelineRunsResponse } from "./api-types/pipeline";
+import type { PipelineResponse } from "./api-types/outcomes";
+import type { LeadOutreachResponse, MessagesResponse } from "./api-types/outreach";
 import type { LeadResearchResponse } from "./api-types/research";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
 // `use cache`, so nothing is stored on the server or shared between users.
 // Reading cookies() makes the caller request-time, which is why every component
 // that calls these sits inside a <Suspense> boundary.
+// Any other failure throws apiFailure (lib/api-error.ts): the nearest error.tsx
+// shows it in plain words with the API's request id.
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${process.env.API_URL}${path}`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const cookie = (await cookies()).toString();
+  let res: Response;
+  try {
+    res = await fetch(`${process.env.API_URL}${path}`, { headers: { cookie }, cache: "no-store" });
+  } catch {
+    throw apiFailure(0, path, null);
+  }
   if (res.status === 401) redirect("/login");
   if (res.status === 404) notFound();
-  if (!res.ok) throw new Error(`API answered ${res.status} for ${path}`);
+  if (!res.ok) throw apiFailure(res.status, path, await requestIdOf(res));
   return res.json();
+}
+
+// The id a 500 is logged under: the X-Request-Id header, else the body's.
+async function requestIdOf(res: Response) {
+  const header = res.headers.get("x-request-id");
+  if (header) return header;
+  const body = (await res.json().catch(() => null)) as ApiErrorResponse | null;
+  return body?.error?.requestId ?? null;
 }
 
 // The session check for every app route. React's cache() only dedupes calls
@@ -37,28 +53,36 @@ export async function getWorkspace(slug: string) {
   return workspace;
 }
 
+export const getWorkspaceSettings = (workspaceId: string) => apiGet<WorkspaceSettingsResponse>(`/api/w/${workspaceId}/settings`);
+
 export const listMembers = (workspaceId: string) => apiGet<MembersResponse>(`/api/w/${workspaceId}/members`);
 
 export const listPipelineRuns = (workspaceId: string) =>
   apiGet<PipelineRunsResponse>(`/api/w/${workspaceId}/pipeline-runs`);
 
-export const getBrand = (workspaceId: string) => apiGet<BrandOverviewResponse>(`/api/w/${workspaceId}/brand`);
+// The shell (sidebar and phone menu) and the Brand DNA page all read these.
+export const getBrand = cache((workspaceId: string) => apiGet<BrandOverviewResponse>(`/api/w/${workspaceId}/brand`));
 
 export const getBrandProfile = (workspaceId: string, profileId: string) =>
   apiGet<ProfileDetailResponse>(`/api/w/${workspaceId}/brand/profiles/${encodeURIComponent(profileId)}`);
 
-export const listCampaigns = (workspaceId: string) => apiGet<CampaignsResponse>(`/api/w/${workspaceId}/campaigns`);
+export const listCampaigns = cache((workspaceId: string) => apiGet<CampaignsResponse>(`/api/w/${workspaceId}/campaigns`));
 
 const campaignPath = (workspaceId: string, campaignId: string) => `/api/w/${workspaceId}/campaigns/${encodeURIComponent(campaignId)}`;
 
-export const getCampaign = (workspaceId: string, campaignId: string) =>
-  apiGet<CampaignDetailResponse>(campaignPath(workspaceId, campaignId));
+// The campaign layout and its pages both read these: cache() shares one
+// request's answer between them (per request only, like getMe).
+export const getCampaign = cache((workspaceId: string, campaignId: string) =>
+  apiGet<CampaignDetailResponse>(campaignPath(workspaceId, campaignId)));
 
-export const getCampaignLeads = (workspaceId: string, campaignId: string) =>
-  apiGet<LeadsResponse>(`${campaignPath(workspaceId, campaignId)}/leads`);
+export const getCampaignLeads = cache((workspaceId: string, campaignId: string) =>
+  apiGet<LeadsResponse>(`${campaignPath(workspaceId, campaignId)}/leads`));
 
 export const getCampaignEstimate = (workspaceId: string, campaignId: string) =>
   apiGet<EstimateResponse>(`${campaignPath(workspaceId, campaignId)}/estimate`);
+
+export const getCampaignProgress = (workspaceId: string, campaignId: string) =>
+  apiGet<CampaignProgressResponse>(`${campaignPath(workspaceId, campaignId)}/progress`);
 
 // Owners only; the API answers 403 to a member.
 export const listPendingInvites = (workspaceId: string) =>
@@ -84,3 +108,13 @@ export async function getInvite(
 // The lead page: the lead, its deep-dive and its opportunity cards.
 export const getLeadResearch = (workspaceId: string, campaignId: string, leadId: string) =>
   apiGet<LeadResearchResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}`);
+
+// The lead page's drafts, contact points and outcomes.
+export const getLeadOutreach = (workspaceId: string, campaignId: string, leadId: string) =>
+  apiGet<LeadOutreachResponse>(`${campaignPath(workspaceId, campaignId)}/leads/${encodeURIComponent(leadId)}/outreach`);
+
+// Every campaign's leads waiting on the user, and the sidebar's counts.
+export const getMessages = cache((workspaceId: string) => apiGet<MessagesResponse>(`/api/w/${workspaceId}/messages`));
+
+// The campaign's leads by stage.
+export const getPipeline = cache((workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`));

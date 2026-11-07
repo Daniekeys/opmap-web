@@ -1,6 +1,27 @@
 // Plain words for the lead finder's data: contact labels (spec, Data
 // accuracy), phone numbers, categories and campaign states.
-import type { Campaign, Lead, TargetKind } from "./api-types/leads";
+import type { Campaign, Lead, SearchSettings, TargetKind } from "./api-types/leads";
+import { dayKey, formatDateTime, formatter } from "./format";
+
+// The lead list's badges for the channels a lead can be messaged on now, in
+// this order: WhatsApp (confirmed) and email in green, likely WhatsApp in grey,
+// so a guess never looks checked. None for a suppressed business (the API
+// sends none).
+const READY_BADGES = {
+  whatsapp_confirmed: { word: "WhatsApp", title: "WhatsApp confirmed: they published a wa.me link", checked: true },
+  whatsapp_likely: { word: "Likely WhatsApp", title: "Likely on WhatsApp: a mobile number, not checked", checked: false },
+  email: { word: "Email", title: "Email found on their own site", checked: true },
+} as const;
+
+export const readyBadges = (ready: Lead["ready"]) =>
+  (["whatsapp_confirmed", "whatsapp_likely", "email"] as const).filter((c) => ready.includes(c)).map((c) => ({ channel: c, ...READY_BADGES[c] }));
+
+// A lead row's badges: its ready channels, or only "Opted out" for a business
+// that asked not to be contacted.
+export function leadBadges(lead: Pick<Lead, "ready" | "optedOut">) {
+  if (lead.optedOut) return [{ kind: "opted_out" as const, word: "Opted out", title: "They asked not to be contacted" }];
+  return readyBadges(lead.ready).map((b) => ({ kind: b.channel, word: b.word, title: b.title, checked: b.checked }));
+}
 
 export type ContactKindGroup = "phone" | "whatsapp" | "email" | "website" | "person" | "social";
 
@@ -41,15 +62,6 @@ export function labelText(group: ContactKindGroup, label: string): LabelText {
   return LABELS[group][label] ?? { word: label.replaceAll("_", " "), tip: "", tone: "fair" };
 }
 
-// "+2348033718771" as Nigerians write it: "0803 371 8771". Other countries
-// keep the international form.
-// A WhatsApp value can be a link with no number (wa.me/message/...).
-export function formatPhone(e164: string) {
-  if (/^https?:/.test(e164)) return "WhatsApp link";
-  const ng = /^\+234(\d{3})(\d{3})(\d{4})$/.exec(e164);
-  return ng ? `0${ng[1]} ${ng[2]} ${ng[3]}` : e164;
-}
-
 export const telHref = (e164: string) => `tel:${e164}`;
 export const whatsappHref = (value: string) => (/^https?:/.test(value) ? value : `https://wa.me/${value.replace(/\D/g, "")}`);
 
@@ -87,37 +99,104 @@ export const TARGET_KINDS: { kind: TargetKind; label: string; help: string; supp
   { kind: "institution", label: "Institutions", help: "NGOs, government bodies, associations. Not searchable yet", supported: false },
 ];
 
-// Fixed time zone so the server and the browser print the same day.
-const dayOf = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(d);
-const timeOf = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
 
 // Whether a paused campaign's limit has lifted, so an owner can resume it
 // (the API checks again with the database's clock).
 export const resumeDue = (resumeAt: string | null, now = new Date()) => resumeAt !== null && new Date(resumeAt).getTime() <= now.getTime();
 
-// "Paused until tomorrow, 08:00" (Lagos time), or the date when it's later.
-export function pausedUntil(resumeAt: string, now = new Date()) {
+// "Paused until tomorrow, 08:00" in the workspace's time zone, or the date
+// when it's later.
+export function pausedUntil(resumeAt: string, timeZone: string, now = new Date()) {
   const at = new Date(resumeAt);
   const tomorrow = new Date(now.getTime() + 86_400_000);
-  if (dayOf(at) === dayOf(now)) return `later today, ${timeOf.format(at)}`;
-  if (dayOf(at) === dayOf(tomorrow)) return `tomorrow, ${timeOf.format(at)}`;
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" }).format(at);
+  const time = formatter(timeZone, { hour: "2-digit", minute: "2-digit" }).format(at);
+  if (dayKey(at, timeZone) === dayKey(now, timeZone)) return `later today, ${time}`;
+  if (dayKey(at, timeZone) === dayKey(tomorrow, timeZone)) return `tomorrow, ${time}`;
+  return formatDateTime(resumeAt, timeZone);
 }
 
-export function statusText(campaign: Pick<Campaign, "status" | "resumeAt">, now = new Date()) {
+export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pauseKind">, timeZone: string, now = new Date()) {
   switch (campaign.status) {
     case "draft":
       return "Draft, not started";
     case "running":
       return "Searching";
     case "paused":
+      // Not a limit: no time to wait for (the banner says what to do).
+      if (campaign.pauseKind === "setup") return "Paused, Google search was off";
       if (resumeDue(campaign.resumeAt, now)) return "Paused, limit lifted";
-      return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, now)}` : "Paused";
+      return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, timeZone, now)}` : "Paused";
+    case "stopped":
+      return "Stopped";
     case "done":
       return "Complete";
     case "failed":
       return "Failed";
   }
+}
+
+// A campaign's search settings as the form holds them: the leads wanted and
+// the two limits as typed (empty: no limit), the two choices as select values.
+export type SettingsDraft = { leadsWanted: string; maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string };
+
+// Leads wanted: the search ends as done once this many pass the fit check.
+export const LEADS_WANTED = { min: 20, max: 30, default: 20 };
+
+export const settingsDraft = (s: SearchSettings): SettingsDraft => ({
+  leadsWanted: s.leadsWanted === null ? "" : String(s.leadsWanted),
+  maxCalls: s.maxCalls === null ? "" : String(s.maxCalls),
+  dailyCalls: s.dailyCalls === null ? "" : String(s.dailyCalls),
+  pagesPerTile: String(s.pagesPerTile),
+  extrasPerCity: String(s.extrasPerCity),
+});
+
+// The draft as settings, or what is wrong with it. The API checks again.
+// `dailyCap` is the shared Google limit, when the screen knows it.
+export function readSettings(d: SettingsDraft, dailyCap?: number): { settings: SearchSettings } | { error: string } {
+  const limit = (text: string, max?: number) => {
+    const t = text.trim();
+    if (t === "") return null;
+    const n = Number(t);
+    return Number.isInteger(n) && n >= 1 && (max === undefined || n <= max) ? n : undefined;
+  };
+  const maxCalls = limit(d.maxCalls, 100_000);
+  if (maxCalls === undefined) return { error: "The search budget must be a whole number from 1 to 100,000, or empty for no limit." };
+  const dailyCalls = limit(d.dailyCalls, dailyCap);
+  if (dailyCalls === undefined) {
+    return { error: `Searches a day must be a whole number${dailyCap ? ` from 1 to ${dailyCap}, the shared Google limit` : " from 1"}, or empty.` };
+  }
+  // Empty only on a campaign made before leads wanted, which searches everything.
+  const wanted = d.leadsWanted.trim() === "" ? null : Number(d.leadsWanted);
+  if (wanted !== null && !(Number.isInteger(wanted) && wanted >= LEADS_WANTED.min && wanted <= LEADS_WANTED.max)) {
+    return { error: `Leads wanted must be a whole number from ${LEADS_WANTED.min} to ${LEADS_WANTED.max}.` };
+  }
+  return { settings: { leadsWanted: wanted, maxCalls, dailyCalls, pagesPerTile: Number(d.pagesPerTile), extrasPerCity: Number(d.extrasPerCity) } };
+}
+
+export const sameSettings = (a: SearchSettings, b: SearchSettings) =>
+  a.leadsWanted === b.leadsWanted &&
+  a.maxCalls === b.maxCalls &&
+  a.dailyCalls === b.dailyCalls &&
+  a.pagesPerTile === b.pagesPerTile &&
+  a.extrasPerCity === b.extrasPerCity;
+
+// The estimate route's preview query for these settings.
+export const previewQuery = (s: SearchSettings) =>
+  new URLSearchParams({
+    maxCalls: s.maxCalls === null ? "none" : String(s.maxCalls),
+    dailyCalls: s.dailyCalls === null ? "none" : String(s.dailyCalls),
+    pagesPerTile: String(s.pagesPerTile),
+    extrasPerCity: String(s.extrasPerCity),
+    ...(s.leadsWanted === null ? {} : { leadsWanted: String(s.leadsWanted) }),
+  }).toString();
+
+// A Google cost on screen. The ledger records list price on every call, but
+// inside Google's free tier the bill is $0, so a list price is never shown
+// bare, as if it were cash spent. `listPrice` is already formatted.
+export function googleCost(listPrice: string, inFreeTier: boolean) {
+  return inFreeTier
+    ? { line: `Inside the free tier: $0 to you (${listPrice} at list price).`, button: "" }
+    : { line: `More than the free tier left this month: ${listPrice} at list price.`, button: `, ${listPrice} at list price` };
 }
 
 export function formatUsd(n: number) {

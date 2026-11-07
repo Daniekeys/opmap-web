@@ -4,10 +4,33 @@ export type Role = "owner" | "member";
 
 export type AuthedUser = { id: string; name: string; email: string };
 
-export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role };
+// claudeAlert: set for owners on a day (UTC) the workspace passed the Claude
+// daily alert; null otherwise and for members.
+export type ClaudeAlert = { spentUsd: number; thresholdUsd: number };
 
-// GET /api/me
-export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[] };
+// timeZone: the IANA zone every time in this workspace is shown in (saved by
+// an owner on Settings or by approving the Brand DNA's country question, else
+// Africa/Lagos). country: the workspace's own country (the saved zone's, else
+// NG); phones from it show in national format, others in international.
+export type WorkspaceSummary = { id: string; name: string; slug: string; role: Role; claudeAlert: ClaudeAlert | null; timeZone: string; country: string };
+
+// GET /api/w/:workspaceId/settings; PATCH (owner) with { timeZone: string | null }.
+export type WorkspaceSettingsResponse = {
+  timeZone: string;
+  saved: string | null;
+  // What applies with no saved zone: Nigeria, Africa/Lagos.
+  default: { timeZone: string; country: string };
+  // The workspace's country and its zones, listed first in the picker.
+  country: { code: string; name: string; timeZones: string[] };
+};
+
+// GET /api/me. canCreateWorkspaces: the platform owner only.
+export type MeResponse = { user: AuthedUser; workspaces: WorkspaceSummary[]; canCreateWorkspaces: boolean };
+
+// POST /api/workspaces (platform owner only; 403 otherwise), 201: the caller
+// owns it. Name 1 to 80 characters.
+export type CreateWorkspaceBody = { name: string };
+export type CreateWorkspaceResponse = { workspace: WorkspaceSummary };
 
 // GET /api/workspaces
 export type WorkspacesResponse = { workspaces: WorkspaceSummary[] };

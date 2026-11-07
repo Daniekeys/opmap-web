@@ -12,6 +12,10 @@ const STEP_LABELS: Record<string, string> = {
   "deepdive.cards": "Writing opportunity cards",
   "deepdive.check": "Checking every claim against its source",
   "deepdive.save": "Saving",
+  "drafts.write": "Writing WhatsApp, email, LinkedIn and call drafts",
+  "drafts.check": "Checking every sentence against its source",
+  "drafts.check.retry": "Checking again the sentences that came back unclear",
+  "drafts.save": "Saving",
 };
 
 export function stepLabel(name: string) {

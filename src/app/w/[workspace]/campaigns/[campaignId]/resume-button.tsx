@@ -7,8 +7,10 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import { goToLogin } from "@/lib/go-to-login";
 
 // Resume search: restarts a campaign a Google cap paused, once the cap has
-// lifted. In development this is the only way it restarts; in production the
-// resume job usually gets there first. The API checks the time again.
+// lifted, or one paused because Google was off, once it is on. This is the
+// only way it restarts: nothing resumes a search by itself. Shown when the
+// API's pause state says it can resume; the API decides again with the same
+// state, and a refusal says why.
 export function ResumeButton({ workspaceId, campaignId }: { workspaceId: string; campaignId: string }) {
   const router = useRouter();
   const [resuming, setResuming] = useState(false);
@@ -25,9 +27,9 @@ export function ResumeButton({ workspaceId, campaignId }: { workspaceId: string;
         return;
       }
       const { error: e }: ApiErrorResponse = await res.json().catch(() => ({ error: { code: "", message: "" } }));
-      // Already resumed (by the job, or another tap): show where it is now.
-      if (e.code === "not_paused") return router.refresh();
       setError(res.status === 403 ? "Only an owner can resume a campaign." : e.message || "The search could not be resumed. Please try again.");
+      // Already resumed (by the job, or another tap): also show where it is now.
+      if (e.code === "not_paused") router.refresh();
     } catch {
       setError("Could not reach the server. Check your connection and try again.");
     }
@@ -40,7 +42,7 @@ export function ResumeButton({ workspaceId, campaignId }: { workspaceId: string;
         {resuming ? "Resuming" : "Resume search"}
       </Button>
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-negative-ink">
           {error}
         </p>
       )}

@@ -6,8 +6,8 @@ export const KINDS: { kind: FactKind; label: string; one: string }[] = [
   { kind: "proof_point", label: "Proof points", one: "Proof point" },
   { kind: "ideal_client", label: "Ideal clients", one: "Ideal client" },
   { kind: "industry", label: "Industries", one: "Industry" },
-  { kind: "tone", label: "Tone", one: "Tone" },
-  { kind: "location", label: "Locations served", one: "Location" },
+  { kind: "tone", label: "Tone of voice", one: "Tone of voice" },
+  { kind: "location", label: "Places served", one: "Place served" },
 ];
 
 export const kindLabel = (kind: FactKind) => KINDS.find((k) => k.kind === kind)!.one;

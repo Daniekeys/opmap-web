@@ -24,3 +24,22 @@ export const ratingOptions = (current: number | null) =>
 export function parseSearchTerms(text: string) {
   return [...new Set(text.split(/[,\n]/).map((t) => t.trim().toLowerCase().replace(/\s+/g, " ")).filter((t) => t.length >= 2))].slice(0, 3);
 }
+
+// The segment card's rank line: "1. Best match", then "2.", "3." (Segments.dc.html).
+export const rankLabel = (rank: number) => (rank === 1 ? "1. Best match" : `${rank}.`);
+
+// The reach pill. Google Maps either lists this kind of business or doesn't
+// yet; there is no "partly".
+export const reachWords = (reachability: "places" | "not_yet") =>
+  reachability === "places" ? { text: "Easy to find on Maps", tone: "positive" as const } : { text: "Not on Maps yet", tone: "neutral" as const };
+
+// "Ranked up when: 100+ reviews, no website yet", from the buyer signals.
+export function rankedUpWhen(signals: BuyerSignals) {
+  const words = signalsInWords(signals);
+  return words.length ? `Ranked up when: ${words.join(", ")}` : "No particular signals";
+}
+
+// The sentence under the picker's title: what the ranking weighs, as the
+// prompt does (leads.buyer-segments@2).
+export const segmentsIntro = (brandVersion: number | null) =>
+  `Ranked from your Brand DNA${brandVersion === null ? "" : `, version ${brandVersion}`}: how much the problem hurts, whether they can pay, and how visible they already are online.`;

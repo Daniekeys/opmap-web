@@ -1,36 +1,64 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
-import { AlertTriangle, ExternalLink, FileSearch, MessageCircle, Phone, RotateCw, Star } from "lucide-react";
+import { AlertTriangle, ChevronDown, ExternalLink, MessageCircle, Phone, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Avatar } from "@/components/avatar";
+import { TileMark } from "@/components/logo";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
-import type { Cite, Claim, LeadResearchResponse, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import type { Lead } from "@/lib/api-types/leads";
+import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
+import type { Claim, DatedCite, LeadResearchResponse, OpenLeadBody, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
+import { cardTitle, citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { categoryText, formatPhone, telHref, whatsappHref } from "@/lib/leads";
+import { categoryText, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { useFormatPhone } from "@/components/phone-text";
+import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
+import { hostOf, LeadContacts } from "../../lead-contacts";
+import { OFFER_GONE_ID, OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
+import { CardDrafts, LikelyOnWhatsapp, OutcomePanel, NotThisBusiness } from "./outreach-panel";
+import { LegalFormBox } from "./legal-form-box";
 
-type Props = { workspaceId: string; slug: string; campaignId: string; initial: LeadResearchResponse };
+type Props = {
+  workspaceId: string;
+  slug: string;
+  campaignId: string;
+  initial: LeadResearchResponse;
+  initialOutreach: LeadOutreachResponse;
+  listLead: Lead | null;
+  openOn?: "opportunity" | "messages";
+};
 
 // What happened when we asked for a run, when it isn't a run to follow.
 type Ask = { state: "idle" } | { state: "asking" } | { state: "limit"; reason: string } | { state: "error" };
+
+type Tab = "opportunity" | "messages" | "outcome" | "details";
 
 // How many times to ask again (1.5 s apart) for a run someone else just claimed.
 const MAX_WAITS = 20;
 // The API's text for a removed entry that is a whole card, not one claim.
 const WHOLE_CARD = "(whole card)";
 
-const linkClass ="text-primary underline-offset-4 hover:underline wrap-anywhere";
+const linkClass = "font-medium text-accent-ink underline-offset-4 hover:text-accent hover:underline wrap-anywhere";
+const outlineLink = "inline-flex h-11 items-center justify-center gap-2 rounded-control border border-control bg-surface px-3.5 text-sm font-medium whitespace-nowrap hover:bg-raised sm:h-10";
 
-// The lead page's live part: opens the deep-dive on first view (once; the API
-// makes sure two people opening it start one run), follows its progress, and
-// shows the cards, "Not enough information", or what went wrong.
-export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
+// The lead page's live part (Main.dc.html's open business; MobileDetail.dc.html
+// on a phone): opens the deep-dive on first view (once; the API makes sure two
+// people opening it start one run), follows its progress, and shows the
+// opportunity cards, "Not enough information", or what went wrong.
+export function LeadView({ workspaceId, slug, campaignId, initial, initialOutreach, listLead, openOn = "opportunity" }: Props) {
   const [data, setData] = useState(initial);
+  const [outreach, setOutreach] = useState(initialOutreach);
   const [ask, setAsk] = useState<Ask>({ state: "idle" });
   // A run this page started or joined, before the GET shows it.
   const [runId, setRunId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>(openOn);
+  // The card shown in full on the Opportunity tab, and written from on Messages.
+  const [cardId, setCardId] = useState<string | null>(null);
   const base = `/api/w/${workspaceId}/campaigns/${campaignId}/leads/${data.lead.leadId}`;
 
   async function reload() {
@@ -40,12 +68,23 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
     const next: LeadResearchResponse = await res.json();
     setData(next);
     setRunId(null);
+    await reloadOutreach();
   }
 
-  async function open(refresh: boolean) {
+  // Drafts, contact points and outcomes: after a draft run, a send or a tap.
+  async function reloadOutreach() {
+    const res = await fetch(`${base}/outreach`, { cache: "no-store" });
+    if (res.status === 401) return goToLogin();
+    if (!res.ok) throw new Error(String(res.status));
+    setOutreach(await res.json());
+  }
+
+  // First view ({}), a refresh after 90 days, or new cards from the current
+  // Brand DNA.
+  async function open(body: OpenLeadBody) {
     setAsk({ state: "asking" });
     try {
-      const res = await fetch(`${base}/deep-dive`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(refresh ? { refresh } : {}) });
+      const res = await fetch(`${base}/deep-dive`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 401) return goToLogin();
       if (!res.ok) throw new Error(String(res.status));
       const result: OpenLeadResponse = await res.json();
@@ -58,7 +97,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
         // Someone else's run, claimed a moment ago: its id is set right after.
         // Stay "asking" while we wait, so the progress section doesn't flicker.
         waits.current += 1;
-        if (alive.current) retry.current = setTimeout(() => void open(false), 1_500);
+        if (alive.current) retry.current = setTimeout(() => void open({}), 1_500);
       } else {
         // Done, or still no id after the waits: show what the API has.
         waits.current = 0;
@@ -87,58 +126,217 @@ export function LeadView({ workspaceId, slug, campaignId, initial }: Props) {
   useEffect(() => {
     if (opened.current || initial.run !== null) return;
     opened.current = true;
-    void open(false);
+    void open({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const following = runId ?? (data.run?.status === "running" ? data.run.runId : null);
+  const researching = following !== null || ask.state === "asking" || (data.run?.status === "running" && !data.run.runId);
   const failed = !following && data.run?.status === "failed";
+  const cards = data.result?.cards ?? [];
+  const chosenCard = cards.find((c) => c.id === cardId) ?? cards[0] ?? null;
+  const draftCount = outreach.cards.reduce((n, c) => n + c.drafts.length, 0);
+  const suppressed = outreach.suppressed;
+  const chosenWritten = chosenCard ? (outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.drafts.length ?? 0) > 0 : false;
+  const rerun: Rerun = { allowed: data.result?.brandDnaRerun ?? false, busy: researching, onRerun: () => void open({ brandDna: true }) };
+
+  function writeFor(id: string) {
+    setCardId(id);
+    setTab("messages");
+  }
+
+  const tabs: { key: Tab; label: string; count?: number }[] = [
+    { key: "opportunity", label: "Opportunity", count: cards.length || undefined },
+    { key: "messages", label: "Messages", count: draftCount || undefined },
+    { key: "outcome", label: "Outcome" },
+    { key: "details", label: "Details" },
+  ];
+
+  // The chosen card's offer isn't in the approved Brand DNA: the primary
+  // action takes the user to the warning and its re-run button instead.
+  const chosenOfferGone = chosenCard && !chosenCard.mismatch ? !(outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.offerInBrandDna ?? chosenCard.offerInBrandDna) : false;
+
+  function fixOffer() {
+    setTab("opportunity");
+    requestAnimationFrame(() => {
+      const warning = document.getElementById(OFFER_GONE_ID);
+      warning?.scrollIntoView({ behavior: "smooth", block: "center" });
+      warning?.querySelector<HTMLElement>("button, a")?.focus({ preventScroll: true });
+    });
+  }
+
+  // The one primary action, in the header on wide screens and in the bottom
+  // bar on a phone. Never shown for a business on the opt-out list.
+  const primary =
+    !suppressed &&
+    chosenCard &&
+    (chosenOfferGone ? (
+      <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={fixOffer}>
+        <AlertTriangle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+        Offer missing, fix it
+      </Button>
+    ) : (
+      <Button type="button" className="h-13 w-full gap-2 text-base sm:h-10 sm:w-auto sm:text-sm" onClick={() => writeFor(chosenCard.id)}>
+        <MessageCircle className="size-4.5 sm:size-4" strokeWidth={1.75} aria-hidden />
+        {chosenWritten ? "Open messages" : "Write messages"}
+      </Button>
+    ));
 
   return (
-    <div className="flex flex-col gap-6">
-      <LeadHeader lead={data.lead} />
+    <div className="flex flex-col gap-4 pb-28 sm:pb-0">
+      <section aria-label={data.lead.name} className="flex flex-col sm:rounded-card sm:border sm:border-border sm:bg-surface">
+        <LeadHeader lead={data.lead} stage={outreach.stage} targets={outreach.targets} suppressed={suppressed} primary={primary} />
 
-      {ask.state === "limit" && (
-        <Notice tone="warn" title="Spending limit reached">
-          {ask.reason} The deep-dive will run once there is budget again.
-        </Notice>
-      )}
-      {ask.state === "error" && (
-        <Notice tone="error" title="Couldn't start the research">
-          Check your connection and try again.
-          <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)}>
-            <RotateCw className="size-4" aria-hidden /> Try again
-          </Button>
-        </Notice>
-      )}
+        <div role="tablist" aria-label="Lead" className="-mx-4 flex gap-6 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-6">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "-mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 text-body",
+                tab === t.key ? "border-accent font-semibold text-ink" : "border-transparent text-muted hover:text-ink",
+              )}
+            >
+              {t.label}
+              {t.key === "outcome" && outreach.stage !== "new" ? (
+                <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", STAGE_TONES[outreach.stage])}>{STAGE_NAMES[outreach.stage]}</span>
+              ) : (
+                t.count !== undefined && <span className="font-normal text-muted tabular-nums">{t.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
 
-      {(following || ask.state === "asking" || (data.run?.status === "running" && !data.run.runId)) && (
-        <section className="flex flex-col gap-2" aria-label="Research in progress">
-          <p className="text-sm text-muted-foreground" role="status">
-            Researching this business: reading what it publishes, then writing and checking opportunity cards. This takes about a minute.
-          </p>
-          {following ? (
-            <ProgressPanel workspaceId={workspaceId} runId={following} title="Deep-dive" onFinished={() => void reload().catch(() => setAsk({ state: "error" }))} />
-          ) : (
-            <CardsLoading />
+        <div className="flex flex-col gap-4 pt-4 sm:px-6 sm:pt-5 sm:pb-6">
+          {ask.state === "limit" && (
+            <Notice tone="warn" title="Spending limit reached">
+              {ask.reason} The research will run once there is budget again.
+            </Notice>
           )}
-        </section>
-      )}
-
-      {failed && !data.result && (
-        <Notice tone="error" title="The research didn't finish">
-          {failureText(data.run?.errorCode ?? null, data.run?.error ?? null, slug)}
-          {data.run?.errorCode !== "brand_not_usable" && (
-            <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open(false)} disabled={ask.state === "asking"}>
-              <RotateCw className="size-4" aria-hidden /> Try again
-            </Button>
+          {ask.state === "error" && (
+            <Notice tone="error" title="We couldn't start the research">
+              Check your connection and try again.
+              <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open({})}>
+                <RotateCw aria-hidden /> Try again
+              </Button>
+            </Notice>
           )}
-        </Notice>
+
+          {researching && (
+            <div className="flex flex-col gap-3" aria-label="Research in progress">
+              <p className="text-sm text-muted" role="status">
+                Researching this business: reading what it publishes, then writing and checking opportunity cards. About a minute.
+              </p>
+              {following ? (
+                <ProgressPanel workspaceId={workspaceId} runId={following} title="Research" onFinished={() => void reload().catch(() => setAsk({ state: "error" }))} />
+              ) : (
+                <CardsLoading />
+              )}
+            </div>
+          )}
+
+          {failed && !data.result && (
+            <Notice tone="error" title="The research didn't finish">
+              {failureText(data.run?.errorCode ?? null, data.run?.error ?? null, slug)}
+              {data.run?.errorCode !== "brand_not_usable" && (
+                <Button type="button" variant="outline" className="mt-3 h-11 self-start" onClick={() => open({})} disabled={ask.state === "asking"}>
+                  <RotateCw aria-hidden /> Try again
+                </Button>
+              )}
+            </Notice>
+          )}
+
+          {tab === "opportunity" &&
+            (data.result ? (
+              <Result
+                result={data.result}
+                chosen={chosenCard}
+                onChoose={setCardId}
+                onRefresh={() => open({ refresh: true })}
+                refreshing={researching}
+                slug={slug}
+                rerun={rerun}
+                failedRefresh={failed}
+                listLead={listLead}
+              />
+            ) : (
+              !researching && !failed && <Waiting />
+            ))}
+
+          {tab === "messages" && outreach.legalForm && !suppressed && <LegalFormBox base={base} view={outreach.legalForm} onChange={reloadOutreach} />}
+
+          {tab === "messages" &&
+            (chosenCard ? (
+              <section aria-label="Messages" className="flex flex-col gap-4">
+                {cards.length > 1 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-muted">Written from</p>
+                    <div className="flex flex-wrap gap-2">
+                      {cards.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          aria-pressed={c.id === chosenCard.id}
+                          onClick={() => setCardId(c.id)}
+                          className={cn(
+                            "inline-flex min-h-10 max-w-full items-center rounded-control border px-3 text-left text-sm",
+                            c.id === chosenCard.id ? "border-primary bg-primary font-medium text-on-primary" : "border-control bg-surface hover:bg-raised",
+                          )}
+                        >
+                          <span className="truncate">{cardTitle(c)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <CardDrafts
+                  key={chosenCard.id}
+                  base={base}
+                  workspaceId={workspaceId}
+                  slug={slug}
+                  card={chosenCard}
+                  finishedAt={data.result?.finishedAt ?? null}
+                  outreach={outreach}
+                  onChange={reloadOutreach}
+                  rerun={rerun}
+                />
+              </section>
+            ) : (
+              <EmptyState title="No messages yet">
+                Messages are written from an opportunity card, so every sentence has a source.{" "}
+                {data.result ? "This business has none to write from." : "They can be written once the research finishes."}
+              </EmptyState>
+            ))}
+
+          {tab === "outcome" && <OutcomePanel base={base} outreach={outreach} onChange={reloadOutreach} />}
+
+          {tab === "details" && (
+            <div className="flex flex-col gap-6">
+              <section aria-labelledby="contacts-heading" className="flex flex-col gap-2">
+                <h3 id="contacts-heading" className="font-semibold">
+                  Contact points
+                </h3>
+                {listLead ? <LeadContacts lead={listLead} linked={!suppressed} /> : <p className="text-sm text-muted">Not found in this campaign&apos;s list.</p>}
+              </section>
+              {data.signals.length > 0 ? (
+                <Signals signals={data.signals} />
+              ) : (
+                <EmptyState title="Nothing found yet">What the research reads about this business shows here.</EmptyState>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Phone: the one action in thumb reach. */}
+      {tab === "opportunity" && (primary || suppressed) && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-5 sm:hidden">
+          {suppressed ? <OptedOutNote /> : primary}
+        </div>
       )}
-
-      {data.result && <Result result={data.result} onRefresh={() => open(true)} refreshing={ask.state === "asking" || following !== null} failedRefresh={failed} />}
-
-      {data.signals.length > 0 && <Signals signals={data.signals} />}
     </div>
   );
 }
@@ -154,41 +352,84 @@ function failureText(code: string | null, error: string | null, slug: string) {
       </>
     );
   if (code === "limit_reached") return error ?? "The spending limit was reached.";
+  // Not retried by itself: one more paid try is the user's call.
+  if (code === "deepdive_unusable") return "Claude's answer couldn't be used this time (it declined, or came back in the wrong shape), so it wasn't tried again.";
   return error ?? "Something went wrong while researching this business.";
 }
 
-function LeadHeader({ lead }: { lead: LeadResearchResponse["lead"] }) {
-  const details = [categoryText(lead.category), lead.city].filter(Boolean).join(" · ");
+function OptedOutNote() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight wrap-break-word">{lead.name}</h1>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          {details && <span>{details}</span>}
-          {lead.rating !== null && (
-            <span className="inline-flex items-center gap-1 text-foreground">
-              <Star className="size-3.5 fill-amber-400 text-amber-500" aria-hidden />
-              {lead.rating.toFixed(1)}
-              <span className="text-muted-foreground">({lead.reviewCount ?? 0} reviews)</span>
+    <p className="flex flex-col gap-0.5 text-sm" role="note">
+      <span className="font-semibold text-negative-ink">On your opt-out list</span>
+      <span className="text-muted">They asked not to be contacted, so no messages are written or shown.</span>
+    </p>
+  );
+}
+
+// "Cake shop in Ilorin, 4.7 stars from 35 reviews".
+function describe(lead: LeadResearchResponse["lead"]) {
+  const kind = categoryText(lead.category);
+  const where = kind && lead.city ? `${kind} in ${lead.city}` : (kind ?? lead.city);
+  const rating = lead.rating !== null ? `${lead.rating.toFixed(1)} stars from ${lead.reviewCount ?? 0} ${lead.reviewCount === 1 ? "review" : "reviews"}` : null;
+  return [where, rating].filter(Boolean).join(", ");
+}
+
+function LeadHeader({
+  lead,
+  stage,
+  targets,
+  suppressed,
+  primary,
+}: {
+  lead: LeadResearchResponse["lead"];
+  stage: LeadOutreachResponse["stage"];
+  targets: LeadOutreachResponse["targets"];
+  suppressed: boolean;
+  primary: React.ReactNode;
+}) {
+  const formatPhone = useFormatPhone();
+  const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
+  // The same send targets as the composer, so the two never disagree.
+  const { whatsapp, call } = targets;
+  return (
+    <div className="flex flex-col gap-4 pb-4 sm:border-b sm:border-rule sm:px-6 sm:py-5">
+      <div className="flex items-center gap-3 sm:gap-3.5">
+        <Avatar name={lead.name} seed={lead.businessId} size="lg" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h2 className="text-[22px] leading-7 font-bold tracking-[-0.01em] wrap-break-word sm:text-xl sm:leading-[26px] sm:font-semibold sm:tracking-normal">{lead.name}</h2>
+            {suppressed ? (
+              <span className="rounded-full bg-negative-soft px-2 text-xs/[22px] font-medium text-negative-ink">On your opt-out list</span>
+            ) : (
+              stage !== "new" && <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>
+            )}
+          </div>
+          <span className="text-sm text-muted">{describe(lead)}</span>
+        </div>
+      </div>
+      {suppressed ? (
+        <div className="hidden sm:block">
+          <OptedOutNote />
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <span className="hidden sm:contents">{primary}</span>
+          {whatsapp && (
+            <span className="inline-flex items-center gap-2">
+              <a href={whatsappHref(whatsapp.value)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+                <MessageCircle className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Chat on WhatsApp
+              </a>
+              {whatsapp.label === "likely" && <LikelyOnWhatsapp />}
             </span>
           )}
-        </p>
-      </div>
-      {(lead.phone || lead.whatsapp || lead.website) && (
-        <div className="flex flex-wrap gap-2">
-          {lead.phone && (
-            <a href={telHref(lead.phone.value)} className={tapClass}>
-              <Phone className="size-4" aria-hidden /> {formatPhone(lead.phone.value)}
+          {call && (
+            <a href={telHref(call.value)} className={outlineLink}>
+              <Phone className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> {formatPhone(call.value)}
             </a>
           )}
-          {lead.whatsapp && (
-            <a href={whatsappHref(lead.whatsapp.value)} target="_blank" rel="noreferrer noopener" className={tapClass}>
-              <MessageCircle className="size-4" aria-hidden /> WhatsApp
-            </a>
-          )}
-          {lead.website && lead.website.label !== "dead" && (
-            <a href={lead.website.value} target="_blank" rel="noreferrer noopener" className={tapClass}>
-              <ExternalLink className="size-4" aria-hidden /> Website
+          {website && (
+            <a href={website.value} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+              <ExternalLink className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Website
             </a>
           )}
         </div>
@@ -197,180 +438,250 @@ function LeadHeader({ lead }: { lead: LeadResearchResponse["lead"] }) {
   );
 }
 
-const tapClass = "inline-flex h-11 items-center gap-2 rounded-lg border bg-card px-4 text-sm font-medium hover:bg-muted";
-
 function Result({
   result,
+  chosen,
+  onChoose,
   onRefresh,
   refreshing,
+  slug,
+  rerun,
   failedRefresh,
+  listLead,
 }: {
   result: NonNullable<LeadResearchResponse["result"]>;
+  chosen: OpportunityCard | null;
+  onChoose: (id: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  slug: string;
+  rerun: Rerun;
   failedRefresh: boolean;
+  listLead: Lead | null;
 }) {
+  const timeZone = useTimeZone();
+  const others = result.cards.filter((c) => c.id !== chosen?.id);
+  // The warning when this card's offer is gone; a quiet action when every
+  // card still stands but the Brand DNA changed (or there is no card).
+  const quiet = rerun.allowed && result.cards.every((c) => c.offerInBrandDna || c.mismatch);
   return (
-    <section aria-labelledby="cards-heading" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 id="cards-heading" className="text-lg font-semibold">
-            Opportunities
-          </h2>
-          {result.finishedAt && <p className="text-sm text-muted-foreground">Researched {formatDateTime(result.finishedAt)}</p>}
-        </div>
-        {result.stale && (
-          <Button type="button" variant="outline" className="h-11" onClick={onRefresh} disabled={refreshing}>
-            <RotateCw className="size-4" aria-hidden /> Refresh research
+    <section aria-label="Opportunities" className="flex flex-col gap-4">
+      {result.stale && (
+        <div className="flex flex-col gap-2 rounded-card bg-warning-soft px-4 py-3 text-sm text-warning-ink sm:flex-row sm:items-center sm:justify-between">
+          <span>This research is over 90 days old. Refresh it before reaching out.</span>
+          <Button type="button" variant="outline" className="h-11 shrink-0 sm:h-9" onClick={onRefresh} disabled={refreshing}>
+            <RotateCw aria-hidden /> Refresh research
           </Button>
-        )}
-      </div>
-      {result.stale && <p className="text-sm text-muted-foreground">This research is over 90 days old. Refresh it before reaching out.</p>}
-      {failedRefresh && <p className="text-sm text-destructive">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
+        </div>
+      )}
+      {failedRefresh && <p className="text-sm text-negative-ink">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
+      {chosen && !chosen.offerInBrandDna && !chosen.mismatch && <OfferGone slug={slug} rerun={rerun} />}
+      {/* With cards, a re-run is only offered when the version changed. */}
+      {quiet && <RefreshCards changed={result.cards.length > 0} rerun={rerun} />}
 
-      {result.cards.length === 0 ? (
-        <NotEnough reason={result.notEnough} read={result.read} />
-      ) : (
-        <ol className="flex flex-col gap-3">
-          {result.cards.map((card) => (
-            <li key={card.id}>
-              <OpportunityCardView card={card} />
-            </li>
+      {chosen?.mismatch ? (
+        <NotThisBusiness />
+      ) : chosen ? (
+        <article className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted">{rankText(chosen, result.cards.length)}</span>
+            <Confidence card={chosen} />
+          </div>
+          <h3 className="text-section font-semibold wrap-break-word">{chosen.offer?.text ?? "Opportunity"}</h3>
+          {chosen.offer && chosen.offer.cites.length > 0 && <ClaimSource claim={chosen.offer} readAt={result.finishedAt} />}
+          {chosen.gap && <ClaimBlock claim={chosen.gap} readAt={result.finishedAt} />}
+          {chosen.why.map((w) => (
+            <ClaimBlock key={w.id} claim={w} readAt={result.finishedAt} />
           ))}
-        </ol>
+          {chosen.angle ? (
+            <ClaimBlock claim={chosen.angle} readAt={result.finishedAt} lead="Angle." muted />
+          ) : (
+            // A card stands on its offer and gap; its angle may have failed the check.
+            <p className="text-muted">Angle. No opening line passed the check. Open with the gap above, in your own words.</p>
+          )}
+          {chosen.confidenceReason && <p className="text-xs text-muted">{chosen.confidenceReason}</p>}
+
+          {listLead && <ContactWell lead={listLead} />}
+
+          {others.length > 0 && (
+            <div className="flex flex-col border-t border-rule pt-1.5">
+              {others.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onChoose(c.id)}
+                  className="flex min-h-11 items-center justify-between gap-3 py-2 text-left hover:text-accent-ink"
+                >
+                  <span className="min-w-0">{cardTitle(c)}</span>
+                  <span className={cn("shrink-0 text-xs", (CONFIDENCE[c.confidence]?.word ?? "") === "High" ? "text-positive" : "text-warning-ink")}>
+                    {CONFIDENCE[c.confidence]?.word ?? c.confidence}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
+      ) : (
+        <NotEnough reason={result.notEnough} read={result.read} />
       )}
 
       {result.removed.length > 0 && <Removed removed={result.removed} />}
+      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt, timeZone)}</p>}
     </section>
   );
 }
 
-function NotEnough({ reason, read }: { reason: string | null; read: NonNullable<LeadResearchResponse["result"]>["read"] }) {
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-dashed bg-card p-4">
-      <p className="flex items-center gap-2 font-medium">
-        <FileSearch className="size-4 shrink-0 text-muted-foreground" aria-hidden /> Not enough information
-      </p>
-      <p className="text-sm">{reason ?? "We couldn't tie any of your offers to something specific at this business."}</p>
-      {read && (
-        <p className="text-sm text-muted-foreground">
-          Read: {read.pages} website {read.pages === 1 ? "page" : "pages"}, {read.socials} social {read.socials === 1 ? "account" : "accounts"}, the Google Maps listing.
-        </p>
-      )}
-      <p className="text-sm text-muted-foreground">We don&apos;t guess. Call them, or look them up yourself, before pitching.</p>
-    </div>
-  );
+function rankText(card: OpportunityCard, total: number) {
+  if (total === 1) return "The one opportunity found";
+  return card.rank === 1 ? `Best of ${total} opportunities` : `Opportunity ${card.rank} of ${total}`;
 }
 
 const CONFIDENCE: Record<string, { word: string; tone: string }> = {
-  high: { word: "High confidence", tone: "bg-emerald-100 text-emerald-900" },
-  medium: { word: "Medium confidence", tone: "bg-sky-100 text-sky-900" },
-  low: { word: "Low confidence", tone: "bg-amber-100 text-amber-950" },
+  high: { word: "High", tone: "bg-positive-soft text-positive-ink" },
+  medium: { word: "Medium", tone: "bg-warning-soft text-warning-ink" },
+  low: { word: "Low", tone: "bg-warning-soft text-warning-ink" },
 };
 
-function OpportunityCardView({ card }: { card: OpportunityCard }) {
-  const confidence = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-muted" };
-  return (
-    <article className="flex flex-col gap-4 rounded-xl border bg-card p-4">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", confidence.tone)} title={card.confidenceReason ?? undefined}>
-            {confidence.word}
-          </span>
-        </div>
-        {card.offer && (
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Offer</p>
-            <h3 className="text-base font-semibold wrap-break-word">{card.offer.text}</h3>
-            <Evidence claim={card.offer} />
-          </div>
-        )}
-      </div>
-      {card.gap && <ClaimBlock label="The gap" claim={card.gap} />}
-      {card.why.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why it matters to them</p>
-          {card.why.map((w) => (
-            <div key={w.id} className="flex flex-col gap-1">
-              <p className="text-sm">{w.text}</p>
-              <Evidence claim={w} />
-            </div>
-          ))}
-        </div>
-      )}
-      {card.angle ? (
-        <ClaimBlock label="Angle" claim={card.angle} quoteStyle />
-      ) : (
-        // A card stands on its offer and gap; its angle may have failed the check.
-        <div className="flex flex-col gap-1">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Angle</p>
-          <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-            No opening line passed the check. Open with the gap above, in your own words.
-          </p>
-        </div>
-      )}
-      {card.confidenceReason && <p className="text-xs text-muted-foreground">{card.confidenceReason}</p>}
-    </article>
-  );
+function Confidence({ card }: { card: OpportunityCard }) {
+  const c = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-neutral-soft text-neutral-ink" };
+  return <span className={cn("shrink-0 rounded-full px-2 text-xs/[22px] font-medium", c.tone)}>{c.word} confidence</span>;
 }
 
-function ClaimBlock({ label, claim, quoteStyle }: { label: string; claim: Claim; quoteStyle?: boolean }) {
+// "Not enough information" as its own designed state: the tile grid with
+// nothing lit, what was read, and what to do instead. Never a blank space.
+function NotEnough({ reason, read }: { reason: string | null; read: NonNullable<LeadResearchResponse["result"]>["read"] }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className={cn("text-sm", quoteStyle && "font-medium")}>{claim.text}</p>
-      <Evidence claim={claim} />
+    <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+      <span className="grid w-fit grid-cols-4 gap-1" aria-hidden>
+        {Array.from({ length: 8 }, (_, i) => (
+          <span key={i} className="size-3.5 rounded-tile bg-rule" />
+        ))}
+      </span>
+      <h3 className="text-section font-semibold">Not enough information</h3>
+      <p>{reason ?? "We couldn't tie any of your offers to something specific at this business."}</p>
+      {read && (
+        <div className="rounded-control bg-raised px-3.5 py-3 text-sm">
+          <span className="font-medium">What we read: </span>
+          {read.pages} website {read.pages === 1 ? "page" : "pages"}, {read.socials} social {read.socials === 1 ? "account" : "accounts"} and the Google Maps listing.
+        </div>
+      )}
+      <p className="text-sm text-muted">We don&apos;t guess. Call them, or look them up yourself, before pitching.</p>
     </div>
   );
 }
 
-const SOURCE_NAMES: Record<string, string> = { places: "Google Maps listing", website: "Their website", search: "Search result" };
-
-const pageName = (url: string) => {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("google.")) return "Google Maps";
-    return `${u.hostname.replace(/^www\./, "")}${u.pathname === "/" ? "" : u.pathname}`;
-  } catch {
-    return url;
-  }
-};
-
-// The evidence under a claim, readable without leaving the page: each quote
-// in full, with a link that opens the page it came from.
-function Evidence({ claim }: { claim: Claim }) {
+// A claim's text, with its sourced part marked, and where it came from.
+function ClaimBlock({ claim, readAt, lead, muted }: { claim: Claim; readAt: string | null; lead?: string; muted?: boolean }) {
+  const sourced = claim.cites.some((c) => c.kind !== "fact");
   return (
-    <ul className="flex flex-col gap-1.5">
-      {claim.cites.map((c) => (
-        <li key={`${claim.id}-${c.ref}`} className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
-          <CiteView cite={c} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-1.5">
+      <p className={cn(muted && "text-muted")}>
+        {lead && <span className="text-muted">{lead} </span>}
+        {sourced ? (
+          <mark className="rounded-tile bg-accent-soft px-0.5 text-accent-ink underline decoration-accent decoration-2 underline-offset-[3px] box-decoration-clone">{claim.text}</mark>
+        ) : (
+          claim.text
+        )}
+      </p>
+      <ClaimSource claim={claim} readAt={readAt} />
+    </div>
   );
 }
 
-function CiteView({ cite }: { cite: Cite }) {
+// Where a claim came from, always visible ("Instagram bio, read 28 Oct"),
+// opening to the quotes themselves. Sources read on the same day share one
+// date; approved facts have none.
+function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null }) {
+  const timeZone = useTimeZone();
+  const [open, setOpen] = useState(false);
+  if (claim.cites.length === 0) return null;
+  const byDay = new Map<string, string[]>();
+  for (const c of claim.cites) {
+    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt), timeZone);
+    const names = byDay.get(day) ?? [];
+    if (!names.includes(citeName(c))) names.push(citeName(c));
+    byDay.set(day, names);
+  }
+  const label = [...byDay].map(([day, names]) => (day ? `${names.join(", ")}, ${day}` : names.join(", "))).join(" · ");
+  return (
+    <div className="flex flex-col gap-1.5">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex min-h-8 items-center gap-1 self-start text-left text-xs text-muted hover:text-ink"
+      >
+        {label}
+        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
+        <span className="sr-only">{open ? "Hide the evidence" : "Show the evidence"}</span>
+      </button>
+      {open && (
+        <ul className="flex flex-col gap-1.5">
+          {claim.cites.map((c) => (
+            <li key={`${claim.id}-${c.ref}`} className="flex flex-col gap-0.5 rounded-control bg-raised px-3.5 py-3">
+              <CiteView cite={c} readAt={readAt} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) {
+  const timeZone = useTimeZone();
   if (cite.kind === "fact") {
     return (
-      <p>
-        <span className="text-muted-foreground">Your approved fact: </span>
-        {cite.text}
-      </p>
+      <>
+        <span>{cite.text}</span>
+        <span className="text-xs text-muted">Your approved fact</span>
+      </>
     );
   }
   const text = cite.kind === "source" ? `“${cite.quote}”` : cite.text;
-  const from = cite.kind === "source" ? (SOURCE_NAMES[cite.sourceType] ?? "Source") : "Our check";
   return (
-    <div className="flex flex-col gap-1">
-      <p className={cn(cite.kind === "source" && "italic")}>{text}</p>
-      <p className="text-xs text-muted-foreground">
-        {from} ·{" "}
-        <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1")}>
-          {pageName(cite.url)} <ExternalLink className="size-3" aria-hidden />
+    <>
+      <span>{text}</span>
+      <span className="text-xs text-muted">
+        {citeName(cite)}, {readOn(citeReadAt(cite, readAt), timeZone)} ·{" "}
+        <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 font-normal")}>
+          {(cite.kind === "source" && cite.sourceType === "places") || /google\./.test(cite.url) ? "Open the listing" : hostOf(cite.url)} <ExternalLink className="size-3" aria-hidden />
         </a>
-      </p>
-    </div>
+      </span>
+    </>
+  );
+}
+
+const PILL = { good: "bg-positive-soft text-positive-ink", fair: "bg-neutral-soft text-neutral-ink", weak: "bg-warning-soft text-warning-ink" };
+
+// WhatsApp, email and website at a glance, each with how sure we are.
+function ContactWell({ lead }: { lead: Lead }) {
+  const formatPhone = useFormatPhone();
+  const { whatsapp, phone, email, website } = lead.contacts;
+  const rows: { key: string; label: string; value: string; pill: { word: string; tone: string } }[] = [];
+  const pill = (group: Parameters<typeof labelText>[0], label: string) => {
+    const t = labelText(group, label);
+    return { word: t.word, tone: PILL[t.tone] };
+  };
+  if (whatsapp) rows.push({ key: "w", label: "WhatsApp", value: formatPhone(whatsapp.value), pill: pill("whatsapp", whatsapp.label) });
+  else if (phone) rows.push({ key: "p", label: "Phone", value: formatPhone(phone.value), pill: pill("phone", phone.label) });
+  else rows.push({ key: "w", label: "WhatsApp", value: "-", pill: { word: "None found", tone: PILL.fair } });
+  rows.push(email ? { key: "e", label: "Email", value: email.value, pill: pill("email", email.label) } : { key: "e", label: "Email", value: "-", pill: { word: "None found", tone: PILL.fair } });
+  rows.push(
+    website ? { key: "s", label: "Website", value: hostOf(website.value), pill: pill("website", website.label) } : { key: "s", label: "Website", value: "-", pill: { word: "Not listed", tone: PILL.fair } },
+  );
+  return (
+    <dl className="grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 border-t border-rule pt-3.5 text-sm">
+      {rows.map((r) => (
+        <div key={r.key} className="contents">
+          <dt className="text-muted">{r.label}</dt>
+          <dd className={cn("truncate tabular-nums", r.value === "-" && "text-muted")}>{r.value}</dd>
+          <dd>
+            <span className={cn("rounded-full px-2 text-xs/[22px] font-medium whitespace-nowrap", r.pill.tone)}>{r.pill.word}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -378,18 +689,18 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
   // The summary counts every entry the list shows: claims, and whole cards dropped.
   const cards = removed.filter((r) => r.text === WHOLE_CARD).length;
   const claims = removed.length - cards;
-  const parts = [
-    claims > 0 && `${claims} ${claims === 1 ? "claim" : "claims"}`,
-    cards > 0 && `${cards} ${cards === 1 ? "card" : "cards"}`,
-  ].filter(Boolean);
+  const parts = [claims > 0 && `${claims} ${claims === 1 ? "claim" : "claims"}`, cards > 0 && `${cards} ${cards === 1 ? "card" : "cards"}`].filter(Boolean);
   return (
-    <details className="rounded-xl border bg-card p-4 text-sm">
-      <summary className="cursor-pointer font-medium">{parts.join(" and ")} removed: their sources didn&apos;t back them</summary>
-      <ul className="mt-3 flex flex-col gap-2">
+    <details className="group text-sm">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-muted hover:text-ink">
+        <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+        {parts.join(" and ")} removed: their sources didn&apos;t back them
+      </summary>
+      <ul className="flex flex-col gap-2 pb-1 pl-5.5">
         {removed.map((r, i) => (
           <li key={i} className="flex flex-col gap-0.5">
-            <span className="line-through decoration-muted-foreground/60">{r.text}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted line-through">{r.text}</span>
+            <span className="text-xs text-muted">
               Card {r.card}, {r.field}: {r.reason}
             </span>
           </li>
@@ -402,16 +713,16 @@ function Removed({ removed }: { removed: NonNullable<LeadResearchResponse["resul
 function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
   return (
     <section aria-labelledby="signals-heading" className="flex flex-col gap-2">
-      <h2 id="signals-heading" className="text-sm font-medium text-muted-foreground">
+      <h3 id="signals-heading" className="font-semibold">
         What we found
-      </h2>
-      <ul className="flex flex-col divide-y rounded-xl border bg-card">
+      </h3>
+      <ul className="flex flex-col">
         {signals.map((s, i) => (
-          <li key={i} className="flex flex-col gap-0.5 px-4 py-3 text-sm">
-            <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
+          <li key={i} className="flex flex-col gap-0.5 border-b border-rule py-2.5 text-sm last:border-b-0">
+            <span className="text-xs text-muted">{s.label}</span>
             <span className="wrap-break-word">{s.text}</span>
-            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs")}>
-              {pageName(s.sourceUrl)} <ExternalLink className="size-3" aria-hidden />
+            <a href={s.sourceUrl} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 self-start text-xs font-normal")}>
+              {hostOf(s.sourceUrl)} <ExternalLink className="size-3" aria-hidden />
             </a>
           </li>
         ))}
@@ -423,22 +734,31 @@ function Signals({ signals }: { signals: LeadResearchResponse["signals"] }) {
 function CardsLoading() {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="Loading">
-      <div className="h-32 animate-pulse rounded-xl bg-muted" />
-      <div className="h-32 animate-pulse rounded-xl bg-muted" />
+      <div className="h-6 w-2/3 animate-pulse rounded-control bg-raised" />
+      <div className="h-20 animate-pulse rounded-control bg-raised" />
+      <div className="h-20 animate-pulse rounded-control bg-raised" />
+    </div>
+  );
+}
+
+function Waiting() {
+  return <EmptyState title="Not researched yet">The research starts when this page opens. If it hasn&apos;t, reload the page.</EmptyState>;
+}
+
+function EmptyState({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-2 rounded-card border border-border bg-surface p-4 sm:border-0 sm:bg-transparent sm:p-0">
+      <TileMark className="size-6 opacity-60" />
+      <p className="font-semibold">{title}</p>
+      <p className="max-w-md text-sm text-muted">{children}</p>
     </div>
   );
 }
 
 function Notice({ tone, title, children }: { tone: "warn" | "error"; title: string; children: React.ReactNode }) {
   return (
-    <div
-      role="alert"
-      className={cn(
-        "flex flex-col gap-1 rounded-xl border p-4 text-sm",
-        tone === "error" ? "border-destructive/30 bg-destructive/5" : "border-amber-300 bg-amber-50 text-amber-950",
-      )}
-    >
-      <p className="flex items-center gap-2 font-medium">
+    <div role="alert" className={cn("flex flex-col gap-1 rounded-card px-4 py-3 text-sm", tone === "error" ? "bg-negative-soft text-negative-ink" : "bg-warning-soft text-warning-ink")}>
+      <p className="flex items-center gap-2 font-semibold">
         <AlertTriangle className="size-4 shrink-0" aria-hidden /> {title}
       </p>
       <div className="flex flex-col">{children}</div>
