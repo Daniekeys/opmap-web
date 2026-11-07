@@ -61,7 +61,7 @@ async function Campaigns({ params }: { params: Props["params"] }) {
                     <span>
                       {c.leadCount} {c.leadCount === 1 ? "lead" : "leads"}
                     </span>
-                    <span>Created {formatDateTime(c.createdAt)}</span>
+                    <span>Created {formatDateTime(c.createdAt, workspace.timeZone)}</span>
                   </div>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />

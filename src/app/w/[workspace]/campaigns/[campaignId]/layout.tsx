@@ -4,6 +4,7 @@ import { CampaignStatusBadge } from "@/components/campaign-status";
 import { getBrand, getCampaign, getCampaignLeads, getPipeline, getWorkspace } from "@/lib/api";
 import type { Stage } from "@/lib/api-types/outcomes";
 import { campaignContext, findingSentence } from "@/lib/campaign-view";
+import { contactedLeads } from "@/lib/pipeline";
 import { cn } from "@/lib/utils";
 import { CampaignFrame } from "./campaign-frame";
 import { LeadRail } from "./lead-rail";
@@ -25,15 +26,16 @@ export default function CampaignLayout({ params, children }: Props) {
 async function Workspace({ params, children }: { params: Props["params"]; children: React.ReactNode }) {
   const { workspace: slug, campaignId } = await params;
   const workspace = await getWorkspace(slug);
-  const [{ campaign, possibleCount }, { leads }, pipeline, brand] = await Promise.all([
+  const [{ campaign, possibleCount, fewResults }, { leads }, pipeline, brand] = await Promise.all([
     getCampaign(workspace.id, campaignId),
     getCampaignLeads(workspace.id, campaignId),
     getPipeline(workspace.id, campaignId),
     getBrand(workspace.id),
   ]);
-  const context = campaignContext(campaign, brand);
+  const context = campaignContext(campaign, brand, workspace.timeZone);
   const stages: Record<string, Stage> = {};
   for (const s of pipeline.stages) for (const l of s.leads) stages[l.leadId] = s.stage;
+  const contacted = contactedLeads(pipeline);
   const base = `/w/${slug}/campaigns/${campaign.id}`;
   const { messaged, replied, meeting: meetings } = pipeline.funnel;
 
@@ -69,7 +71,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
             isOwner={workspace.role === "owner"}
           />
         )}
-        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, stages, status: campaign.status, callsUsed: campaign.callsUsed })}</p>
+        <p className="text-sm text-muted sm:text-body">{findingSentence({ leads, contacted, status: campaign.status, callsUsed: campaign.callsUsed, fewResults })}</p>
       </div>
       {leads.length > 0 && (
         <Link
@@ -102,7 +104,7 @@ async function Workspace({ params, children }: { params: Props["params"]; childr
       base={base}
       header={header}
       stats={stats}
-      rail={<LeadRail base={base} leads={leads} stages={stages} searched={campaign.status !== "draft" && campaign.status !== "failed"} />}
+      rail={<LeadRail base={base} leads={leads} stages={stages} contacted={[...contacted]} fewResults={fewResults} searched={campaign.status !== "draft" && campaign.status !== "failed"} />}
       paneFirst={campaign.status === "running" || campaign.status === "paused"}
     >
       {children}

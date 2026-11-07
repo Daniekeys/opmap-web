@@ -13,11 +13,26 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Demo-ready follow-ups 2026-11-03 on branch `redesign`, committed 2026-11-05: Places caps are ceilings (env can lower them; above a ceiling the API refuses to start); owners see a Claude daily alert banner for the rest of the UTC day. Clone drafts check with v2 re-approved: four drafts for Cherish cakes and events place, $0.037 and 21 s; v4 approved again after. pause-state-fixes' migrations renumbered to 0029 and 0030 to follow redesign's 0028.
 - Migrate on start gated 2026-11-05 on branch `redesign`: the Docker image runs migrations at start only when `RUN_MIGRATIONS_ON_START=true`; off by default, so a local run of the image never migrates a local database.
 - Channel status 2026-11-06 on branch `channel-status` (worktree, both repos): every draft tab shows a status chip and, with no target, the reason with "Show draft anyway" (copy only); likely WhatsApp for Nigerian MOBILE or FIXED_LINE_OR_MOBILE numbers, decided in `research/phone-rules.ts`; LinkedIn only from their site or listing; a "Not on WhatsApp" button; WhatsApp confirmed and likely apart in the leads list, confirmed first. No migration.
+- Any country, step D7 2026-11-06: a place past 40 tiles gets a note and a borough to swap in (London's 32 boroughs and the City of London seeded); a search needing more Google searches than this month has left can't start (`over_monthly_cap`), checked again once its places are mapped.
+- Any country, step D6 2026-11-06: a UK lead's legal form from Companies House (number on its site, then name and postcode), saved for every workspace for 90 days; only an active company gets every draft, everyone else the call opener; "I checked" buttons on the lead; TPS/CTPS line on UK call tabs. Migration 0031 (0029 and 0030 are pause-state-fixes').
+- Any country, step D5 2026-11-06: "Google Maps has little data for this area" before a search in China or North Korea, and after a search that found fewer than 3 businesses. The confirm panel's Google cost reads $0 inside the free tier.
+- Fix batch after D4 2026-11-06: campaign counts are businesses (Messaged is any stage outcome); cards and drafts citing another business's sources show "This doesn't match this business"; "Email not checked"; green chips only for checked contacts; "Opted out" in the leads list; a fade on the phone's filter chips; geocoding caps (100 a day, 2,000 a month).
+- Any country, step D4 2026-11-06: places not in the list are looked up on Google Maps on demand from the campaign form and cached in geo_areas (towns, districts under their town, regions searched whole), in any country Google covers.
+- Any country, polish after D3 2026-11-06: country notes at the top of the draft; phones national only for the workspace's own country, else international; Settings text follows a save and the zone picker lists the workspace country's zones first.
+- Any country, step D2 2026-11-06 on branch `any-country` (worktree, both repos): country profiles for NG, GH, KE, GB and a default for every other country (all drafts, a "check local marketing rules" note); phone parsing, dedupe, social search, Places language, WhatsApp guesses and draft tab order read the lead's profile; the workspace time zone (Settings page, suggested from the Brand DNA) replaces Lagos time in the web. No migration.
+- Any country, D2 follow-ups and D3 2026-11-06 on `any-country`: an unknown country code gets the default profile, never Nigeria's; phone display loads its library only on the lead and messages pages; `/campaigns/new` starts from the Brand DNA's places.
 - Next: the user's manual check of drafts for 10 real leads, then contacting 10 real leads with the tool (more deep-dives are needed: 6 of 19 local leads with cards have a send target).
 
 ## Clones to re-clone
 
 - `opmap_shots_redesign` and `opmap_b_backfill` ran migration 0029 before its backfill changed (2026-11-06, merging pause-state-fixes into redesign: it now also turns campaigns paused with "This server can't call Google..." into setup pauses). Their pause labels can't be trusted until both are re-cloned from local `opmap` and migrated again.
+## Known flaky tests
+
+- `test/pipeline.test.ts` > "runs an interactive run (a deep-dive, drafts) while a background run still holds its lane": failed once in the full API suite under load on 2026-11-06 (after 23 s); its file passed alone (14 of 14). Again on 2026-11-07 in the full suite after merging any-country into redesign ("pipeline run did not finish in time"); alone, 14 of 14. Timing, not a lane bug; rerun the file before looking further.
+
+## Parked
+
+- UK, for when we run a UK campaign (no Companies House key yet, so D6 runs without it: no lookup, every UK lead gets the call opener only until a member says "I checked: limited company"): set `COMPANIES_HOUSE_API_KEY` and make the one real lookup with `npm run registry:try` (estimate and yes first); then the candidate list, Companies House entries close to the lead for a member to pick from when no automatic match is found.
 
 ## Deploy checklist
 

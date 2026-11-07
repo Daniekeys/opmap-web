@@ -25,6 +25,8 @@ export type Draft = {
   // False when what it offers isn't in the approved Brand DNA any more: shown
   // as not ready, never sent.
   offerInBrandDna: boolean;
+  // Cites another business's pages (or its card does): empty, never sent.
+  mismatch: boolean;
   subject: string | null;
   body: string;
   lines: DraftLine[];
@@ -42,12 +44,32 @@ export type Blocked = "not_enough_information" | "no_cards" | "no_target" | "bra
 // has no send target. A suppressed business has code "suppressed" everywhere.
 export type ChannelStatus = { available: boolean; code: string; chip: string; reason: string | null };
 
+// A UK lead's legal form. consentNeeded: only the call opener may be used.
+// registry: what Companies House said (null until looked up), and how it was
+// matched. confirmed: a member's own check, which wins.
+export type LegalFormView = {
+  consentNeeded: boolean;
+  registry: {
+    form: "company" | "partnership" | "unknown";
+    method: "site_number" | "name_postcode" | null;
+    company: { number: string; name: string; type: string; status: string; postcode: string | null } | null;
+  } | null;
+  checkedAt: string | null;
+  confirmed: { form: "company" | "sole_trader"; note: string | null; by: string; at: string } | null;
+};
+
 export type LeadOutreachResponse = {
   stage: Stage;
   suppressed: boolean;
   blocked: Blocked | null;
   // optOut: the line every email draft ends with, for this country.
-  country: { code: string; law: string; optOut: string; emailNote: string | null };
+  // name: the country in words. draftNote: shown on every draft when no rules
+  // are on file for the country. channelOrder: the draft tab order, from the
+  // lead's country profile (drafts arrive in this order).
+  // callNote: shown on the call tab (the UK: check TPS/CTPS), or null.
+  country: { code: string; name: string; law: string; optOut: string; emailNote: string | null; draftNote: string | null; channelOrder: Channel[]; callNote: string | null };
+  // Only where the country's rule goes by legal form (the UK), else null.
+  legalForm: LegalFormView | null;
   // Who drafts sign as, or null when Brand DNA isn't usable.
   sender: { name: string } | null;
   targets: Record<Channel, Target | null>;

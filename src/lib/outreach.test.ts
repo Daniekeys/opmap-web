@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Draft, DraftLine } from "./api-types/outreach";
 import type { OpportunityCard } from "./api-types/research";
-import { canMarkSent, draftChecks, firstOpenChannel, gmailHref, outcomeText, outlookHref, showAnywayAllowed, sourceReadDates, whatsappSendHref } from "./outreach";
+import { canMarkSent, channelChipTone, draftChecks, firstOpenChannel, gmailHref, outcomeText, outlookHref, showAnywayAllowed, sourceReadDates, whatsappSendHref } from "./outreach";
 
 describe("send links", () => {
   it("fills WhatsApp with the draft, digits only in the number", () => {
@@ -39,6 +39,7 @@ function emailDraft(body: string): Draft {
     channel: "email",
     status: "ready",
     offerInBrandDna: true,
+    mismatch: false,
     subject: "A question",
     body,
     lines: [line("greeting", "Hello A Bakes,"), line("claim", "You take cake orders.", [site]), line("claim", "88 people reviewed you.", [listing]), line("claim", "We build order pages.", [fact])],
@@ -110,6 +111,7 @@ describe("source dates for a draft's claims", () => {
       why: [],
       angle: null,
       offerInBrandDna: true,
+      mismatch: false,
     } satisfies OpportunityCard;
     expect(sourceReadDates(card, "2026-10-29T09:00:00Z")).toEqual(new Map([["s1", "2026-10-28T10:00:00Z"], ["s2", "2026-10-29T09:00:00Z"]]));
   });
@@ -124,6 +126,8 @@ describe("channels with no send target", () => {
     expect(showAnywayAllowed({ available: false, code: "none", chip: "No email", reason: "No email found on their own site." })).toBe(true);
     expect(showAnywayAllowed({ available: false, code: "suppressed", chip: "Not to be contacted", reason: "They asked not to be contacted." })).toBe(false);
     expect(showAnywayAllowed(on("WhatsApp confirmed"))).toBe(false);
+    // UK rules: the draft isn't there to show until they agree.
+    expect(showAnywayAllowed({ available: false, code: "consent", chip: "Consent needed", reason: "Consent needed for this business under UK rules." })).toBe(false);
   });
 
   it("open on the first channel that can be sent to", () => {
@@ -131,5 +135,16 @@ describe("channels with no send target", () => {
     const none = off("none", "No WhatsApp link or mobile number found.");
     expect(firstOpenChannel(drafts, { whatsapp: none, email: on("Email found on their site"), linkedin: none, call: on("Phone, one source") })).toBe("email");
     expect(firstOpenChannel(drafts, { whatsapp: none, email: none, linkedin: none, call: none })).toBe("whatsapp");
+  });
+});
+
+describe("channel chip colour", () => {
+  const st = (available: boolean, code: string) => ({ available, code, chip: "x", reason: null });
+  it("is green only for a checked contact; a guess or one source looks like the leads list", () => {
+    expect(channelChipTone(st(true, "confirmed"))).toBe("checked");
+    expect(channelChipTone(st(true, "found"))).toBe("checked");
+    expect(channelChipTone(st(true, "likely"))).toBe("unchecked");
+    expect(channelChipTone(st(true, "single_source"))).toBe("unchecked");
+    expect(channelChipTone(st(false, "not_on_site"))).toBe("unavailable");
   });
 });

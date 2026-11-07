@@ -23,15 +23,17 @@ export function CampaignProgress({
   leadCount,
   workspaceId,
   isOwner,
+  timeZone,
 }: {
   progress: CampaignProgressResponse;
   campaign: Campaign;
   leadCount: number;
   workspaceId: string;
   isOwner: boolean;
+  timeZone: string;
 }) {
   const stoppable = isOwner && (campaign.status === "running" || campaign.status === "paused");
-  const pause = progress.pause && pauseText(progress.pause, progress, campaign.settings.dailyCalls);
+  const pause = progress.pause && pauseText(progress.pause, progress, campaign.settings.dailyCalls, timeZone);
   return (
     <section aria-labelledby="progress-heading" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">

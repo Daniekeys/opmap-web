@@ -4,7 +4,9 @@ import type { PipelineRun } from "./pipeline";
 
 export type TargetKind = "local_business" | "b2b" | "institution";
 export type CampaignStatus = "draft" | "running" | "paused" | "stopped" | "done" | "failed";
-export type AreaLevel = "country" | "state" | "city" | "neighbourhood";
+// region: a first-level division nobody seeded (Greater Accra Region,
+// England), searched as one area; a seeded state runs its towns.
+export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood";
 
 // A place from geo_areas, with the place above it ("Ilorin", "Kwara").
 export type GeoArea = {
@@ -16,8 +18,25 @@ export type GeoArea = {
   population: number | null;
 };
 
-// GET /api/w/:workspaceId/geo-areas?q=
+// GET /api/w/:workspaceId/geo-areas?q= (or ?ids=a,b for exact places)
 export type GeoAreasResponse = { areas: GeoArea[] };
+
+// POST /api/w/:workspaceId/geo-areas/lookup { query }: look a place up on
+// Google Maps (one geocode, in the worker). Then GET .../lookup/:runId until
+// it is done: `area` is the place found and saved, or `problem` says why
+// it can't be used (not_found, whole_country, not_an_area, unknown_country;
+// "failed" when the lookup didn't run).
+export type PlaceLookupStarted = { runId: string };
+export type PlaceLookupResponse = {
+  status: "running" | "done" | "failed";
+  area: GeoArea | null;
+  problem: { code: string; message: string } | null;
+};
+
+// GET /api/w/:workspaceId/campaigns/suggested-places: the default places for a
+// new campaign from the approved Brand DNA. from: the location fact the first
+// place came from. unmatched: location facts that name no known place.
+export type SuggestedPlacesResponse = { areas: GeoArea[]; from: string | null; unmatched: string[] };
 
 // POST /api/w/:workspaceId/campaigns/route-target
 export type RouteTargetBody = { segment: string; queries?: string[] };
@@ -160,7 +179,9 @@ export type CampaignResponse = { campaign: Campaign };
 export type CampaignsResponse = { campaigns: Campaign[] };
 
 // GET .../campaigns/:campaignId
-export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number };
+// fewResults: the search finished with fewer than 3 businesses across all its
+// tiles: the page says Google Maps has little data for this area.
+export type CampaignDetailResponse = { campaign: Campaign; possibleCount: number; fewResults: boolean };
 
 type Range = { min: number; max: number };
 
@@ -189,9 +210,19 @@ export type EstimateResponse = {
   // Google searches left under the shared caps (all workspaces).
   callsLeft: { today: number; month: number };
   unmapped: string[];
+  // Countries among its places where Google Maps has little data.
+  thinMaps: string[];
   warning: string | null;
+  // The campaign's places past 40 tiles, and the places under each (London's
+  // boroughs) to start with instead.
+  largeAreas: LargeArea[];
+  // Set when even one page a tile needs more Google searches than this month
+  // has left: the confirm button refuses with this message.
+  overMonth: string | null;
   notes: string[];
 };
+
+export type LargeArea = { areaId: string; name: string; tiles: number; smaller: { id: string; name: string }[] };
 
 // GET .../campaigns/:campaignId/progress: the search's steps (from
 // step_runs), what it has cost, and which limit paused it. A failed step's
@@ -262,6 +293,8 @@ export type Lead = {
   // contact point; none when the business asked not to be contacted.
   // Confirmed and likely WhatsApp apart; confirmed sorts first.
   ready: ("whatsapp_confirmed" | "whatsapp_likely" | "email")[];
+  // Asked not to be contacted (an opt-out, or on the suppression list).
+  optedOut: boolean;
   contacts: {
     phone: Contact | null;
     whatsapp: Contact | null;

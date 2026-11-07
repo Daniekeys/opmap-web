@@ -1,4 +1,5 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
 import { Dialog } from "@base-ui/react/dialog";
 import { Popover } from "@base-ui/react/popover";
@@ -30,10 +31,11 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { FeedbackOutcome, OutcomeBody, OutcomeResponse, Stage } from "@/lib/api-types/outcomes";
 import type { Channel, ChannelStatus, ContactRow, Draft, DraftCite, DraftLine, LeadOutreachResponse, SendVia, StartDraftsResponse, Target } from "@/lib/api-types/outreach";
 import type { OpportunityCard } from "@/lib/api-types/research";
-import { citeName, readOn } from "@/lib/campaign-view";
+import { citeName, NOT_THIS_BUSINESS, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { formatPhone, labelText, telHref } from "@/lib/leads";
+import { labelText, telHref } from "@/lib/leads";
+import { useFormatPhone } from "@/components/phone-text";
 import {
   canMarkSent,
   type Check as DraftCheck,
@@ -46,8 +48,7 @@ import {
   sourceReadDates,
   STAGE_NAMES,
   STAGE_TONES,
-  whatsappSendHref,
-} from "@/lib/outreach";
+  whatsappSendHref, channelChipTone } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { OfferGone, type Rerun } from "./brand-dna-notice";
 
@@ -61,7 +62,11 @@ const bigTap = "h-12 w-full justify-center gap-2 text-sm";
 const post = (url: string, body: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true });
 
-const showValue = (kind: string, value: string) => (kind === "phone" || kind === "whatsapp" ? formatPhone(value) : value);
+// A contact's value as shown: phones in the workspace's reading of them.
+function useShowValue() {
+  const formatPhone = useFormatPhone();
+  return (kind: string, value: string) => (kind === "phone" || kind === "whatsapp" ? formatPhone(value) : value);
+}
 
 // Below the sm breakpoint a claim's source opens as a bottom sheet, not a popover.
 const PHONE = "(max-width: 639px)";
@@ -131,7 +136,10 @@ export function CardDrafts({
 
   const following = runId ?? (card?.run?.status === "running" ? card.run.runId : null);
   const drafts = card?.drafts ?? [];
-  const offerGone = !offerInBrandDna || drafts.some((d) => !d.offerInBrandDna);
+  const offerGone = !offerInBrandDna || drafts.some((d) => !d.offerInBrandDna && !d.mismatch);
+
+  // About another business (the card or its messages cite their pages).
+  if (opportunity.mismatch || drafts.some((d) => d.mismatch)) return <NotThisBusiness what="messages" />;
 
   if (outreach.suppressed) {
     return (
@@ -194,7 +202,7 @@ function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachRes
   if (blocked === "no_target") {
     return (
       <Box icon={<Phone className="size-4" aria-hidden />} title="No checked contact to send to">
-        WhatsApp needs a WhatsApp link they published or a Nigerian mobile number, email must be on their own site, and a call needs a phone number. Check their details first.
+        WhatsApp needs a WhatsApp link they published (or, in some countries, a mobile number), email must be on their own site, and a call needs a phone number. Check their details first.
       </Box>
     );
   }
@@ -262,8 +270,8 @@ function DraftTabs({
                 d.channel === open ? TAB_ON : "text-muted hover:text-ink",
               )}
             >
-              {/* A dot for a channel that can be sent to; none when it can't. */}
-              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", outreach.channels[d.channel].available ? "bg-positive-ink" : "border border-muted")} />
+              {/* A dot for a channel that can be sent to: green when checked, grey for a guess or one source; an empty ring when it can't. */}
+              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", DOT_TONES[channelChipTone(outreach.channels[d.channel])])} />
               <span className="truncate">
                 {d.channel === "call" ? (
                   <>
@@ -280,12 +288,19 @@ function DraftTabs({
           ))}
         </div>
       </div>
+      {/* The call tab always says to check the do-not-call lists (the UK). */}
+      {draft.channel === "call" && outreach.country.callNote && (
+        <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+          {outreach.country.callNote}
+        </p>
+      )}
       <DraftView key={draft.id} base={base} draft={draft} dates={dates} outreach={outreach} onChange={onChange} />
     </div>
   );
 }
 
 function DraftView({ base, draft, dates, outreach, onChange }: { base: string; draft: Draft; dates: ReadDates; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
+  const showValue = useShowValue();
   const [copied, setCopied] = useState<"body" | "subject" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   // Set at the tap, so "Mark as sent" goes before the reload shows the Sent
@@ -320,6 +335,8 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
     </div>
   );
+
+  if (draft.mismatch) return <NotThisBusiness what="messages" />;
 
   // Written from an offer the approved Brand DNA no longer holds: the text
   // stays readable, with nothing to open, copy or mark as sent. The warning
@@ -402,6 +419,18 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       {statusRow}
       <div className="flex flex-wrap items-start gap-6">
         <article aria-label={`${TAB_NAMES[draft.channel]} message`} className="flex min-w-0 flex-[3_1_400px] flex-col gap-3 rounded-card border border-border bg-surface px-4 py-4 sm:px-6 sm:py-5">
+          {/* The country's notes first, above the message, at every width: on a
+              phone the send bar is pinned, so a note below could be missed. */}
+          {outreach.country.draftNote && (
+            <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+              {outreach.country.draftNote}
+            </p>
+          )}
+          {draft.channel === "email" && outreach.country.emailNote && (
+            <p role="note" className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
+              {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
+            </p>
+          )}
           <div className="flex justify-between gap-3 text-small text-muted">
             <span className="min-w-0 truncate" title={label?.tip}>
               {target ? `To ${showValue(target.kind, target.value)}, ${label!.word.toLowerCase()}` : "No checked contact"}
@@ -441,11 +470,6 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
         </aside>
       </div>
 
-      {draft.channel === "email" && outreach.country.emailNote && (
-        <p className="rounded-card bg-warning-soft px-3 py-2 text-xs text-warning-ink">
-          {outreach.country.emailNote} (A summary of {outreach.country.law}, not legal advice.)
-        </p>
-      )}
       {problem && <p className="text-sm text-negative-ink">{problem}</p>}
       <RemovedList removed={draft.removed} />
 
@@ -517,13 +541,35 @@ function SendLinks({ draft, target, onSend, phone }: { draft: Draft; target: Tar
   }
   return (
     <a href={telHref(target.value)} className={sendClass} onClick={() => onSend("call")}>
-      <Phone className="size-4" aria-hidden /> Call {formatPhone(target.value)}
+      <Phone className="size-4" aria-hidden /> Call <CallNumber value={target.value} />
     </a>
   );
 }
 
+// The number on the call button, as the workspace reads it (the link is E.164).
+function CallNumber({ value }: { value: string }) {
+  return <>{useFormatPhone()(value)}</>;
+}
+
+// A card or its messages citing another business's pages: none of it is
+// shown or sent (the API logs it once).
+export function NotThisBusiness({ what = "card" }: { what?: "card" | "messages" }) {
+  return (
+    <div role="note" className="flex flex-col gap-1 rounded-card bg-negative-soft px-4 py-3 text-sm">
+      <p className="flex items-center gap-2 font-semibold text-negative-ink">
+        <ShieldAlert className="size-4" aria-hidden /> {NOT_THIS_BUSINESS}
+      </p>
+      <p className="text-muted">
+        {what === "card"
+          ? "This opportunity cites pages about another business, so it isn't shown. Refresh the research to get cards about this one."
+          : "These messages cite pages about another business, so they aren't shown and can't be sent."}
+      </p>
+    </div>
+  );
+}
+
 // A mobile number with no WhatsApp link from them: probably on WhatsApp, not
-// checked (Nigerian numbers only, until the country profiles).
+// checked (only in countries whose profile allows it: Nigeria, Ghana, Kenya).
 export function LikelyOnWhatsapp({ className }: { className?: string }) {
   return (
     <span className={cn("text-xs text-muted", className)} title="A mobile number, but no WhatsApp link from them">
@@ -532,16 +578,18 @@ export function LikelyOnWhatsapp({ className }: { className?: string }) {
   );
 }
 
-// A channel's status in a few words: green when it can be sent to, a plain
-// grey chip when it can't (the reason sits beside or under it).
+// A channel's status in a few words: green only when the contact is checked,
+// neutral and outlined for a guess or one source (as on the leads list), a
+// plain grey chip when it can't be used (the reason sits beside or under it).
+const DOT_TONES = { checked: "bg-positive-ink", unchecked: "bg-muted", unavailable: "border border-muted" };
+const CHIP_TONES = {
+  checked: "bg-positive-soft text-positive-ink",
+  unchecked: "border border-control bg-neutral-soft text-neutral-ink",
+  unavailable: "bg-neutral-soft text-neutral-ink",
+};
 function ChannelChip({ status }: { status: ChannelStatus }) {
   return (
-    <span
-      className={cn(
-        "inline-flex self-start rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-        status.available ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
-      )}
-    >
+    <span className={cn("inline-flex self-start rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap", CHIP_TONES[channelChipTone(status)])}>
       {status.chip}
     </span>
   );
@@ -590,6 +638,7 @@ function AfterSend({
   markable: boolean;
   onMarkSent: () => void;
 }) {
+  const showValue = useShowValue();
   const shown = target && target.kind !== "linkedin" ? outreach.contacts.find((c) => c.kind === target.kind && c.value === target.value) : undefined;
   const feedback = shown ? FEEDBACK[shown.kind] : [];
   const text = "inline-flex h-11 items-center text-sm text-negative-ink hover:underline underline-offset-4 disabled:opacity-50 sm:h-7";
@@ -716,13 +765,14 @@ function ClaimMark({ line, dates }: { line: DraftLine; dates: ReadDates }) {
 // Each quote or fact behind a claim: what it says, where and when it was
 // read, and a link to the page.
 function Sources({ cites, dates }: { cites: DraftCite[]; dates: ReadDates }) {
+  const timeZone = useTimeZone();
   return (
     <ul className="flex flex-col gap-3">
       {cites.map((c) => (
         <li key={c.ref} className="flex flex-col gap-1">
           {/* A source with no quote of its own for this line shows just where it is. */}
           {c.kind === "source" ? c.quote && <span className="font-medium">{`“${c.quote}”`}</span> : <span className="font-medium">{c.text}</span>}
-          <span className="text-small text-muted">{c.kind === "fact" ? "Your approved fact" : `${citeName(c)}, ${readOn(dates.get(c.sourceId) ?? null)}`}</span>
+          <span className="text-small text-muted">{c.kind === "fact" ? "Your approved fact" : `${citeName(c)}, ${readOn(dates.get(c.sourceId) ?? null, timeZone)}`}</span>
           {c.kind !== "fact" && (
             <a href={c.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex min-h-8 items-center gap-1 self-start text-small font-medium")}>
               Open the source <ExternalLink className="size-3" aria-hidden />
@@ -803,6 +853,7 @@ type OutcomeTap = ReturnType<typeof useOutcomeTap>;
 // One outcome tap: logged as an outcome and an event, never on anyone's
 // behalf. Feedback and opt-outs ask first. Resolves true once it is logged.
 function useOutcomeTap(base: string, onChange: () => Promise<void>) {
+  const showValue = useShowValue();
   const [busy, setBusy] = useState<string | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -861,6 +912,8 @@ function OutcomeStatus({ outcome, idle }: { outcome: OutcomeTap; idle: string })
 // point, the history). Data feedback lowers that contact point's confidence
 // on the shared record, so it asks first.
 export function OutcomePanel({ base, outreach, onChange }: { base: string; outreach: LeadOutreachResponse; onChange: () => Promise<void> }) {
+  const timeZone = useTimeZone();
+  const showValue = useShowValue();
   const outcome = useOutcomeTap(base, onChange);
   const { busy, tap } = outcome;
 
@@ -953,7 +1006,7 @@ export function OutcomePanel({ base, outreach, onChange }: { base: string; outre
             {outreach.outcomes.slice(0, 10).map((o) => (
               <li key={o.id} className="flex flex-wrap justify-between gap-x-3">
                 <span>{outcomeText(o, (v) => showValue(o.contactKind ?? "", v))}</span>
-                <span className="text-xs text-muted">{formatDateTime(o.createdAt)}</span>
+                <span className="text-xs text-muted">{formatDateTime(o.createdAt, timeZone)}</span>
               </li>
             ))}
           </ul>

@@ -1,4 +1,5 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
 import { Check, ChevronLeft, ChevronRight, ChevronsUpDown, Pencil, Plus, X } from "lucide-react";
 import Link from "next/link";
@@ -90,6 +91,7 @@ export function FactReview({
   missing: MissingFact[];
   isOwner: boolean;
 }) {
+  const timeZone = useTimeZone();
   const router = useRouter();
   const api = `/api/w/${workspaceId}/brand`;
   const [facts, setFacts] = useState(() =>
@@ -113,7 +115,7 @@ export function FactReview({
   const pending = facts.filter((f) => f.status === "pending").length;
   const decided = facts.length - pending;
   const share = facts.length ? (decided / facts.length) * 100 : 0;
-  const readFrom = profile.source === "website" ? pagesRead(pages, profile.createdAt) : pagesRead([], profile.createdAt);
+  const readFrom = profile.source === "website" ? pagesRead(pages, profile.createdAt, timeZone) : pagesRead([], profile.createdAt, timeZone);
 
   // On phones, move on to the next fact still waiting for a decision.
   function advanceFrom(position: number, after: Fact[]) {

@@ -1,15 +1,16 @@
 "use client";
 
-import { Mail, MessageCircle, Search } from "lucide-react";
+import { Mail, MessageCircle, Search, Ban } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import type { Lead } from "@/lib/api-types/leads";
 import type { Stage } from "@/lib/api-types/outcomes";
-import { fitOf, leadMeta } from "@/lib/campaign-view";
-import { hasPhoneOrWhatsapp, readyBadges } from "@/lib/leads";
+import { fitOf, LITTLE_DATA, leadMeta } from "@/lib/campaign-view";
+import { hasPhoneOrWhatsapp, leadBadges } from "@/lib/leads";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
+import { moreToRight } from "@/lib/scroll-hint";
 import { cn } from "@/lib/utils";
 
 type Tab = "all" | "researched" | "outreach";
@@ -28,24 +29,42 @@ export function LeadRail({
   base,
   leads,
   stages,
+  contacted,
+  fewResults,
   searched,
 }: {
   base: string;
   leads: Lead[];
   stages: Record<string, Stage>;
+  // Leads with any stage outcome (lib/pipeline.ts, contactedLeads).
+  contacted: string[];
+  // The finished search found fewer than 3 businesses.
+  fewResults: boolean;
   searched: boolean;
 }) {
   const pathname = usePathname();
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [phoneOnly, setPhoneOnly] = useState(false);
+  // The phone's chip row: whether chips are hidden off its right edge.
+  const chipRow = useRef<HTMLDivElement>(null);
+  const [chipsHidden, setChipsHidden] = useState(false);
+  const updateChipHint = useCallback(() => {
+    if (chipRow.current) setChipsHidden(moreToRight(chipRow.current));
+  }, []);
+  useEffect(() => {
+    updateChipHint();
+    window.addEventListener("resize", updateChipHint);
+    return () => window.removeEventListener("resize", updateChipHint);
+  }, [updateChipHint, leads.length]);
 
   const stageOf = (lead: Lead) => stages[lead.leadId] ?? "new";
-  const inTab = (lead: Lead, t: Tab) => (t === "all" ? true : t === "researched" ? lead.researched : stageOf(lead) !== "new");
+  const contactedSet = useMemo(() => new Set(contacted), [contacted]);
+  const inTab = (lead: Lead, t: Tab) => (t === "all" ? true : t === "researched" ? lead.researched : contactedSet.has(lead.leadId));
   const counts = useMemo(
     () => Object.fromEntries(TABS.map((t) => [t.key, leads.filter((l) => inTab(l, t.key)).length])) as Record<Tab, number>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [leads, stages],
+    [leads, contactedSet],
   );
   const q = query.trim().toLowerCase();
   const shown = leads.filter(
@@ -94,16 +113,23 @@ export function LeadRail({
             className="w-full bg-transparent text-base text-ink outline-none placeholder:text-muted lg:text-sm"
           />
         </label>
-        {/* Phones: the tabs as filter chips, with the phone filter beside them. */}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:hidden">
-          {TABS.map((t) => (
-            <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)} className={chipClass(tab === t.key)}>
-              {t.chip} <span className="tabular-nums opacity-80">{counts[t.key]}</span>
+        {/* Phones: the tabs as filter chips, with the phone filter beside them.
+            A fade at the right edge while more chips are off-screen. */}
+        <div className="relative -mx-4 lg:hidden">
+          <div ref={chipRow} onScroll={updateChipHint} className="flex gap-2 overflow-x-auto px-4">
+            {TABS.map((t) => (
+              <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)} className={chipClass(tab === t.key)}>
+                {t.chip} <span className="tabular-nums opacity-80">{counts[t.key]}</span>
+              </button>
+            ))}
+            <button type="button" aria-pressed={phoneOnly} onClick={() => setPhoneOnly((v) => !v)} className={chipClass(phoneOnly)}>
+              Has phone
             </button>
-          ))}
-          <button type="button" aria-pressed={phoneOnly} onClick={() => setPhoneOnly((v) => !v)} className={chipClass(phoneOnly)}>
-            Has phone
-          </button>
+          </div>
+          <span
+            aria-hidden
+            className={cn("pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-ground to-transparent transition-opacity", chipsHidden ? "opacity-100" : "opacity-0")}
+          />
         </div>
         <div className="hidden shrink-0 items-center gap-3 lg:flex">
           <button
@@ -123,9 +149,13 @@ export function LeadRail({
       </div>
 
       {leads.length === 0 ? (
-        <Empty title={searched ? "No businesses yet" : "Not searched yet"}>
-          {searched ? "Businesses that fit show up here as the search finds and checks them." : "Confirm the search to find businesses that fit."}
-        </Empty>
+        fewResults ? (
+          <Empty title={LITTLE_DATA}>The search found fewer than 3 businesses here. Try a bigger town nearby, or another kind of business.</Empty>
+        ) : (
+          <Empty title={searched ? "No businesses yet" : "Not searched yet"}>
+            {searched ? "Businesses that fit show up here as the search finds and checks them." : "Confirm the search to find businesses that fit."}
+          </Empty>
+        )
       ) : shown.length === 0 ? (
         <Empty title="Nothing matches">
           {tab === "outreach" && !q && !phoneOnly ? "Nobody contacted yet. Open a business, write its messages and send one." : "Try another word, or clear the filters."}
@@ -162,18 +192,18 @@ function Empty({ title, children }: { title: string; children: React.ReactNode }
 }
 
 // The channels a lead can be messaged on now, one badge each, so a checked
-// contact stands out without opening the lead (readyBadges).
-function ReadyBadge({ ready }: { ready: Lead["ready"] }) {
-  return readyBadges(ready).map((b) => (
+// contact stands out without opening the lead; or "Opted out" (leadBadges).
+function ReadyBadge({ lead }: { lead: Lead }) {
+  return leadBadges(lead).map((b) => (
     <span
-      key={b.channel}
+      key={b.kind}
       title={b.title}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 text-xs/[18px] font-medium",
-        b.checked ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
+        b.kind === "opted_out" ? "bg-negative-soft text-negative-ink" : b.checked ? "bg-positive-soft text-positive-ink" : "bg-neutral-soft text-neutral-ink",
       )}
     >
-      {b.channel === "email" ? <Mail className="size-3" aria-hidden /> : <MessageCircle className="size-3" aria-hidden />}
+      {b.kind === "opted_out" ? <Ban className="size-3" aria-hidden /> : b.kind === "email" ? <Mail className="size-3" aria-hidden /> : <MessageCircle className="size-3" aria-hidden />}
       {b.word}
     </span>
   ));
@@ -201,7 +231,7 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="shrink-0 lg:hidden">{right}</span>
         </span>
         <span className="flex min-w-0 items-center gap-1.5">
-          <ReadyBadge ready={lead.ready} />
+          <ReadyBadge lead={lead} />
           <span className="truncate text-xs text-muted">{meta}</span>
         </span>
       </span>

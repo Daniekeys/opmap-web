@@ -69,7 +69,7 @@ async function Overview({ params }: { params: Params }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium capitalize">{run.type}</p>
                     <p className="text-sm text-muted">
-                      {formatDateTime(run.createdAt)}
+                      {formatDateTime(run.createdAt, workspace.timeZone)}
                       {run.durationMs !== null && `, ${formatDuration(run.durationMs)}`}
                     </p>
                   </div>

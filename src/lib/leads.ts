@@ -1,6 +1,7 @@
 // Plain words for the lead finder's data: contact labels (spec, Data
 // accuracy), phone numbers, categories and campaign states.
 import type { Campaign, Lead, SearchSettings, TargetKind } from "./api-types/leads";
+import { dayKey, formatDateTime, formatter } from "./format";
 
 // The lead list's badges for the channels a lead can be messaged on now, in
 // this order: WhatsApp (confirmed) and email in green, likely WhatsApp in grey,
@@ -14,6 +15,13 @@ const READY_BADGES = {
 
 export const readyBadges = (ready: Lead["ready"]) =>
   (["whatsapp_confirmed", "whatsapp_likely", "email"] as const).filter((c) => ready.includes(c)).map((c) => ({ channel: c, ...READY_BADGES[c] }));
+
+// A lead row's badges: its ready channels, or only "Opted out" for a business
+// that asked not to be contacted.
+export function leadBadges(lead: Pick<Lead, "ready" | "optedOut">) {
+  if (lead.optedOut) return [{ kind: "opted_out" as const, word: "Opted out", title: "They asked not to be contacted" }];
+  return readyBadges(lead.ready).map((b) => ({ kind: b.channel, word: b.word, title: b.title, checked: b.checked }));
+}
 
 export type ContactKindGroup = "phone" | "whatsapp" | "email" | "website" | "person" | "social";
 
@@ -54,15 +62,6 @@ export function labelText(group: ContactKindGroup, label: string): LabelText {
   return LABELS[group][label] ?? { word: label.replaceAll("_", " "), tip: "", tone: "fair" };
 }
 
-// "+2348033718771" as Nigerians write it: "0803 371 8771". Other countries
-// keep the international form.
-// A WhatsApp value can be a link with no number (wa.me/message/...).
-export function formatPhone(e164: string) {
-  if (/^https?:/.test(e164)) return "WhatsApp link";
-  const ng = /^\+234(\d{3})(\d{3})(\d{4})$/.exec(e164);
-  return ng ? `0${ng[1]} ${ng[2]} ${ng[3]}` : e164;
-}
-
 export const telHref = (e164: string) => `tel:${e164}`;
 export const whatsappHref = (value: string) => (/^https?:/.test(value) ? value : `https://wa.me/${value.replace(/\D/g, "")}`);
 
@@ -100,24 +99,23 @@ export const TARGET_KINDS: { kind: TargetKind; label: string; help: string; supp
   { kind: "institution", label: "Institutions", help: "NGOs, government bodies, associations. Not searchable yet", supported: false },
 ];
 
-// Fixed time zone so the server and the browser print the same day.
-const dayOf = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(d);
-const timeOf = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
 
 // Whether a paused campaign's limit has lifted, so an owner can resume it
 // (the API checks again with the database's clock).
 export const resumeDue = (resumeAt: string | null, now = new Date()) => resumeAt !== null && new Date(resumeAt).getTime() <= now.getTime();
 
-// "Paused until tomorrow, 08:00" (Lagos time), or the date when it's later.
-export function pausedUntil(resumeAt: string, now = new Date()) {
+// "Paused until tomorrow, 08:00" in the workspace's time zone, or the date
+// when it's later.
+export function pausedUntil(resumeAt: string, timeZone: string, now = new Date()) {
   const at = new Date(resumeAt);
   const tomorrow = new Date(now.getTime() + 86_400_000);
-  if (dayOf(at) === dayOf(now)) return `later today, ${timeOf.format(at)}`;
-  if (dayOf(at) === dayOf(tomorrow)) return `tomorrow, ${timeOf.format(at)}`;
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" }).format(at);
+  const time = formatter(timeZone, { hour: "2-digit", minute: "2-digit" }).format(at);
+  if (dayKey(at, timeZone) === dayKey(now, timeZone)) return `later today, ${time}`;
+  if (dayKey(at, timeZone) === dayKey(tomorrow, timeZone)) return `tomorrow, ${time}`;
+  return formatDateTime(resumeAt, timeZone);
 }
 
-export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pauseKind">, now = new Date()) {
+export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pauseKind">, timeZone: string, now = new Date()) {
   switch (campaign.status) {
     case "draft":
       return "Draft, not started";
@@ -127,7 +125,7 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pau
       // Not a limit: no time to wait for (the banner says what to do).
       if (campaign.pauseKind === "setup") return "Paused, Google search was off";
       if (resumeDue(campaign.resumeAt, now)) return "Paused, limit lifted";
-      return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, now)}` : "Paused";
+      return campaign.resumeAt ? `Paused until ${pausedUntil(campaign.resumeAt, timeZone, now)}` : "Paused";
     case "stopped":
       return "Stopped";
     case "done":
@@ -191,6 +189,15 @@ export const previewQuery = (s: SearchSettings) =>
     extrasPerCity: String(s.extrasPerCity),
     ...(s.leadsWanted === null ? {} : { leadsWanted: String(s.leadsWanted) }),
   }).toString();
+
+// A Google cost on screen. The ledger records list price on every call, but
+// inside Google's free tier the bill is $0, so a list price is never shown
+// bare, as if it were cash spent. `listPrice` is already formatted.
+export function googleCost(listPrice: string, inFreeTier: boolean) {
+  return inFreeTier
+    ? { line: `Inside the free tier: $0 to you (${listPrice} at list price).`, button: "" }
+    : { line: `More than the free tier left this month: ${listPrice} at list price.`, button: `, ${listPrice} at list price` };
+}
 
 export function formatUsd(n: number) {
   return n < 0.01 && n > 0 ? "under 1 cent" : `$${n.toFixed(2)}`;

@@ -1,9 +1,10 @@
+import type { LargeArea } from "./api-types/leads";
+import type { OpportunityCard } from "./api-types/research";
 // Plain words for the campaign workspace: how well a lead fits, its one-line
 // summary, and the sentence under the campaign's title.
 import type { ProfileSummary } from "./api-types/brand";
 import type { Campaign, CampaignStatus, Lead } from "./api-types/leads";
 import type { DraftCite } from "./api-types/outreach";
-import type { Stage } from "./api-types/outcomes";
 import type { Cite, DatedCite } from "./api-types/research";
 import { formatDay } from "./format";
 import { categoryText, FIT_WORDS, labelText } from "./leads";
@@ -37,19 +38,47 @@ export function leadMeta(lead: Lead) {
 }
 
 // The one sentence under the title: the most useful thing to do next.
+export const LITTLE_DATA = "Google Maps has little data for this area";
+
+// Before a search: the countries among its places where Google Maps has
+// little data, or null.
+export function thinMapsNote(countries: string[]) {
+  if (countries.length === 0) return null;
+  const names = countries.length === 1 ? countries[0] : `${countries.slice(0, -1).join(", ")} and ${countries.at(-1)}`;
+  return `${LITTLE_DATA} (${names}): expect few or no businesses.`;
+}
+
+// Before a search: a place past 40 tiles, and what to start with instead.
+export function largeAreaNote(area: LargeArea) {
+  const start =
+    area.smaller.length > 0 ? "Start with one borough or district of it, and add more later." : "Start with a smaller place inside it, and add more later.";
+  return `${area.name} covers ${area.tiles} map tiles, so searching all of it uses a lot of Google searches. ${start}`;
+}
+
+// The campaign's places with `from` swapped for `to` where it stood.
+export function swapLocation(locations: string[], from: string, to: string) {
+  const swapped = locations.map((id) => (id === from ? to : id));
+  return [...new Set(swapped)];
+}
+
+// `contacted`: the leads that ever had a stage outcome (contactedLeads).
+// `fewResults`: the finished search found fewer than 3 businesses (the API's).
 // "Found no businesses that fit" only once the search has finished (its fit
 // checks with it); before any Google search has run, it hasn't started.
 export function findingSentence({
   leads,
-  stages,
+  contacted,
   status,
   callsUsed,
+  fewResults = false,
 }: {
   leads: Lead[];
-  stages: Record<string, Stage>;
+  contacted: ReadonlySet<string>;
   status: CampaignStatus;
   callsUsed: number;
+  fewResults?: boolean;
 }) {
+  if (fewResults) return `${LITTLE_DATA}: the search found fewer than 3 businesses here.`;
   if (leads.length === 0) {
     if (status === "draft") return "Not searched yet. Confirm the search to find businesses that fit.";
     if (status === "running") return "Searching. Businesses that fit show up here as they are checked.";
@@ -57,7 +86,7 @@ export function findingSentence({
     if (callsUsed === 0) return "The search hasn't started yet.";
     return "No businesses that fit so far.";
   }
-  const fresh = leads.filter((l) => (stages[l.leadId] ?? "new") === "new");
+  const fresh = leads.filter((l) => !contacted.has(l.leadId));
   const strong = fresh.filter((l) => fitOf(l).strong);
   if (strong.length > 0) {
     const n = strong.length;
@@ -76,6 +105,7 @@ export function findingSentence({
 export function campaignContext(
   campaign: Pick<Campaign, "segment" | "buyerSegment" | "locations" | "brandProfileVersion" | "startedAt">,
   brand: { approved: Pick<ProfileSummary, "version"> | null; versions: Pick<ProfileSummary, "id" | "version">[] },
+  timeZone: string,
 ) {
   const segment = campaign.buyerSegment;
   const who = segment?.setId ? segment.name : `Your own: ${segment?.name ?? campaign.segment}`;
@@ -87,7 +117,7 @@ export function campaignContext(
     who,
     where,
     brand: built === null ? null : { label: `Brand DNA v${built}`, profileId: profile?.id ?? null },
-    started: campaign.startedAt ? `Started ${formatDay(campaign.startedAt)}` : null,
+    started: campaign.startedAt ? `Started ${formatDay(campaign.startedAt, timeZone)}` : null,
     newer:
       built !== null && approved !== null && approved > built
         ? { version: approved, question: `A newer Brand DNA (v${approved}) was approved. Switch this campaign to v${approved}?` }
@@ -106,7 +136,7 @@ function whereClause(leads: Lead[]) {
 }
 
 // When a source was read ("read 26 Oct").
-export const readOn = (iso: string | null) => (iso ? `read ${formatDay(iso)}` : "date not recorded");
+export const readOn = (iso: string | null, timeZone: string) => (iso ? `read ${formatDay(iso, timeZone)}` : "date not recorded");
 
 // When a cite's page was read: its own read, or the research's finish time
 // when the page has been read again since. Approved facts carry no date.
@@ -134,4 +164,13 @@ export function citeName(cite: Cite | DraftCite) {
     // Not a URL: fall through to the plain name.
   }
   return "Their website";
+}
+
+export const NOT_THIS_BUSINESS = "This doesn't match this business";
+
+// A card's name in lists and headings: its offer, or that it is about
+// another business (it cites their pages, so nothing of it is shown).
+export function cardTitle(card: OpportunityCard) {
+  if (card.mismatch) return NOT_THIS_BUSINESS;
+  return card.offer?.text ?? "Opportunity";
 }

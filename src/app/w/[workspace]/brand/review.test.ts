@@ -66,12 +66,12 @@ describe("page names", () => {
   it("lists up to six names, then how many more", () => {
     const at = "2026-10-28T10:00:00Z";
     const pages = (...paths: string[]) => paths.map((p) => ({ url: `https://site.com${p}` }));
-    expect(pagesRead(pages("/", "/about", "/services"), at)).toBe("3 pages on 28 Oct: home, about and services.");
-    expect(pagesRead(pages("/"), at)).toBe("1 page on 28 Oct: home.");
-    expect(pagesRead(pages("/", "/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h"), at)).toBe(
+    expect(pagesRead(pages("/", "/about", "/services"), at, "Africa/Lagos")).toBe("3 pages on 28 Oct: home, about and services.");
+    expect(pagesRead(pages("/"), at, "Africa/Lagos")).toBe("1 page on 28 Oct: home.");
+    expect(pagesRead(pages("/", "/a", "/b", "/c", "/d", "/e", "/f", "/g", "/h"), at, "Africa/Lagos")).toBe(
       "9 pages on 28 Oct: home, a, b, c, d, e and 3 more.",
     );
-    expect(pagesRead([], at)).toBe("On 28 Oct.");
+    expect(pagesRead([], at, "Africa/Lagos")).toBe("On 28 Oct.");
   });
 });
 

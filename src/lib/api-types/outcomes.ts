@@ -36,6 +36,8 @@ export type PipelineLead = {
   stage: Stage;
   offer: string | null;
   optedOut: boolean;
+  // Ever had a stage outcome (sent, replied, meeting, won, lost): the Contacted tab.
+  messaged: boolean;
   lastOutcome: { type: string; channel: string | null; note: string | null; createdAt: string } | null;
 };
 

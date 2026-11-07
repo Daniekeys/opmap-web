@@ -44,7 +44,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
   // While it searches or waits, its progress comes first; after, the pick hint.
   const searching = campaign.status === "running" || campaign.status === "paused";
   const progressView = progress && (
-    <CampaignProgress progress={progress} campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} />
+    <CampaignProgress progress={progress} campaign={campaign} leadCount={leads.length} workspaceId={workspace.id} isOwner={isOwner} timeZone={workspace.timeZone} />
   );
 
   return (
@@ -64,6 +64,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
             estimate={estimate}
             supported={kind?.supported ?? true}
             continuing={campaign.status === "stopped"}
+            locations={campaign.locations.map((l) => l.id)}
           />
         )}
 

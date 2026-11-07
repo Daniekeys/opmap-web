@@ -28,6 +28,9 @@ export type OpportunityCard = {
   // False when no fact the offer cites is in the approved Brand DNA any more:
   // no drafts are written or sent from this card.
   offerInBrandDna: boolean;
+  // It cites another business's pages: nothing of it is sent (offer, gap, why
+  // and angle are empty); the screen says it doesn't match this business.
+  mismatch: boolean;
 };
 
 export type RemovedClaim = { card: number; field: ClaimField; text: string; reason: string; by: "code" | "check" };

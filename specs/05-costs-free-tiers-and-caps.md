@@ -10,6 +10,8 @@ Prices checked October 2026. They change, so recheck the source links before rel
 | Google Places Text Search Enterprise (phone, website, rating) | 1,000 calls a month | $35 per 1,000 calls up to 100,000 | Card on file, $0 if we stay under the cap |
 | Google Places Text Search Pro (no phone or website) | 5,000 calls a month | $32 per 1,000 | Card on file |
 | Google Geocoding | 10,000 calls a month | $5 per 1,000 | Card on file |
+
+Geocoding has its own caps (2026-11-06): 100 a day and 2,000 a month, shared across workspaces and counted from Pacific midnight like the Places caps, as ceilings that `GEOCODE_DAILY_CAP` and `GEOCODE_MONTHLY_CAP` can lower but never raise. Every call is written to the ledger at list price ($0.005), inside the free tier too, as Places calls are.
 | Railway | $5 one-time trial for 30 days, then $1 a month | Hobby $5 a month, which includes $5 of usage. RAM $10 per GB-month, CPU $20 per vCPU-month | Card |
 
 Notes:

@@ -55,7 +55,7 @@ async function Members({ params }: { params: Props["params"] }) {
               <li key={invite.id} className="flex min-h-11 items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{invite.email}</p>
-                  <p className="text-sm text-muted">Expires {formatDateTime(invite.expiresAt)}</p>
+                  <p className="text-sm text-muted">Expires {formatDateTime(invite.expiresAt, workspace.timeZone)}</p>
                 </div>
                 <RoleBadge role={invite.role} />
               </li>

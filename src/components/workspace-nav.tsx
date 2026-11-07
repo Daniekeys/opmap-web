@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartNoAxesColumnDecreasing, FlaskConical, LayoutGrid, MessageCircle, Plus, Star, Users } from "lucide-react";
+import { ChartNoAxesColumnDecreasing, FlaskConical, LayoutGrid, MessageCircle, Plus, Settings, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { AuthedUser } from "@/lib/api-types/access";
@@ -68,6 +68,7 @@ function useLinks({ slug, isOwner, brandPending, messages }: NavData) {
     owner: isOwner
       ? [
           { href: `/w/${slug}/members`, label: "Members", icon: Users, active: is(`/w/${slug}/members`), note: "" },
+          { href: `/w/${slug}/settings`, label: "Settings", icon: Settings, active: is(`/w/${slug}/settings`), note: "" },
           { href: `/w/${slug}/test-job`, label: "Test job", icon: FlaskConical, active: is(`/w/${slug}/test-job`), note: "" },
         ]
       : [],

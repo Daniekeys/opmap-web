@@ -1,4 +1,5 @@
 "use client";
+import { useTimeZone } from "@/components/time-zone";
 
 import { AlertTriangle, ChevronDown, ExternalLink, MessageCircle, Phone, RotateCw } from "lucide-react";
 import Link from "next/link";
@@ -10,15 +11,17 @@ import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/api-types/leads";
 import type { LeadOutreachResponse } from "@/lib/api-types/outreach";
 import type { Claim, DatedCite, LeadResearchResponse, OpenLeadBody, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
-import { citeName, citeReadAt, readOn } from "@/lib/campaign-view";
+import { cardTitle, citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { categoryText, formatPhone, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { categoryText, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { useFormatPhone } from "@/components/phone-text";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
 import { hostOf, LeadContacts } from "../../lead-contacts";
 import { OFFER_GONE_ID, OfferGone, RefreshCards, type Rerun } from "./brand-dna-notice";
-import { CardDrafts, LikelyOnWhatsapp, OutcomePanel } from "./outreach-panel";
+import { CardDrafts, LikelyOnWhatsapp, OutcomePanel, NotThisBusiness } from "./outreach-panel";
+import { LegalFormBox } from "./legal-form-box";
 
 type Props = {
   workspaceId: string;
@@ -151,7 +154,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
 
   // The chosen card's offer isn't in the approved Brand DNA: the primary
   // action takes the user to the warning and its re-run button instead.
-  const chosenOfferGone = chosenCard ? !(outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.offerInBrandDna ?? chosenCard.offerInBrandDna) : false;
+  const chosenOfferGone = chosenCard && !chosenCard.mismatch ? !(outreach.cards.find((c) => c.opportunityId === chosenCard.id)?.offerInBrandDna ?? chosenCard.offerInBrandDna) : false;
 
   function fixOffer() {
     setTab("opportunity");
@@ -263,6 +266,8 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
               !researching && !failed && <Waiting />
             ))}
 
+          {tab === "messages" && outreach.legalForm && !suppressed && <LegalFormBox base={base} view={outreach.legalForm} onChange={reloadOutreach} />}
+
           {tab === "messages" &&
             (chosenCard ? (
               <section aria-label="Messages" className="flex flex-col gap-4">
@@ -281,7 +286,7 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                             c.id === chosenCard.id ? "border-primary bg-primary font-medium text-on-primary" : "border-control bg-surface hover:bg-raised",
                           )}
                         >
-                          <span className="truncate">{c.offer?.text ?? "Opportunity"}</span>
+                          <span className="truncate">{cardTitle(c)}</span>
                         </button>
                       ))}
                     </div>
@@ -382,6 +387,7 @@ function LeadHeader({
   suppressed: boolean;
   primary: React.ReactNode;
 }) {
+  const formatPhone = useFormatPhone();
   const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
   // The same send targets as the composer, so the two never disagree.
   const { whatsapp, call } = targets;
@@ -453,10 +459,11 @@ function Result({
   failedRefresh: boolean;
   listLead: Lead | null;
 }) {
+  const timeZone = useTimeZone();
   const others = result.cards.filter((c) => c.id !== chosen?.id);
   // The warning when this card's offer is gone; a quiet action when every
   // card still stands but the Brand DNA changed (or there is no card).
-  const quiet = rerun.allowed && result.cards.every((c) => c.offerInBrandDna);
+  const quiet = rerun.allowed && result.cards.every((c) => c.offerInBrandDna || c.mismatch);
   return (
     <section aria-label="Opportunities" className="flex flex-col gap-4">
       {result.stale && (
@@ -468,11 +475,13 @@ function Result({
         </div>
       )}
       {failedRefresh && <p className="text-sm text-negative-ink">The last refresh didn&apos;t finish. These are the cards from before it.</p>}
-      {chosen && !chosen.offerInBrandDna && <OfferGone slug={slug} rerun={rerun} />}
+      {chosen && !chosen.offerInBrandDna && !chosen.mismatch && <OfferGone slug={slug} rerun={rerun} />}
       {/* With cards, a re-run is only offered when the version changed. */}
       {quiet && <RefreshCards changed={result.cards.length > 0} rerun={rerun} />}
 
-      {chosen ? (
+      {chosen?.mismatch ? (
+        <NotThisBusiness />
+      ) : chosen ? (
         <article className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-muted">{rankText(chosen, result.cards.length)}</span>
@@ -503,7 +512,7 @@ function Result({
                   onClick={() => onChoose(c.id)}
                   className="flex min-h-11 items-center justify-between gap-3 py-2 text-left hover:text-accent-ink"
                 >
-                  <span className="min-w-0">{c.offer?.text ?? "Opportunity"}</span>
+                  <span className="min-w-0">{cardTitle(c)}</span>
                   <span className={cn("shrink-0 text-xs", (CONFIDENCE[c.confidence]?.word ?? "") === "High" ? "text-positive" : "text-warning-ink")}>
                     {CONFIDENCE[c.confidence]?.word ?? c.confidence}
                   </span>
@@ -517,7 +526,7 @@ function Result({
       )}
 
       {result.removed.length > 0 && <Removed removed={result.removed} />}
-      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt)}</p>}
+      {result.finishedAt && <p className="text-xs text-muted">Researched {formatDateTime(result.finishedAt, timeZone)}</p>}
     </section>
   );
 }
@@ -583,11 +592,12 @@ function ClaimBlock({ claim, readAt, lead, muted }: { claim: Claim; readAt: stri
 // opening to the quotes themselves. Sources read on the same day share one
 // date; approved facts have none.
 function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null }) {
+  const timeZone = useTimeZone();
   const [open, setOpen] = useState(false);
   if (claim.cites.length === 0) return null;
   const byDay = new Map<string, string[]>();
   for (const c of claim.cites) {
-    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt));
+    const day = c.kind === "fact" ? "" : readOn(citeReadAt(c, readAt), timeZone);
     const names = byDay.get(day) ?? [];
     if (!names.includes(citeName(c))) names.push(citeName(c));
     byDay.set(day, names);
@@ -619,6 +629,7 @@ function ClaimSource({ claim, readAt }: { claim: Claim; readAt: string | null })
 }
 
 function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) {
+  const timeZone = useTimeZone();
   if (cite.kind === "fact") {
     return (
       <>
@@ -632,7 +643,7 @@ function CiteView({ cite, readAt }: { cite: DatedCite; readAt: string | null }) 
     <>
       <span>{text}</span>
       <span className="text-xs text-muted">
-        {citeName(cite)}, {readOn(citeReadAt(cite, readAt))} ·{" "}
+        {citeName(cite)}, {readOn(citeReadAt(cite, readAt), timeZone)} ·{" "}
         <a href={cite.url} target="_blank" rel="noreferrer noopener" className={cn(linkClass, "inline-flex items-center gap-1 font-normal")}>
           {(cite.kind === "source" && cite.sourceType === "places") || /google\./.test(cite.url) ? "Open the listing" : hostOf(cite.url)} <ExternalLink className="size-3" aria-hidden />
         </a>
@@ -645,6 +656,7 @@ const PILL = { good: "bg-positive-soft text-positive-ink", fair: "bg-neutral-sof
 
 // WhatsApp, email and website at a glance, each with how sure we are.
 function ContactWell({ lead }: { lead: Lead }) {
+  const formatPhone = useFormatPhone();
   const { whatsapp, phone, email, website } = lead.contacts;
   const rows: { key: string; label: string; value: string; pill: { word: string; tone: string } }[] = [];
   const pill = (group: Parameters<typeof labelText>[0], label: string) => {

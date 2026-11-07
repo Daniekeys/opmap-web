@@ -2,6 +2,7 @@
 // each step's title and what it is doing, what a failure means, why the
 // search is paused, and what it has cost.
 import type { CampaignProgressResponse, PauseLimit, ProgressStep, ProgressStepKey, ProgressStepState } from "./api-types/leads";
+import { zoneName } from "./format";
 import { pausedUntil } from "./leads";
 
 // The banner while the server can't call Google (the API's GOOGLE_OFF, which
@@ -68,18 +69,18 @@ const PAUSE_TITLES: Record<PauseLimit, string> = {
 // Why the search is paused, from the API's pause state (the one Resume search
 // acts on): Google off is a setup problem with no time; a cap says which, when
 // it resets, and that nothing was charged past it.
-export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, now = new Date()) {
+export function pauseText(pause: NonNullable<Progress["pause"]>, p: Progress, dailyCalls: number | null, timeZone: string, now = new Date()) {
   if (pause.limit === "google_off") return { title: PAUSE_TITLES.google_off, body: GOOGLE_OFF };
   if (pause.limit === "google_back") {
     return { title: PAUSE_TITLES.google_back, body: "Google search is on again on this server. An owner can resume the search now. Nothing was charged." };
   }
   if (pause.lifted) {
-    const at = pause.resumeAt ? ` at ${pausedUntil(pause.resumeAt, now)} (Lagos time)` : "";
+    const at = pause.resumeAt ? ` at ${pausedUntil(pause.resumeAt, timeZone, now)} (${zoneName(timeZone)})` : "";
     const next = pause.autoResume ? "The search picks up again in a moment." : "An owner can resume the search now.";
     return { title: "Paused: the limit has lifted", body: `The limit reset${at}. ${next}` };
   }
   const { searches } = p.cost;
-  const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, now)} (Lagos time).` : "";
+  const resumes = pause.resumeAt ? `${pause.autoResume ? "Searching starts again" : "The limit resets"} ${pausedUntil(pause.resumeAt, timeZone, now)} (${zoneName(timeZone)}).` : "";
   const byHand = pause.autoResume ? "" : " The search doesn't restart on its own: an owner resumes it here once the limit has lifted.";
   const notCharged = "Google is never called past a limit, so nothing was charged past it.";
   // A search pauses once fewer are left than the next map tile needs (up to
