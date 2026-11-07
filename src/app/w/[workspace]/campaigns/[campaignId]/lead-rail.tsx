@@ -258,7 +258,7 @@ function LeadRow({ lead, href, stage, active }: { lead: Lead; href: string; stag
           <span className="truncate font-semibold">{lead.name}</span>
           <span className="shrink-0 lg:hidden">{right}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
           <TailoringBadge tailoring={lead.tailoring} />
           <ReadyBadge lead={lead} />
           <span className="truncate text-xs text-muted">{meta}</span>
