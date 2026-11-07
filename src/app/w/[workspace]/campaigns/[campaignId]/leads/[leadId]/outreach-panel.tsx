@@ -44,11 +44,11 @@ import {
   gmailHref,
   outcomeText,
   outlookHref,
-  showAnywayAllowed,
   sourceReadDates,
   STAGE_NAMES,
   STAGE_TONES,
   whatsappSendHref, channelChipTone } from "@/lib/outreach";
+import { copyPasteChip } from "@/lib/tailoring";
 import { cn } from "@/lib/utils";
 import { OfferGone, type Rerun } from "./brand-dna-notice";
 
@@ -199,13 +199,6 @@ function OfferLine({ text }: { text: string }) {
 }
 
 function Start({ blocked, slug, card, ask, onWrite }: { blocked: LeadOutreachResponse["blocked"]; slug: string; card: CardOutreach | undefined; ask: Ask; onWrite: () => void }) {
-  if (blocked === "no_target") {
-    return (
-      <Box icon={<Phone className="size-4" aria-hidden />} title="No checked contact to send to">
-        WhatsApp needs a WhatsApp link they published (or, in some countries, a mobile number), email must be on their own site, and a call needs a phone number. Check their details first.
-      </Box>
-    );
-  }
   if (blocked === "brand_not_usable") {
     return (
       <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Approve your Brand DNA first">
@@ -309,30 +302,18 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
   const outcome = useOutcomeTap(base, onChange);
   const target = outreach.targets[draft.channel];
   const status = outreach.channels[draft.channel];
-  // "Show draft anyway" on a channel with no target.
-  const [anyway, setAnyway] = useState(false);
 
-  // No send target: the chip and the reason first. The saved draft opens on
-  // request, for copying only (no compose link, no wa.me button).
-  if (!status.available && !anyway) {
-    return (
-      <div className="flex flex-col gap-2 rounded-card border border-border bg-surface px-4 py-4 text-sm sm:px-6">
-        <ChannelChip status={status} />
-        <p className="text-muted">{status.reason}</p>
-        {showAnywayAllowed(status) && (
-          <button type="button" className={cn(linkClass, "inline-flex min-h-11 items-center self-start text-sm sm:min-h-7")} onClick={() => setAnyway(true)}>
-            Show draft anyway
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // Every view of a tab starts with its chip; with no target, the reason too.
+  // Every tab shows its draft (2026-11-07). The chips are labels: the
+  // channel's own, and with nowhere to send, "Copy and paste, no ... found"
+  // (the Copy button is the way to send it).
   const statusRow = (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="flex flex-wrap items-center gap-2">
       <ChannelChip status={status} />
-      {!status.available && <span className="text-xs text-muted">{status.reason} Copy only: nothing opens from here.</span>}
+      {!status.available && (
+        <span title={status.reason ?? undefined} className="inline-flex items-center gap-1 rounded-full border border-control bg-surface px-2 text-xs/[22px] font-medium text-neutral-ink">
+          <Copy className="size-3" aria-hidden /> {copyPasteChip(draft.channel)}
+        </span>
+      )}
     </div>
   );
 
@@ -357,17 +338,15 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
     );
   }
 
-  if (draft.status !== "ready") {
-    const why = draft.removed.find((r) => r.text === "(whole draft)")?.reason.replace(/^not ready: /, "");
+  // Where the law asks for consent first (the UK, by legal form), only the
+  // call opener is shown; the legal form box above says how to change it.
+  if (draft.status !== "ready" && draft.body === "") {
     return (
       <div className="flex flex-col gap-2">
         {statusRow}
-        <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Draft not ready">
-          {why === "no what you offer passed the checks"
-            ? "We couldn't write a line about what you offer, because this card's offer isn't in your approved Brand DNA."
-            : `The checks removed too much of this message to send it${why ? `: ${why}` : "."} Use another channel, or write it yourself from the card above.`}
+        <Box icon={<ShieldAlert className="size-4" aria-hidden />} title="Call opener only for now">
+          This business must agree before anything but a call. Use the call opener, or confirm its legal form above.
         </Box>
-        <RemovedList removed={draft.removed} />
       </div>
     );
   }
@@ -471,6 +450,11 @@ function DraftView({ base, draft, dates, outreach, onChange }: { base: string; d
       </div>
 
       {problem && <p className="text-sm text-negative-ink">{problem}</p>}
+      {draft.fallback && (
+        <p className="text-sm text-muted">
+          Some lines didn&apos;t pass the checks, so this message was rebuilt from what is known for sure: the business&apos;s basics or the card&apos;s sourced gap, and your approved offer.
+        </p>
+      )}
       <RemovedList removed={draft.removed} />
 
       {/* Phone: send, copy and mark as sent in thumb reach. */}

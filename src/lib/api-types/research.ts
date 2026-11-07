@@ -31,6 +31,9 @@ export type OpportunityCard = {
   // It cites another business's pages: nothing of it is sent (offer, gap, why
   // and angle are empty); the screen says it doesn't match this business.
   mismatch: boolean;
+  // The general offer card: no specific gap was found, so it offers the
+  // best-fitting approved service and its gap reads "No specific gap found".
+  general: boolean;
 };
 
 export type RemovedClaim = { card: number; field: ClaimField; text: string; reason: string; by: "code" | "check" };

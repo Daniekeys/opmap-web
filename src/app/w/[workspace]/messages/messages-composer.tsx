@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { Rerun } from "@/app/w/[workspace]/campaigns/[campaignId]/leads/[leadId]/brand-dna-notice";
 import { CardDrafts, OutcomePanel } from "@/app/w/[workspace]/campaigns/[campaignId]/leads/[leadId]/outreach-panel";
 import { Avatar } from "@/components/avatar";
+import { TailoringBadge } from "@/components/tailoring-badge";
 import { ProgressPanel } from "@/components/progress-panel";
 import type { LeadOutreachResponse, MessageRow } from "@/lib/api-types/outreach";
 import type { OpenLeadBody, OpenLeadResponse, OpportunityCard } from "@/lib/api-types/research";
@@ -85,7 +86,10 @@ export function MessagesComposer({
       <div className="flex items-center gap-3">
         <Avatar name={row.name} seed={row.businessId} size="lg" />
         <div className="flex min-w-0 flex-col">
-          <h2 className="text-section font-semibold wrap-break-word">{row.name}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-section font-semibold wrap-break-word">{row.name}</h2>
+            <TailoringBadge tailoring={row.tailoring} size="md" />
+          </div>
           <Link href={leadHref} className="self-start text-sm font-medium text-accent-ink underline-offset-4 hover:text-accent hover:underline">
             Open the lead
           </Link>

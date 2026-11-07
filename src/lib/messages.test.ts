@@ -6,6 +6,7 @@ import { messagesFinding, rowLine, rowStatus } from "./messages";
 const NOW = new Date("2026-10-31T13:00:00Z");
 
 const row = (over: Partial<MessageRow> = {}): MessageRow => ({
+  tailoring: null,
   kind: "draft",
   leadId: "l1",
   campaignId: "c1",

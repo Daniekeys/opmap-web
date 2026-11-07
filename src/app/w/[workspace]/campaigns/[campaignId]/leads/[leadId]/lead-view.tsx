@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, ExternalLink, MessageCircle, Phone, RotateC
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { TailoringBadge } from "@/components/tailoring-badge";
 import { TileMark } from "@/components/logo";
 import { ProgressPanel } from "@/components/progress-panel";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import type { Claim, DatedCite, LeadResearchResponse, OpenLeadBody, OpenLeadResp
 import { cardTitle, citeName, citeReadAt, readOn } from "@/lib/campaign-view";
 import { formatDateTime } from "@/lib/format";
 import { goToLogin } from "@/lib/go-to-login";
-import { categoryText, labelText, telHref, whatsappHref } from "@/lib/leads";
+import { categoryText, labelText, telHref } from "@/lib/leads";
+import { TAILORING, whatsappChatHref } from "@/lib/tailoring";
 import { useFormatPhone } from "@/components/phone-text";
 import { STAGE_NAMES, STAGE_TONES } from "@/lib/outreach";
 import { cn } from "@/lib/utils";
@@ -185,7 +187,15 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
   return (
     <div className="flex flex-col gap-4 pb-28 sm:pb-0">
       <section aria-label={data.lead.name} className="flex flex-col sm:rounded-card sm:border sm:border-border sm:bg-surface">
-        <LeadHeader lead={data.lead} stage={outreach.stage} targets={outreach.targets} suppressed={suppressed} primary={primary} />
+        <LeadHeader
+          lead={data.lead}
+          stage={outreach.stage}
+          targets={outreach.targets}
+          suppressed={suppressed}
+          primary={primary}
+          tailoring={suppressed ? null : outreach.tailoring}
+          whatsappText={suppressed ? null : (outreach.cards[0]?.drafts.find((d) => d.channel === "whatsapp" && d.status === "ready" && d.offerInBrandDna && !d.mismatch)?.body ?? null)}
+        />
 
         <div role="tablist" aria-label="Lead" className="-mx-4 flex gap-6 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-6">
           {tabs.map((t) => (
@@ -271,6 +281,12 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
           {tab === "messages" &&
             (chosenCard ? (
               <section aria-label="Messages" className="flex flex-col gap-4">
+                {outreach.tailoring && !suppressed && (
+                  <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+                    <TailoringBadge tailoring={outreach.tailoring} size="md" />
+                    <span>{TAILORING[outreach.tailoring].title}</span>
+                  </p>
+                )}
                 {cards.length > 1 && (
                   <div className="flex flex-col gap-2">
                     <p className="text-xs text-muted">Written from</p>
@@ -305,9 +321,10 @@ export function LeadView({ workspaceId, slug, campaignId, initial, initialOutrea
                 />
               </section>
             ) : (
-              <EmptyState title="No messages yet">
-                Messages are written from an opportunity card, so every sentence has a source.{" "}
-                {data.result ? "This business has none to write from." : "They can be written once the research finishes."}
+              <EmptyState title="Messages come after the research">
+                {data.result
+                  ? "This business's messages are being prepared."
+                  : "Its four messages (WhatsApp, email, LinkedIn and a call opener) are written as soon as the research finishes."}
               </EmptyState>
             ))}
 
@@ -380,12 +397,17 @@ function LeadHeader({
   targets,
   suppressed,
   primary,
+  tailoring,
+  whatsappText,
 }: {
   lead: LeadResearchResponse["lead"];
   stage: LeadOutreachResponse["stage"];
   targets: LeadOutreachResponse["targets"];
   suppressed: boolean;
   primary: React.ReactNode;
+  tailoring: LeadOutreachResponse["tailoring"];
+  // The top card's ready WhatsApp draft: "Chat on WhatsApp" opens with it.
+  whatsappText: string | null;
 }) {
   const formatPhone = useFormatPhone();
   const website = lead.website && lead.website.label !== "dead" ? lead.website : null;
@@ -403,6 +425,7 @@ function LeadHeader({
             ) : (
               stage !== "new" && <span className={cn("rounded-full px-2 text-xs/[22px] font-medium", STAGE_TONES[stage])}>{STAGE_NAMES[stage]}</span>
             )}
+            <TailoringBadge tailoring={tailoring} size="md" />
           </div>
           <span className="text-sm text-muted">{describe(lead)}</span>
         </div>
@@ -416,7 +439,7 @@ function LeadHeader({
           <span className="hidden sm:contents">{primary}</span>
           {whatsapp && (
             <span className="inline-flex items-center gap-2">
-              <a href={whatsappHref(whatsapp.value)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
+              <a href={whatsappChatHref(whatsapp.value, whatsappText)} target="_blank" rel="noreferrer noopener" className={outlineLink}>
                 <MessageCircle className="size-4 text-muted" strokeWidth={1.75} aria-hidden /> Chat on WhatsApp
               </a>
               {whatsapp.label === "likely" && <LikelyOnWhatsapp />}
@@ -484,7 +507,7 @@ function Result({
       ) : chosen ? (
         <article className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-muted">{rankText(chosen, result.cards.length)}</span>
+            <span className="text-xs text-muted">{chosen.general ? "General offer" : rankText(chosen, result.cards.length)}</span>
             <Confidence card={chosen} />
           </div>
           <h3 className="text-section font-semibold wrap-break-word">{chosen.offer?.text ?? "Opportunity"}</h3>
@@ -493,13 +516,16 @@ function Result({
           {chosen.why.map((w) => (
             <ClaimBlock key={w.id} claim={w} readAt={result.finishedAt} />
           ))}
-          {chosen.angle ? (
+          {chosen.general ? (
+            // No specific gap: its messages say only the business's basics and your offer.
+            <p className="text-muted">Messages use the business&apos;s name, place and rating from Google Maps, and this offer from your approved Brand DNA.</p>
+          ) : chosen.angle ? (
             <ClaimBlock claim={chosen.angle} readAt={result.finishedAt} lead="Angle." muted />
           ) : (
             // A card stands on its offer and gap; its angle may have failed the check.
             <p className="text-muted">Angle. No opening line passed the check. Open with the gap above, in your own words.</p>
           )}
-          {chosen.confidenceReason && <p className="text-xs text-muted">{chosen.confidenceReason}</p>}
+          {chosen.confidenceReason && !chosen.general && <p className="text-xs text-muted">{chosen.confidenceReason}</p>}
 
           {listLead && <ContactWell lead={listLead} />}
 
@@ -543,6 +569,7 @@ const CONFIDENCE: Record<string, { word: string; tone: string }> = {
 };
 
 function Confidence({ card }: { card: OpportunityCard }) {
+  if (card.general) return <span className="shrink-0 rounded-full bg-neutral-soft px-2 text-xs/[22px] font-medium text-neutral-ink">No specific gap found</span>;
   const c = CONFIDENCE[card.confidence] ?? { word: card.confidence, tone: "bg-neutral-soft text-neutral-ink" };
   return <span className={cn("shrink-0 rounded-full px-2 text-xs/[22px] font-medium", c.tone)}>{c.word} confidence</span>;
 }

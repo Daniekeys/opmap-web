@@ -6,6 +6,7 @@ import { campaignContext, cardTitle, citeReadAt, contactNote, findingSentence, f
 const lead = (over: Omit<Partial<Lead>, "contacts"> & { score?: number | null; contacts?: Partial<Lead["contacts"]> } = {}): Lead => {
   const { score = 0.4, contacts, ...rest } = over;
   return {
+    tailoring: null,
     leadId: rest.leadId ?? "l",
     businessId: "b",
     name: "Mix n Bake",

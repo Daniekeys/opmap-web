@@ -20,6 +20,7 @@ import {
 } from "./leads";
 
 const lead = (contacts: Partial<Lead["contacts"]>): Lead => ({
+  tailoring: null,
   leadId: "l",
   businessId: "b",
   name: "Mix n Bake",

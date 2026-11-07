@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { TailoringBadge } from "@/components/tailoring-badge";
 import { TileMark } from "@/components/logo";
 import { PageLoading } from "@/components/page-loading";
 import { getLeadOutreach, getLeadResearch, getMessages, getWorkspace } from "@/lib/api";
@@ -89,7 +90,10 @@ function QueueRow({ row, href, timeZone, selected = false, className }: { row: M
       <Avatar name={row.name} seed={row.businessId} size="sm" />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-semibold">{row.name}</span>
-        <span className="truncate text-xs text-muted">{rowLine(row, timeZone)}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <TailoringBadge tailoring={row.tailoring} />
+          <span className="truncate text-xs text-muted">{rowLine(row, timeZone)}</span>
+        </span>
       </span>
       <span
         className={cn(
