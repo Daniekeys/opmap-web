@@ -4,7 +4,7 @@ import { PageLoading } from "@/components/page-loading";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getMe } from "@/lib/api";
 
-export default function Home() {
+export default function Start() {
   return (
     <Suspense fallback={<PageLoading />}>
       <FirstWorkspace />
@@ -12,8 +12,10 @@ export default function Home() {
   );
 }
 
-// Signed in: go to the first workspace, or, for the platform owner with none
-// yet, make one. Signed out: getMe() goes to login.
+// "/" for a visitor with a session cookie (src/proxy.ts rewrites it here; the
+// signed-out "/" is the landing page). Go to the first workspace, or, for the
+// platform owner with none yet, make one. An expired cookie: getMe() goes to
+// login.
 async function FirstWorkspace() {
   const { user, workspaces, canCreateWorkspaces } = await getMe();
   if (workspaces[0]) redirect(`/w/${workspaces[0].slug}`);
