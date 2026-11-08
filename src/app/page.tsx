@@ -5,6 +5,7 @@ import night from "../../design/photos/night.jpg";
 import street from "../../design/photos/street.jpg";
 import vendor from "../../design/photos/vendor.jpg";
 import { Container } from "@/components/container";
+import { HeroHeadline } from "@/components/landing/hero-headline";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { LeadsForm } from "@/components/landing/leads-form";
 import { RevealObserver } from "@/components/landing/reveal-observer";
@@ -110,24 +111,7 @@ function Hero() {
           {/* The size scales with the container, so the lines break the same
               at every width; fixing them keeps the fallback font (wider) from
               wrapping to four lines and shifting the hero when DM Sans loads. */}
-          <h1 className="lp-rise m-0 text-[clamp(40px,16.4cqw,256px)] leading-[0.92] font-bold tracking-[-0.05em] whitespace-nowrap">
-            Your next
-            <br />
-            client
-            <br />
-            is in{" "}
-            <span
-              role="img"
-              aria-label="a lit map tile with 14 bakeries"
-              className="lp-shutter inline-block h-[0.7em] w-[1.7em] overflow-hidden bg-accent align-baseline text-on-primary"
-            >
-              <span className="flex size-full flex-col justify-end px-[0.12em] py-[0.09em] text-[0.16em] leading-[1.15] font-semibold tracking-normal">
-                <span className="text-[2.4em] leading-none tabular-nums">14</span>
-                <span>bakeries</span>
-              </span>
-            </span>{" "}
-            Lekki.
-          </h1>
+          <HeroHeadline />
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-6">
