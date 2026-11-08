@@ -204,6 +204,9 @@
   }
   html {
     @apply font-sans;
+    /* The font carries the opsz axis for the landing page; app text keeps the
+       default instance. */
+    font-optical-sizing: none;
   }
   body {
     @apply bg-ground text-body text-ink;
