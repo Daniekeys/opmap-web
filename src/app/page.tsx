@@ -262,7 +262,11 @@ function Footer() {
             Segun Jana (Abeokuta at night).
           </span>
         </div>
-        <div aria-hidden className="-ml-[0.04em] translate-y-[28%] text-[22cqw] leading-[0.8] font-bold tracking-[-0.05em] whitespace-nowrap">
+        {/* "Opportunity Map" in DM Sans 700 at -0.05em tracking is about 7.04em
+            wide, so 14cqw spans about 99% of the container: edge to edge and
+            centred. Its descenders reach 1.04em below the line top (ascent 0.992,
+            line-height 1), so the bottom padding keeps them clear of the edge. */}
+        <div aria-hidden className="mt-16 pb-[0.12em] text-center text-[14cqw] leading-none font-bold tracking-[-0.05em] whitespace-nowrap">
           Opportunity Map
         </div>
       </Container>
