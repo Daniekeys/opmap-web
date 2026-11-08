@@ -5,7 +5,9 @@ import { CONTACT_EMAIL, leadsRequestMailto } from "@/lib/landing";
 
 // The closing sentence has a blank, and the blank is the form. Sending opens
 // the visitor's email app with a message to us; nothing is posted anywhere.
-// Without JavaScript the form's own mailto action still works.
+// No mailto action on the form itself: on https, browsers flag a mailto form
+// target as insecure. The address under the form covers anyone without
+// JavaScript.
 export function LeadsForm() {
   const [site, setSite] = useState("");
   const [opened, setOpened] = useState(false);
@@ -18,8 +20,7 @@ export function LeadsForm() {
   };
 
   return (
-    <form action={`mailto:${CONTACT_EMAIL}`} method="get" onSubmit={onSubmit} className="m-0">
-      <input type="hidden" name="subject" value="5 free leads request" />
+    <form onSubmit={onSubmit} className="m-0">
       <div className="text-[clamp(36px,8.8cqw,150px)] leading-[1.1] font-bold tracking-[-0.04em]">
         <h2 id="cta-h" className="m-0 sm:inline">
           Get five free leads for{" "}
@@ -29,7 +30,7 @@ export function LeadsForm() {
             <span className="sr-only">Your website or Instagram</span>
             <input
               type="text"
-              name="body"
+              name="site"
               required
               value={site}
               onChange={(e) => setSite(e.target.value)}
