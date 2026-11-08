@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import aerial from "../../../design/photos/aerial.jpg";
 import { SAMPLE_BAKERY } from "@/lib/landing";
 import { cn } from "@/lib/utils";
@@ -33,10 +33,30 @@ const STEPS = [
 // arrow keys, Home and End move between them, and each stage is a tabpanel.
 // All four panels sit in one grid cell so the card keeps its height and the
 // stages crossfade.
+//
+// The steps also advance on their own every 7 seconds. The active step's bar
+// (.lp-step-bar, 7s) drives it: when the bar finishes filling, the next step
+// shows, so the bar and the step can never drift apart. The bar pauses while
+// the pointer is over the section, while a keyboard user is in it and while
+// it is off screen. Under reduced motion there is no bar and no auto-advance.
 export function HowItWorks() {
   const [stage, setStage] = useState(0);
+  const [hover, setHover] = useState(false);
+  const [keyboard, setKeyboard] = useState(false);
+  const [onScreen, setOnScreen] = useState(false);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const root = useRef<HTMLDivElement>(null);
   const id = useId();
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const paused = hover || keyboard || !onScreen;
 
   const go = (next: number) => {
     const i = (next + STEPS.length) % STEPS.length;
@@ -61,7 +81,16 @@ export function HowItWorks() {
   const panels = [<Describe key={0} />, <Approve key={1} />, <Search key={2} />, <Send key={3} />];
 
   return (
-    <div className="flex min-h-[760px] flex-wrap">
+    <div
+      ref={root}
+      className={cn("flex min-h-[760px] flex-wrap", paused && "lp-paused")}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+      onFocus={(e) => setKeyboard(e.target.matches(":focus-visible"))}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setKeyboard(false);
+      }}
+    >
       <div className="flex flex-[1_1_520px] flex-col gap-12 bg-raised px-6 py-14">
         <h2 id="how-h" className="max-w-2xl text-[clamp(36px,4.6cqw,72px)] leading-none font-bold tracking-[-0.035em]">
           From your website to a sent message.
@@ -97,6 +126,15 @@ export function HowItWorks() {
                 <span className="flex max-w-xl flex-col gap-2.5">
                   <span className="text-[clamp(24px,2.6cqw,38px)] leading-[1.12] font-semibold tracking-[-0.02em]">{s.clause}</span>
                   {on && <span className="text-lg leading-7 text-muted">{s.detail}</span>}
+                  {on && (
+                    <span aria-hidden className="block h-0.5 w-full overflow-hidden bg-accent-track motion-reduce:hidden">
+                      <span
+                        key={stage}
+                        className="lp-step-bar block h-full origin-left bg-accent"
+                        onAnimationEnd={() => setStage((stage + 1) % STEPS.length)}
+                      />
+                    </span>
+                  )}
                 </span>
               </button>
             );

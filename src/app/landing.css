@@ -43,6 +43,14 @@
   from { opacity: 0.01; transform: translateY(24px); }
   to { opacity: 1; transform: none; }
 }
+@keyframes lp-place {
+  from { opacity: 0; transform: translateY(0.22em); filter: blur(0.06em); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes lp-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
 @keyframes lp-lit {
   0%, 22% { color: var(--ink); }
   30%, 100% { color: var(--muted); }
@@ -66,6 +74,26 @@
   }
   .lp-rise {
     animation: lp-rise-hero 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  /* Every 3 seconds (HeroHeadline) the tile shutters open on the next place,
+     faster than the first time, and the place rises in just behind it. */
+  .lp-swap {
+    animation: lp-shutter 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .lp-swap > span {
+    animation: lp-settle 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .lp-place {
+    animation: lp-place 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.08s both;
+  }
+
+  /* How it works: the active step's bar fills over the 7 seconds it shows,
+     and holds while the section is paused. */
+  .lp-step-bar {
+    animation: lp-fill 7s linear both;
+  }
+  .lp-paused .lp-step-bar {
+    animation-play-state: paused;
   }
 
   .lp-src {
