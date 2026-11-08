@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { SignOutButton } from "@/components/sign-out-button";
-import { getMe } from "@/lib/api";
+import { getMeOrNull } from "@/lib/api";
+import { homeFor } from "@/lib/session";
 
 export default function Start() {
   return (
@@ -12,14 +13,15 @@ export default function Start() {
   );
 }
 
-// "/" for a visitor with a session cookie (src/proxy.ts rewrites it here; the
-// signed-out "/" is the landing page). Go to the first workspace, or, for the
-// platform owner with none yet, make one. An expired cookie: getMe() goes to
-// login.
+// Reached only with a valid session and no workspace to go to: src/proxy.ts
+// sends everyone else on (decideEntry). Checked again here in case the session
+// ended in between: no session goes to the landing page, never /login.
 async function FirstWorkspace() {
-  const { user, workspaces, canCreateWorkspaces } = await getMe();
-  if (workspaces[0]) redirect(`/w/${workspaces[0].slug}`);
-  if (canCreateWorkspaces) redirect("/workspaces/new");
+  const me = await getMeOrNull();
+  if (!me) redirect("/");
+  const home = homeFor(me);
+  if (home) redirect(home);
+  const { user } = me;
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-4 py-10">
