@@ -11,12 +11,17 @@ import { RevealObserver } from "@/components/landing/reveal-observer";
 import { TrySearch } from "@/components/landing/try-search";
 import { Logo } from "@/components/logo";
 import { CONTACT_EMAIL, SAMPLE_BAKERY, STOP_CONTACT_MAILTO } from "@/lib/landing";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 import "./landing.css";
 
+// Title, description and share preview (the image is app/opengraph-image.tsx
+// and app/twitter-image.tsx).
 export const metadata: Metadata = {
-  title: "Opportunity Map: your next client, street by street",
-  description:
-    "Opportunity Map searches your city tile by tile, finds the local businesses most likely to buy what you sell, shows what to offer each one with proof, and writes the WhatsApp message for you.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", url: "/", siteName: "Opportunity Map", title: SITE_TITLE, description: SITE_DESCRIPTION },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 };
 
 // The public landing page (design/screens/Landing.dc.html) for signed-out
@@ -75,24 +80,30 @@ function Hero() {
   return (
     <header id="top" className="flex min-h-svh flex-col pt-6 pb-8 md:min-h-[900px]">
       <Container className="flex flex-1 flex-col @container">
-        <nav aria-label="Main" className="flex items-center justify-between gap-4">
-          <a href="#top" className={linkClass}>
-            <Logo />
+        {/* Phone: logo, Sign in and the CTA on one line (fits at 380; below
+            380 the wordmark is for screen readers only, the tile mark stays). From
+            768px: the three section links and Sign in. */}
+        <nav aria-label="Main" className="flex items-center justify-between gap-2 md:gap-4">
+          <a href="#top" className={`${linkClass} whitespace-nowrap`}>
+            <Logo className="gap-2 md:gap-2.5 max-md:[&>span:last-child]:text-[15px] max-[379px]:[&>span:last-child]:sr-only" />
           </a>
-          <div className="hidden flex-wrap items-center gap-7 text-[15px] md:flex">
-            <a href="#how" className={linkClass}>
+          <div className="flex flex-none items-center gap-2.5 text-[15px] md:gap-7">
+            <a href="#how" className={`${linkClass} hidden md:inline`}>
               How it works
             </a>
-            <a href="#try" className={linkClass}>
+            <a href="#try" className={`${linkClass} hidden md:inline`}>
               Try a search
             </a>
-            <a href="#sources" className={linkClass}>
+            <a href="#sources" className={`${linkClass} hidden md:inline`}>
               Where the facts come from
             </a>
+            <Link href="/login" className={`${linkClass} text-sm md:text-[15px]`}>
+              Sign in
+            </Link>
+            <a href="#sample" className="lp-btn inline-flex h-10 items-center bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-on-primary hover:bg-primary/85 md:hidden">
+              Get 5 free leads
+            </a>
           </div>
-          <a href="#sample" className="lp-btn inline-flex h-10 items-center bg-primary px-4 text-[15px] font-semibold text-on-primary hover:bg-primary/85 md:hidden">
-            Get 5 free leads
-          </a>
         </nav>
 
         <div className="flex flex-1 flex-col justify-center py-16">

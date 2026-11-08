@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // The one family (design/brand-book.md), as a variable font: 400 to 700, with
@@ -13,6 +14,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  // Absolute URLs for share images, canonical links and the sitemap.
+  metadataBase: new URL(SITE_URL),
   title: "Opportunity Map",
   description: "Find and research leads for Daniekeys Studios and Afriment.",
 };
