@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
+import { Logo } from "@/components/logo";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in - Opportunity Map" };
@@ -7,8 +9,11 @@ export const metadata: Metadata = { title: "Sign in - Opportunity Map" };
 export default function LoginPage() {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-muted">Opportunity Map</p>
+      <div className="flex flex-col gap-4">
+        {/* Home is the landing page for anyone signed out (src/proxy.ts). */}
+        <Link href="/" className="self-start hover:text-accent-ink">
+          <Logo />
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
       </div>
       {/* The form reads ?next= from the URL, which is only known at request time. */}
@@ -18,6 +23,9 @@ export default function LoginPage() {
       <p className="text-sm text-muted">
         Access is by invite only. Ask a workspace owner for an invite link.
       </p>
+      <Link href="/" className="self-start text-sm text-ink underline underline-offset-3 hover:text-accent-ink">
+        Back to home
+      </Link>
     </main>
   );
 }
