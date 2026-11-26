@@ -3,6 +3,7 @@ import { type ReactNode, Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ClaudeAlertBanner } from "@/components/claude-alert-banner";
 import { Logo } from "@/components/logo";
+import { ReloadOnRestore } from "@/components/reload-on-restore";
 import { TimeZoneProvider } from "@/components/time-zone";
 import { MenuNav, type NavData, SidebarNav } from "@/components/workspace-nav";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
@@ -18,6 +19,7 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/w/[w
   // streams in too, behind a frame of the same shape.
   return (
     <Suspense fallback={<ShellLoading />}>
+      <ReloadOnRestore />
       <AppShell
         sidebar={
           <>

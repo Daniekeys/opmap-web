@@ -44,6 +44,16 @@ async function requestIdOf(res: Response) {
 // within one request (the shell and the page both ask); it does not persist.
 export const getMe = cache(() => apiGet<MeResponse>("/api/me"));
 
+// For /start only: the same /api/me, but no session is null instead of a
+// redirect to /login, so /start can send the visitor to the landing page.
+export async function getMeOrNull(): Promise<MeResponse | null> {
+  const cookie = (await cookies()).toString();
+  const res = await fetch(`${process.env.API_URL}/api/me`, { headers: { cookie }, cache: "no-store" }).catch(() => null);
+  if (!res || res.status === 401) return null;
+  if (!res.ok) throw apiFailure(res.status, "/api/me", await requestIdOf(res));
+  return res.json();
+}
+
 // The active workspace is the slug in the URL. A slug the user is not a member
 // of answers 404, the same as the API does.
 export async function getWorkspace(slug: string) {
