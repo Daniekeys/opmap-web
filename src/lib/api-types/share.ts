@@ -18,9 +18,13 @@ export type ShareStatusResponse = {
   optedOut: number;
   toPrepare: number;
   prepareCostUsd: { typical: number; max: number };
+  // Leads whose messages an older writer or Brand DNA version wrote, and
+  // what rewriting them costs (POST .../share/rewrite).
+  stale: number;
+  rewriteCostUsd: { typical: number; max: number };
 };
 
-// POST .../campaigns/:campaignId/share/prepare (owner).
+// POST .../campaigns/:campaignId/share/prepare and .../share/rewrite (owner).
 export type PrepareShareResponse = { started: number; running: number; done: number; limit: string | null };
 
 // GET .../shares (owner).

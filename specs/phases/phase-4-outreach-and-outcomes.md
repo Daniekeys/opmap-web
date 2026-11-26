@@ -23,6 +23,8 @@ Build:
 
 - Added 2026-11-26: messages follow the owner's selling pattern (drafts.v3, draft-check.v3), signed by a person ("Sign messages as" on Settings), and general offer cards are written by Claude from the business's own listing.
 
+- Added 2026-11-26: "Rewrite messages" in the Share panel rewrites, in the background, messages an older writer or Brand DNA version wrote.
+
 Done when:
 - Drafts for 10 real leads pass a manual check: no claim without a source, no wrong company or person, opt-out on every email.
 - Four drafts cost under $0.05 per opportunity and take under 1 minute.

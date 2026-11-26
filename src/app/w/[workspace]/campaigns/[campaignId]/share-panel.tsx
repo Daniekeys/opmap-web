@@ -20,6 +20,7 @@ export function SharePanel({ workspaceId, campaignId, initial }: { workspaceId: 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prepared, setPrepared] = useState<PrepareShareResponse | null>(null);
+  const [rewritten, setRewritten] = useState<PrepareShareResponse | null>(null);
   const [allowDownloads, setAllowDownloads] = useState(false);
   const base = `/api/w/${workspaceId}/campaigns/${campaignId}`;
 
@@ -88,6 +89,34 @@ export function SharePanel({ workspaceId, campaignId, initial }: { workspaceId: 
                 {busy === "prepare" ? "Starting" : `Write messages for ${status.toPrepare} ${status.toPrepare === 1 ? "lead" : "leads"}`}
               </Button>
             </div>
+          )}
+          {status.stale > 0 && !rewritten && (
+            <div className="flex flex-col gap-2 rounded-control bg-raised px-3 py-3 text-sm">
+              <p>
+                {status.stale} {status.stale === 1 ? "lead's messages were" : "leads' messages were"} written before your latest Brand DNA or message writer. Rewrite{" "}
+                {status.stale === 1 ? "it" : "them"}: about {formatUsd(status.rewriteCostUsd.typical)}, at most {formatUsd(status.rewriteCostUsd.max)}. Each one is rewritten in the
+                background, and the link shows the new messages as they finish.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 self-start sm:h-9"
+                disabled={busy !== null}
+                onClick={async () => {
+                  const result: PrepareShareResponse | null = await call("rewrite", "POST", "/share/rewrite");
+                  if (result) setRewritten(result);
+                }}
+              >
+                {busy === "rewrite" ? "Starting" : `Rewrite messages for ${status.stale} ${status.stale === 1 ? "lead" : "leads"}`}
+              </Button>
+            </div>
+          )}
+          {rewritten && (
+            <p role="status" className="rounded-control bg-raised px-3 py-2 text-sm">
+              {rewritten.started > 0 ? `Rewriting ${rewritten.started}. ` : ""}
+              {rewritten.running > 0 ? `${rewritten.running} already being written. ` : ""}
+              {rewritten.limit ? `Stopped: ${rewritten.limit} ` : "Reload this page in a few minutes to see the new messages."}
+            </p>
           )}
           {prepared && (
             <p role="status" className="rounded-control bg-raised px-3 py-2 text-sm">
