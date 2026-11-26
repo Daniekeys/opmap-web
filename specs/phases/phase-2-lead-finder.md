@@ -24,6 +24,7 @@ Build:
 - Added 2026-11-06 (Part D7): estimate `largeAreas` (places past 40 tiles, with the places under them) and `overMonth`; the confirm button refuses a search over this month's remaining Google searches (`over_monthly_cap`), and a first search checks again after mapping its places. London's boroughs seeded (seed-data/gb-london.json).
 - Added 2026-11-06 (Part D3): `/campaigns/new` prefills the places from the approved Brand DNA's location facts (`GET /campaigns/suggested-places`, no Google call), with a note naming the fact; a buyer segment's suggested places load as full rows (`GET /geo-areas?ids=`). The user can pick any other place.
 - Added 2026-11-27 (near a place, step 1): the Google Maps lookup accepts a landmark, business or exact address as a `point` under its town, named by Google's landmark component or as typed. Fake-provider tests cover the Eiffel Tower and Ikeja City Mall. No migration.
+- Added 2026-11-27 (near a place, step 2): a campaign's distance around a landmark, `pointRadiusKm` (1 to 5 km, default 2; migration 0032), in its search settings: set at creation, edited, and previewed in the estimate.
 - Leads table: name, category, city, rating and reviews, best phone, email and WhatsApp with their labels, fit, and a "Researched / Not yet" status so people know what opening a lead will do. On phones the table becomes stacked cards.
 
 Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap, and a manual check of 20 rows finds the contact labels honest.
