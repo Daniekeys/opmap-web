@@ -26,6 +26,7 @@ Build:
 - Added 2026-11-27 (near a place, step 1): the Google Maps lookup accepts a landmark, business or exact address as a `point` under its town, named by Google's landmark component or as typed. Fake-provider tests cover the Eiffel Tower and Ikeja City Mall. No migration.
 - Added 2026-11-27 (near a place, step 2): a campaign's distance around a landmark, `pointRadiusKm` (1 to 5 km, default 2; migration 0032), in its search settings: set at creation, edited, and previewed in the estimate.
 - Added 2026-11-26 (near a place, step 3): a `point` is searched as a circle of the campaign's distance around it (tiles the circle reaches, ring 0 holds the landmark), with no neighbourhood extras; when a full tile splits, quarters outside the area's boundary are skipped at every level (`tilesOutside` in the run output).
+- Added 2026-11-26 (near a place, step 4): a landmark campaign fit-checks, and counts toward its leads wanted, only businesses with an exact location within its distance; pinned and farther ones stay stored but are not candidates.
 - Leads table: name, category, city, rating and reviews, best phone, email and WhatsApp with their labels, fit, and a "Researched / Not yet" status so people know what opening a lead will do. On phones the table becomes stacked cards.
 
 Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap, and a manual check of 20 rows finds the contact labels honest.
