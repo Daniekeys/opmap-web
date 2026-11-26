@@ -217,7 +217,7 @@ contact_points is owned by the research module because it references sources. Th
 
 ## Location
 
-Location is a ladder from region down to neighbourhood. The user picks any level, and the tool always breaks it down to small map tiles before calling Google, because one Places search returns at most 60 results.
+Location is a ladder from region down to neighbourhood, and a landmark or business to search around (Near a place, below). The user picks any level, and the tool always breaks it down to small map tiles before calling Google, because one Places search returns at most 60 results.
 
 > Diagram: [reference/diagrams/location-ladder-and-tile-search.png](../reference/diagrams/location-ladder-and-tile-search.png)
 
@@ -235,6 +235,7 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 
 | Level | Example | How it runs |
 | --- | --- | --- |
+| Near a place | Eiffel Tower, Ikeja City Mall | A circle of the campaign's distance (1 to 5 km) around it: the tiles it reaches, and only businesses inside it become leads |
 | Neighbourhood | Tanke, GRA | One or a few tiles |
 | City | Ilorin | The whole city tiled |
 | State | Kwara | Towns ranked by size (Ilorin, Offa, Omu-Aran, Jebba) and run in that order |
