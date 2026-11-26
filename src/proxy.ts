@@ -35,11 +35,12 @@ export async function proxy(request: NextRequest) {
   return NextResponse.redirect(login);
 }
 
-// Every app route except the ones opened signed out: login, invite links, the
-// privacy page, sign out, and the files crawlers and link previews fetch.
+// Every app route except the ones opened signed out: login, invite links,
+// shared campaign links, the privacy page, sign out, and the files crawlers
+// and link previews fetch.
 // /api/* is forwarded to opmap-api, which does its own session check.
 export const config = {
   matcher: [
-    "/((?!api/|login$|privacy$|invite/|auth/sign-out$|robots\\.txt$|sitemap\\.xml$|icon|apple-icon|opengraph-image|twitter-image|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/|login$|privacy$|invite/|share/|auth/sign-out$|robots\\.txt$|sitemap\\.xml$|icon|apple-icon|opengraph-image|twitter-image|_next/static|_next/image|favicon.ico).*)",
   ],
 };
