@@ -10,10 +10,12 @@ export type Channel = "whatsapp" | "email" | "linkedin" | "call";
 export type DraftCite = Exclude<Cite, { kind: "source" }> | (Omit<Extract<Cite, { kind: "source" }>, "quote"> & { quote: string | null });
 
 export type DraftLine = {
-  kind: "greeting" | "intro" | "claim" | "ask" | "signoff" | "optout";
+  kind: "greeting" | "intro" | "claim" | "aside" | "ask" | "signoff" | "optout";
   text: string;
   cites: DraftCite[];
   span: string | null;
+  // Starts a paragraph of the body (drafts.v3); absent on older drafts.
+  newParagraph?: boolean;
 };
 
 export type RemovedSentence = { channel: Channel; text: string; reason: string; by: "code" | "check" };

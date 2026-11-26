@@ -33,18 +33,19 @@ describe("workspace time zone", () => {
   const NG = { code: "NG", name: "Nigeria", timeZones: ["Africa/Lagos"] };
   const GB = { code: "GB", name: "United Kingdom", timeZones: ["Europe/London"] };
   const fallback = { timeZone: "Africa/Lagos", country: "Nigeria" };
+  const signAs = { name: null, saved: null, default: null };
 
   it("says Nigeria is the default until an owner picks a zone", () => {
-    expect(defaultText({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG })).toBe(
+    expect(defaultText({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG, signAs })).toBe(
       "No zone has been chosen, so the workspace uses Nigeria and Africa/Lagos, the default.",
     );
   });
 
   it("describes the zone in use: the saved one after a save, not the default", () => {
-    expect(zoneDescription({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG })).toBe(
+    expect(zoneDescription({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG, signAs })).toBe(
       "Every time in this workspace (searches, pauses, replies) shows in Africa/Lagos. No zone has been chosen, so the workspace uses Nigeria and Africa/Lagos, the default.",
     );
-    const london = zoneDescription({ timeZone: "Europe/London", saved: "Europe/London", default: fallback, country: GB });
+    const london = zoneDescription({ timeZone: "Europe/London", saved: "Europe/London", default: fallback, country: GB, signAs });
     expect(london).toBe(
       'Every time in this workspace (searches, pauses, replies) shows in Europe/London. An owner chose it. Pick "Default: Nigeria" to go back to Africa/Lagos.',
     );
@@ -52,12 +53,12 @@ describe("workspace time zone", () => {
 
   it("lists the workspace country's zones first, then every other zone once", () => {
     const all = ["Africa/Accra", "Africa/Lagos", "America/Chicago", "Europe/London", "UTC"];
-    expect(zoneGroups({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG }, all)).toEqual([
+    expect(zoneGroups({ timeZone: "Africa/Lagos", saved: null, default: fallback, country: NG, signAs }, all)).toEqual([
       { label: "In Nigeria", zones: ["Africa/Lagos"] },
       { label: "All other time zones", zones: ["Africa/Accra", "America/Chicago", "Europe/London", "UTC"] },
     ]);
     // A saved zone of no one country stays at the top.
-    expect(zoneGroups({ timeZone: "UTC", saved: "UTC", default: fallback, country: NG }, all).map((g) => [g.label, g.zones.length])).toEqual([
+    expect(zoneGroups({ timeZone: "UTC", saved: "UTC", default: fallback, country: NG, signAs }, all).map((g) => [g.label, g.zones.length])).toEqual([
       ["Saved", 1],
       ["In Nigeria", 1],
       ["All other time zones", 3],

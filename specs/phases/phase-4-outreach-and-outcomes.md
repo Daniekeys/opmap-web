@@ -19,6 +19,10 @@ Build:
 
 - Added 2026-11-26 (sharing a campaign): a public read-only link per campaign (owner-only, revocable, downloads optional), prepare-for-sharing in the background lane, .md and .xlsx downloads, and the Shared campaigns page (migration 0033).
 
+- Added 2026-11-26: the general offer card pitches the campaign's "What to pitch first" when it names an approved service; older general cards are rewritten and redrafted for free.
+
+- Added 2026-11-26: messages follow the owner's selling pattern (drafts.v3, draft-check.v3), signed by a person ("Sign messages as" on Settings), and general offer cards are written by Claude from the business's own listing.
+
 Done when:
 - Drafts for 10 real leads pass a manual check: no claim without a source, no wrong company or person, opt-out on every email.
 - Four drafts cost under $0.05 per opportunity and take under 1 minute.

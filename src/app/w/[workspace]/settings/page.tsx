@@ -1,12 +1,14 @@
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getWorkspace, getWorkspaceSettings } from "@/lib/api";
+import { SignAsForm } from "./sign-as-form";
 import { TimeZoneForm } from "./time-zone-form";
 
 type Props = PageProps<"/w/[workspace]/settings">;
 
-// Workspace settings: the time zone every time in the app is shown in
-// (spec, Location > Beyond Nigeria). Owners change it; members see it.
+// Workspace settings: who signs the messages (spec, Core pipelines > 4) and
+// the time zone every time in the app is shown in (spec, Location > Beyond
+// Nigeria). Owners change them; members see them.
 export default function SettingsPage({ params }: Props) {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -24,6 +26,7 @@ async function Settings({ params }: { params: Props["params"] }) {
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted wrap-break-word">How {workspace.name} works.</p>
       </div>
+      <SignAsForm key={`sign:${workspace.id}`} workspaceId={workspace.id} settings={settings} canEdit={workspace.role === "owner"} />
       <TimeZoneForm key={workspace.id} workspaceId={workspace.id} settings={settings} canEdit={workspace.role === "owner"} />
     </>
   );
