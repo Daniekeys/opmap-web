@@ -29,6 +29,7 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Sharing a campaign 2026-11-26 on branch `campaign-share`: public read-only links (migration 0033), prepare for sharing, .md and Excel downloads, the Shared campaigns page.
 - General card pitch 2026-11-26 on branch `general-card-pitch`: the general offer card pitches the campaign's "What to pitch first"; older general cards are rewritten and redrafted at no cost.
 - Messages v3 2026-11-26 on branch `general-card-pitch`: the owner's selling pattern (drafts.v3, draft-check.v3), "Sign messages as", general cards written by Claude. Eval: eval/reports/drafts-drafts-v3-entourage-2026-11-26T15-35-38 (10 local leads, test-only positioning and guarantee facts). Before using it live, add the positioning line and the guarantee as Brand DNA facts.
+- Rewrite messages 2026-11-26 on branch `rewrite-messages`: the Share panel counts leads whose messages an older writer or Brand DNA version wrote and rewrites them in the background (about $0.04 a lead).
 
 ## Clones to re-clone
 
