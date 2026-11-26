@@ -228,8 +228,10 @@ Dense tiles keep splitting until each search returns fewer than 60 results; thin
 1. Get the chosen place's boundary from the Geocoding API and cache it.
 2. Cut it into a grid of tiles about 4 km across, and keep only tiles that overlap the boundary circle or polygon. Dense tiles split under step 4, so the starting size only sets the cost of thin outskirts.
 3. Run each query with the search restricted to that tile's rectangle, paging up to 60 results.
-4. A tile that returns 60 splits into 4 and is searched again; a tile that returns fewer is done. Tiles stop splitting at about 250 m.
-5. AI neighbourhood queries such as "cake shop Tanke Ilorin" run on top as extras, never as the only coverage, since the names can be wrong or patchy.
+4. A tile that returns 60 splits into 4 and is searched again; a tile that returns fewer is done. Only the quarters that still overlap the boundary are searched (2026-11-26); the others are counted as `tilesOutside` in the run output. Tiles stop splitting at about 250 m.
+5. AI neighbourhood queries such as "cake shop Tanke Ilorin" run on top as extras, never as the only coverage, since the names can be wrong or patchy. Only a city gets them; a landmark doesn't.
+
+**Near a place.** A `point` (a landmark, business or exact address) is searched as a circle of the campaign's distance around it (1 to 5 km, default 2), centred on Google's point for it; Google's own viewport for the landmark is ignored. The tiles are the usual grid: ring 0 is the tile holding the landmark, and only tiles the circle reaches are searched, in rings outward. The estimate counts the same tiles, from the distance being typed.
 
 | Level | Example | How it runs |
 | --- | --- | --- |
