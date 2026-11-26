@@ -17,6 +17,8 @@ Build:
 - Eval: `npm run eval:deepdive -- drafts` writes and checks the four drafts for the first card of each eval lead with cards and reports cost and time per lead.
 - Mobile first: 380 px first, copy, WhatsApp and outcome buttons at least 44 px tall.
 
+- Added 2026-11-26 (sharing a campaign): a public read-only link per campaign (owner-only, revocable, downloads optional), prepare-for-sharing in the background lane, .md and .xlsx downloads, and the Shared campaigns page (migration 0033).
+
 Done when:
 - Drafts for 10 real leads pass a manual check: no claim without a source, no wrong company or person, opt-out on every email.
 - Four drafts cost under $0.05 per opportunity and take under 1 minute.

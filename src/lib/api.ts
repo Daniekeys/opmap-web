@@ -11,6 +11,7 @@ import type { PipelineRunsResponse } from "./api-types/pipeline";
 import type { PipelineResponse } from "./api-types/outcomes";
 import type { LeadOutreachResponse, MessagesResponse } from "./api-types/outreach";
 import type { LeadResearchResponse } from "./api-types/research";
+import type { SharedCampaignResponse, SharesResponse, ShareStatusResponse } from "./api-types/share";
 
 // Every read goes to opmap-api with the caller's own cookie. Nothing here uses
 // `use cache`, so nothing is stored on the server or shared between users.
@@ -128,3 +129,19 @@ export const getMessages = cache((workspaceId: string) => apiGet<MessagesRespons
 
 // The campaign's leads by stage.
 export const getPipeline = cache((workspaceId: string, campaignId: string) => apiGet<PipelineResponse>(`${campaignPath(workspaceId, campaignId)}/pipeline`));
+
+// The campaign's share link and how ready its leads are. Owners only (403 to a member).
+export const getShareStatus = (workspaceId: string, campaignId: string) => apiGet<ShareStatusResponse>(`${campaignPath(workspaceId, campaignId)}/share`);
+
+// Every link the workspace made. Owners only.
+export const getShares = (workspaceId: string) => apiGet<SharesResponse>(`/api/w/${workspaceId}/shares`);
+
+// For the shared page, opened by anyone with the link: no cookie is sent, and
+// a link that doesn't work (never was, or turned off) is a state to show.
+export async function getSharedCampaign(token: string): Promise<SharedCampaignResponse | null> {
+  const res = await fetch(`${process.env.API_URL}/api/share/${encodeURIComponent(token)}`, { cache: "no-store" });
+  if (res.ok) return res.json();
+  if (res.status === 404) return null;
+  throw new Error(`API answered ${res.status} for the shared campaign`);
+}
+

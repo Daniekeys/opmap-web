@@ -3,7 +3,7 @@ import { Fragment, Suspense } from "react";
 import { Container } from "@/components/container";
 import { TileMark } from "@/components/logo";
 import { PageLoading } from "@/components/page-loading";
-import { getCampaign, getCampaignEstimate, getCampaignLeads, getCampaignProgress, getWorkspace } from "@/lib/api";
+import { getCampaign, getCampaignEstimate, getCampaignLeads, getCampaignProgress, getShareStatus, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
 import { TARGET_KINDS } from "@/lib/leads";
 import { hasLandmark } from "@/lib/place-lookup";
@@ -12,13 +12,15 @@ import { CampaignProgress } from "./campaign-progress";
 import { ConfirmPanel } from "./confirm-panel";
 import { EditCampaign } from "./edit-campaign";
 import { Possibles } from "./possibles";
+import { SharePanel } from "./share-panel";
 
 type Props = PageProps<"/w/[workspace]/campaigns/[campaignId]">;
 
 // One campaign, beside its list of leads (the layout): where its search
 // stands (with Stop search while it runs or waits), the confirm button with
 // its cost and settings while it is a draft or stopped, the edit panel
-// whenever it is not searching, and the businesses it was unsure about.
+// whenever it is not searching, sharing and downloads once it has leads, and
+// the businesses it was unsure about.
 export default function CampaignPage({ params }: Props) {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -37,9 +39,12 @@ async function CampaignView({ params }: { params: Props["params"] }) {
   const startable = campaign.status === "draft" || campaign.status === "failed" || campaign.status === "stopped";
   const editable = startable || campaign.status === "paused";
   const isOwner = workspace.role === "owner";
-  const [estimate, progress] = await Promise.all([
+  // Sharing once it has leads; the link's state is an owner's to see.
+  const shareable = campaign.status !== "draft" && leads.length > 0;
+  const [estimate, progress, share] = await Promise.all([
     startable ? getCampaignEstimate(workspace.id, campaignId) : null,
     campaign.status !== "draft" ? getCampaignProgress(workspace.id, campaignId) : null,
+    shareable && isOwner ? getShareStatus(workspace.id, campaignId) : null,
   ]);
   const kind = TARGET_KINDS.find((t) => t.kind === campaign.targetKind);
   // While it searches or waits, its progress comes first; after, the pick hint.
@@ -81,6 +86,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
       </Container>
 
       {!searching && progressView}
+      {shareable && <SharePanel key={share?.share?.id ?? "none"} workspaceId={workspace.id} campaignId={campaign.id} initial={share} />}
       <SearchSummary campaign={campaign} />
       <NameWordsPanel campaign={campaign} />
       {campaign.status !== "draft" && <Possibles workspaceId={workspace.id} campaignId={campaign.id} count={possibleCount} />}
