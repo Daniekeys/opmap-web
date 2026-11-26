@@ -28,7 +28,7 @@ import { offerLookup } from "@/lib/place-lookup";
 import { parseSearchTerms, ratingOptions } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
-const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", region: "Region", city: "City", neighbourhood: "Area" };
+const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", region: "Region", city: "City", neighbourhood: "Area", point: "Place" };
 
 const areaLabel = (a: GeoArea) => (a.parentName ? `${a.name}, ${a.parentName}` : a.name);
 

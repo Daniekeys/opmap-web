@@ -6,7 +6,7 @@ export type TargetKind = "local_business" | "b2b" | "institution";
 export type CampaignStatus = "draft" | "running" | "paused" | "stopped" | "done" | "failed";
 // region: a first-level division nobody seeded (Greater Accra Region,
 // England), searched as one area; a seeded state runs its towns.
-export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood";
+export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood" | "point";
 
 // A place from geo_areas, with the place above it ("Ilorin", "Kwara").
 export type GeoArea = {

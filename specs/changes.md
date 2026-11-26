@@ -25,6 +25,7 @@ Where the build stands. Decisions and their reasons are in 07-decisions-log.md.
 - Fix B 2026-11-07 on `redesign`: Nigeria and Africa/Lagos are the default workspace country and zone; a Brand DNA version based in another country asks the owner, as its own item in the review, whether to switch (approve saves that country's zone, reject keeps Nigeria, both logged); Settings still overrides. No migration.
 - Messages never blocked 2026-11-07 on `redesign`: the Tech365 name-check fix (page names like FAQ aren't business names), the fallback rewrite, general offer cards for leads with no specific gap, auto-drafts after every deep-dive, every tab shows its draft with a copy-and-paste chip where nothing can be opened, "Chat on WhatsApp" prefilled, and the Tailored / General badge, filter, order and counts. No migration.
 - Next: the user's manual check of drafts for 10 real leads, then contacting 10 real leads with the tool (more deep-dives are needed: 6 of 19 local leads with cards have a send target).
+- Near a place, step 1 2026-11-27 on branch `near-a-place`: a looked-up landmark, business or exact address ("Eiffel Tower") is a `point` under its town instead of being refused. Searching a radius around it comes in later steps.
 
 ## Clones to re-clone
 
