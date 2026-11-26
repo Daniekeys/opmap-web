@@ -6,7 +6,7 @@ export type TargetKind = "local_business" | "b2b" | "institution";
 export type CampaignStatus = "draft" | "running" | "paused" | "stopped" | "done" | "failed";
 // region: a first-level division nobody seeded (Greater Accra Region,
 // England), searched as one area; a seeded state runs its towns.
-export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood";
+export type AreaLevel = "country" | "state" | "region" | "city" | "neighbourhood" | "point";
 
 // A place from geo_areas, with the place above it ("Ilorin", "Kwara").
 export type GeoArea = {
@@ -165,7 +165,15 @@ export type PauseKind = "setup" | "campaign_daily" | "daily_cap" | "monthly_cap"
 // 3), its own searches a day (null: the shared cap alone, which always holds),
 // and the leads wanted before the search ends as done (20 to 30; null on
 // campaigns made before it, which search everything).
-export type SearchSettings = { maxCalls: number | null; pagesPerTile: number; extrasPerCity: number; dailyCalls: number | null; leadsWanted: number | null };
+// pointRadiusKm: the km searched around a landmark (a point place), 1 to 5.
+export type SearchSettings = {
+  maxCalls: number | null;
+  pagesPerTile: number;
+  extrasPerCity: number;
+  dailyCalls: number | null;
+  leadsWanted: number | null;
+  pointRadiusKm: number;
+};
 
 // PATCH .../campaigns/:campaignId (owner): search terms, places and search
 // settings, while it is a draft, paused, stopped or failed. A field left out

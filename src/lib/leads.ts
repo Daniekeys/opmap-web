@@ -137,7 +137,10 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pau
 
 // A campaign's search settings as the form holds them: the leads wanted and
 // the two limits as typed (empty: no limit), the two choices as select values.
-export type SettingsDraft = { leadsWanted: string; maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string };
+export type SettingsDraft = { leadsWanted: string; maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string; pointRadiusKm: string };
+
+// The distances offered around a landmark, in km (the API takes 1 to 5).
+export const POINT_RADIUS_CHOICES = [1, 2, 5];
 
 // Leads wanted: the search ends as done once this many pass the fit check.
 export const LEADS_WANTED = { min: 20, max: 30, default: 20 };
@@ -148,6 +151,7 @@ export const settingsDraft = (s: SearchSettings): SettingsDraft => ({
   dailyCalls: s.dailyCalls === null ? "" : String(s.dailyCalls),
   pagesPerTile: String(s.pagesPerTile),
   extrasPerCity: String(s.extrasPerCity),
+  pointRadiusKm: String(s.pointRadiusKm),
 });
 
 // The draft as settings, or what is wrong with it. The API checks again.
@@ -170,7 +174,16 @@ export function readSettings(d: SettingsDraft, dailyCap?: number): { settings: S
   if (wanted !== null && !(Number.isInteger(wanted) && wanted >= LEADS_WANTED.min && wanted <= LEADS_WANTED.max)) {
     return { error: `Leads wanted must be a whole number from ${LEADS_WANTED.min} to ${LEADS_WANTED.max}.` };
   }
-  return { settings: { leadsWanted: wanted, maxCalls, dailyCalls, pagesPerTile: Number(d.pagesPerTile), extrasPerCity: Number(d.extrasPerCity) } };
+  return {
+    settings: {
+      leadsWanted: wanted,
+      maxCalls,
+      dailyCalls,
+      pagesPerTile: Number(d.pagesPerTile),
+      extrasPerCity: Number(d.extrasPerCity),
+      pointRadiusKm: Number(d.pointRadiusKm),
+    },
+  };
 }
 
 export const sameSettings = (a: SearchSettings, b: SearchSettings) =>
@@ -178,7 +191,8 @@ export const sameSettings = (a: SearchSettings, b: SearchSettings) =>
   a.maxCalls === b.maxCalls &&
   a.dailyCalls === b.dailyCalls &&
   a.pagesPerTile === b.pagesPerTile &&
-  a.extrasPerCity === b.extrasPerCity;
+  a.extrasPerCity === b.extrasPerCity &&
+  a.pointRadiusKm === b.pointRadiusKm;
 
 // The estimate route's preview query for these settings.
 export const previewQuery = (s: SearchSettings) =>
@@ -187,6 +201,7 @@ export const previewQuery = (s: SearchSettings) =>
     dailyCalls: s.dailyCalls === null ? "none" : String(s.dailyCalls),
     pagesPerTile: String(s.pagesPerTile),
     extrasPerCity: String(s.extrasPerCity),
+    pointRadiusKm: String(s.pointRadiusKm),
     ...(s.leadsWanted === null ? {} : { leadsWanted: String(s.leadsWanted) }),
   }).toString();
 
