@@ -22,6 +22,8 @@ export type WorkspaceSettingsResponse = {
   default: { timeZone: string; country: string };
   // The workspace's country and its zones, listed first in the picker.
   country: { code: string; name: string; timeZones: string[] };
+  // Who signs messages: the saved name, else the first owner's first name.
+  signAs: { name: string | null; saved: string | null; default: string | null };
 };
 
 // GET /api/me. canCreateWorkspaces: the platform owner only.

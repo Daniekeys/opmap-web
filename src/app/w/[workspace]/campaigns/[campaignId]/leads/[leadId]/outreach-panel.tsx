@@ -682,11 +682,16 @@ function AfterSend({
 // a bottom sheet on a phone. The trigger is a span: a button can't wrap
 // inline with the sentences around it.
 function Lines({ lines, dates, call }: { lines: DraftLine[]; dates: ReadDates; call: boolean }) {
-  // The body joins the claims into one paragraph; a call opener is line by line.
+  // The body's own paragraphs when the draft marks them (drafts.v3): a line
+  // joins the one before unless it starts a paragraph. Older drafts join the
+  // claims into one paragraph. A call opener is line by line.
+  const marked = lines.some((l) => l.newParagraph !== undefined);
+  const inBody = (l: DraftLine) => l.kind === "claim" || l.kind === "aside" || l.kind === "ask";
   const paragraphs: DraftLine[][] = [];
   for (const line of lines) {
     const last = paragraphs.at(-1);
-    if (!call && line.kind === "claim" && last?.[0]?.kind === "claim") last.push(line);
+    const joins = marked ? inBody(line) && !line.newParagraph && !!last && inBody(last[0]!) : line.kind === "claim" && last?.[0]?.kind === "claim";
+    if (!call && joins) last!.push(line);
     else paragraphs.push([line]);
   }
   return (
