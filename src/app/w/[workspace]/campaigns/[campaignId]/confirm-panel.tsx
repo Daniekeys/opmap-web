@@ -27,6 +27,7 @@ export function ConfirmPanel({
   supported,
   continuing,
   locations,
+  landmark,
 }: {
   workspaceId: string;
   campaignId: string;
@@ -36,6 +37,8 @@ export function ConfirmPanel({
   continuing: boolean;
   // The campaign's place ids, for swapping a big place for a borough.
   locations: string[];
+  // Whether a landmark is among them (asks for the distance around it).
+  landmark: boolean;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => settingsDraft(estimate.settings));
@@ -134,7 +137,7 @@ export function ConfirmPanel({
         {continuing ? "Continue the search" : "Before you start"}
       </h2>
 
-      <SearchSettingsFields value={draft} onChange={setDraft} dailyCap={estimate.dailyCap} disabled={!isOwner || starting} />
+      <SearchSettingsFields value={draft} onChange={setDraft} dailyCap={estimate.dailyCap} disabled={!isOwner || starting} landmark={landmark} />
       {invalid && (
         <p role="alert" className="text-sm text-negative-ink">
           {invalid}
@@ -150,7 +153,8 @@ export function ConfirmPanel({
         ) : (
           <p className="text-sm">
             About <strong>{calls} Google searches</strong> ({tiles} map tiles x {queries} {queries === 1 ? "search term" : "search terms"}, {pages}
-            {shown.settings.extrasPerCity > 0 ? ", plus a few neighbourhood searches" : ""}).{" "}
+            {/* Only a city gets them (never a landmark), so the estimate says. */}
+            {shown.areas.some((a) => a.extras > 0) ? ", plus a few neighbourhood searches" : ""}).{" "}
             {shown.budgetCut && budgetLeft !== null && (
               <>
                 The whole search needs about {span(shown.needed)}; the budget stops it at {budgetLeft}

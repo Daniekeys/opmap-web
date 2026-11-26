@@ -9,6 +9,7 @@ import type { ApiErrorResponse } from "@/lib/api-types/errors";
 import type { Campaign, EditCampaignBody, GeoArea } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
 import { readSettings, settingsDraft } from "@/lib/leads";
+import { hasLandmark } from "@/lib/place-lookup";
 import { parseSearchTerms } from "@/lib/segments";
 import { PlacePicker } from "../new/campaign-form";
 import { SearchSettingsFields } from "./search-settings";
@@ -79,7 +80,7 @@ export function EditCampaign({ workspaceId, campaign, withSettings }: { workspac
           <span className="font-normal text-muted">Up to 3, separated by commas. Each one multiplies the searches per map tile.</span>
         </label>
         <PlacePicker workspaceId={workspaceId} chosen={places} onChange={setPlaces} />
-        {withSettings && <SearchSettingsFields value={settings} onChange={setSettings} />}
+        {withSettings && <SearchSettingsFields value={settings} onChange={setSettings} landmark={hasLandmark(places)} />}
         {error && (
           <p role="alert" className="rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative-ink">
             {error}

@@ -6,6 +6,7 @@ import { PageLoading } from "@/components/page-loading";
 import { getCampaign, getCampaignEstimate, getCampaignLeads, getCampaignProgress, getWorkspace } from "@/lib/api";
 import type { Campaign } from "@/lib/api-types/leads";
 import { TARGET_KINDS } from "@/lib/leads";
+import { hasLandmark } from "@/lib/place-lookup";
 import { AutoRefresh } from "./auto-refresh";
 import { CampaignProgress } from "./campaign-progress";
 import { ConfirmPanel } from "./confirm-panel";
@@ -65,6 +66,7 @@ async function CampaignView({ params }: { params: Props["params"] }) {
             supported={kind?.supported ?? true}
             continuing={campaign.status === "stopped"}
             locations={campaign.locations.map((l) => l.id)}
+            landmark={hasLandmark(campaign.locations)}
           />
         )}
 
@@ -107,7 +109,7 @@ function SearchSummary({ campaign }: { campaign: Campaign }) {
   const budget = campaign.settings.maxCalls;
   const rows: [string, string][] = [
     ["Searching for", campaign.queries.join(", ") || "Not set"],
-    ["Places", campaign.locations.map((l) => l.name).join(", ") || "Not set"],
+    ["Places", campaign.locations.map((l) => (l.level === "point" ? `Near ${l.name} (${campaign.settings.pointRadiusKm} km)` : l.name)).join(", ") || "Not set"],
     ...(kind ? ([["Kind", kind.label]] as [string, string][]) : []),
     ["Leads wanted", campaign.settings.leadsWanted === null ? "Every place searched" : String(campaign.settings.leadsWanted)],
     ["Google searches", `${campaign.callsUsed}${budget !== null ? ` of ${budget}` : ""} used`],

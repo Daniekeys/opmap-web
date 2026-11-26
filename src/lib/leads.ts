@@ -139,6 +139,9 @@ export function statusText(campaign: Pick<Campaign, "status" | "resumeAt" | "pau
 // the two limits as typed (empty: no limit), the two choices as select values.
 export type SettingsDraft = { leadsWanted: string; maxCalls: string; dailyCalls: string; pagesPerTile: string; extrasPerCity: string; pointRadiusKm: string };
 
+// The distances offered around a landmark, in km (the API takes 1 to 5).
+export const POINT_RADIUS_CHOICES = [1, 2, 5];
+
 // Leads wanted: the search ends as done once this many pass the fit check.
 export const LEADS_WANTED = { min: 20, max: 30, default: 20 };
 

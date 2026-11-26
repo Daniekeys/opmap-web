@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
 import type { GeoArea } from "./api-types/leads";
-import { offerLookup } from "./place-lookup";
+import { areaLabel, hasLandmark, offerLookup } from "./place-lookup";
 
 const area = (name: string): GeoArea => ({ id: name, name, level: "city", parentName: null, country: "NG", population: null });
+
+describe("place labels", () => {
+  it("names a landmark as near it, under its town", () => {
+    expect(areaLabel({ name: "Eiffel Tower", level: "point", parentName: "Paris" })).toBe("Near Eiffel Tower, Paris");
+    expect(areaLabel({ name: "Ilorin", level: "city", parentName: "Kwara" })).toBe("Ilorin, Kwara");
+    expect(areaLabel({ name: "Kwara", level: "state", parentName: null })).toBe("Kwara");
+  });
+
+  it("asks for the distance only when a landmark is among the places", () => {
+    expect(hasLandmark([area("Ilorin")])).toBe(false);
+    expect(hasLandmark([area("Ilorin"), { ...area("Eiffel Tower"), level: "point" }])).toBe(true);
+    expect(hasLandmark([])).toBe(false);
+  });
+});
 
 describe("offering a Google Maps lookup", () => {
   it("offers it when no place in the list has the name typed", () => {

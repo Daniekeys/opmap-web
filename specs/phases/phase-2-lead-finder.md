@@ -27,6 +27,7 @@ Build:
 - Added 2026-11-27 (near a place, step 2): a campaign's distance around a landmark, `pointRadiusKm` (1 to 5 km, default 2; migration 0032), in its search settings: set at creation, edited, and previewed in the estimate.
 - Added 2026-11-26 (near a place, step 3): a `point` is searched as a circle of the campaign's distance around it (tiles the circle reaches, ring 0 holds the landmark), with no neighbourhood extras; when a full tile splits, quarters outside the area's boundary are skipped at every level (`tilesOutside` in the run output).
 - Added 2026-11-26 (near a place, step 4): a landmark campaign fit-checks, and counts toward its leads wanted, only businesses with an exact location within its distance; pinned and farther ones stay stored but are not candidates.
+- Added 2026-11-26 (near a place, step 5): "Near Eiffel Tower, Paris" in the place picker, "Distance around a place" on the confirm and paused edit panels when a landmark is chosen, the summary's "Near X (2 km)", campaign names with "near".
 - Leads table: name, category, city, rating and reviews, best phone, email and WhatsApp with their labels, fit, and a "Researched / Not yet" status so people know what opening a lead will do. On phones the table becomes stacked cards.
 
 Done when: a campaign for one business type in Ilorin returns at least 50 deduplicated leads without passing the daily cap, and a manual check of 20 rows finds the contact labels honest.

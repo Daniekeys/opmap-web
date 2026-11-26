@@ -24,13 +24,12 @@ import type {
 } from "@/lib/api-types/leads";
 import { goToLogin } from "@/lib/go-to-login";
 import { TARGET_KINDS } from "@/lib/leads";
-import { offerLookup } from "@/lib/place-lookup";
+import { areaLabel, offerLookup } from "@/lib/place-lookup";
 import { parseSearchTerms, ratingOptions } from "@/lib/segments";
 import { cn } from "@/lib/utils";
 
 const LEVELS: Record<GeoArea["level"], string> = { country: "Country", state: "State", region: "Region", city: "City", neighbourhood: "Area", point: "Place" };
 
-const areaLabel = (a: GeoArea) => (a.parentName ? `${a.name}, ${a.parentName}` : a.name);
 
 const NO_ERROR: ApiErrorResponse = { error: { code: "", message: "" } };
 
@@ -470,13 +469,14 @@ export function PlacePicker({ workspaceId, chosen, onChange }: { workspaceId: st
             type="search"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="City, state or area, e.g. Accra"
+            placeholder="City, area or landmark, e.g. Accra"
             autoComplete="off"
             className={cn(inputClass, "pl-9")}
           />
         </span>
         <span className="font-normal text-muted">
-          A state runs its listed towns, biggest first; a region or county is searched as one area. Pick as many places as you like.
+          A state runs its listed towns, biggest first; a region or county is searched as one area; a landmark or business is searched around it. Pick as
+          many places as you like.
         </span>
       </label>
 

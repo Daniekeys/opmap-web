@@ -1,23 +1,28 @@
 "use client";
 
 import { inputClass } from "@/components/input-class";
-import { LEADS_WANTED, type SettingsDraft } from "@/lib/leads";
+import { LEADS_WANTED, POINT_RADIUS_CHOICES, type SettingsDraft } from "@/lib/leads";
 
 // An owner's search settings: the leads wanted, which ends the search as done;
 // a budget and a pace that can only lower what the search spends (the shared
 // Google limit always holds); and how deep it searches each tile and city.
-// Empty limits mean no limit.
+// Empty limits mean no limit. With a landmark among the places, how far
+// around it to search.
 export function SearchSettingsFields({
   value,
   onChange,
   dailyCap,
   disabled,
+  landmark,
 }: {
   value: SettingsDraft;
   onChange: (value: SettingsDraft) => void;
   dailyCap?: number;
   disabled?: boolean;
+  landmark?: boolean;
 }) {
+  // A distance set through the API (3 or 4 km) stays pickable.
+  const distances = [...new Set([...POINT_RADIUS_CHOICES, Number(value.pointRadiusKm)])].sort((a, b) => a - b);
   const set = (key: keyof SettingsDraft) => (e: { target: { value: string } }) => onChange({ ...value, [key]: e.target.value });
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-3 disabled:opacity-70">
@@ -89,6 +94,19 @@ export function SearchSettingsFields({
           </select>
           <span className="text-muted">Extra searches by neighbourhood name, one page each.</span>
         </label>
+        {landmark && (
+          <label className="flex flex-col gap-1.5 text-sm">
+            Distance around a place
+            <select value={value.pointRadiusKm} onChange={set("pointRadiusKm")} className={inputClass}>
+              {distances.map((km) => (
+                <option key={km} value={km}>
+                  {km} km
+                </option>
+              ))}
+            </select>
+            <span className="text-muted">How far around a landmark or business to look. Only businesses this close become leads.</span>
+          </label>
+        )}
       </div>
     </fieldset>
   );
